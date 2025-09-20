@@ -2,41 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Restaurant POS & Management System Design System */
 
 @layer base {
   :root {
+    /* Base Colors */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Restaurant Brand Colors */
+    --primary: 25 95% 53%; /* Warm Orange */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 25 100% 65%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --secondary: 217 91% 60%; /* Deep Blue */
+    --secondary-foreground: 0 0% 100%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
+    /* Neutral Grays */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
+    
+    --accent: 142 76% 36%; /* Fresh Green for success states */
+    --accent-foreground: 0 0% 100%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Status Colors */
+    --success: 142 76% 36%; /* Order ready */
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 48 96% 53%; /* Pending orders */
+    --warning-foreground: 222.2 84% 4.9%;
+    
+    --destructive: 0 84.2% 60.2%; /* Cancel/delete */
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* UI Elements */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 25 95% 53%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* POS Specific */
+    --pos-item-bg: 25 5% 98%;
+    --pos-selected: 25 95% 53%;
+    --table-occupied: 0 84% 60%;
+    --table-available: 142 76% 36%;
+    --kitchen-urgent: 0 84% 60%;
 
-    --radius: 0.5rem;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(220 13% 98%) 100%);
+
+    /* Shadows */
+    --shadow-elegant: 0 4px 20px -4px hsl(var(--primary) / 0.15);
+    --shadow-card: 0 2px 10px -2px hsl(220 13% 91% / 0.5);
+    --shadow-pos: 0 8px 32px -8px hsl(222.2 84% 4.9% / 0.12);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease-out;
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
