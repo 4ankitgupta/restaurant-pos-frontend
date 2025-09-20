@@ -13,7 +13,6 @@ import { toast } from '@/hooks/use-toast';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('admin');
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,34 +22,25 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password, role);
-      toast({
-        title: "Login successful",
-        description: `Welcome back! Logged in as ${role}.`,
-      });
+      await login(email, password);
       navigate('/dashboard');
     } catch (error) {
-      toast({
-        title: "Login failed",
-        description: "Please check your credentials and try again.",
-        variant: "destructive",
-      });
+      // Error handling is done in AuthContext
     } finally {
       setIsLoading(false);
     }
   };
 
   const demoCredentials = [
-    { role: 'admin', email: 'admin@restaurant.com', name: 'Admin Dashboard' },
-    { role: 'cashier', email: 'cashier@restaurant.com', name: 'POS System' },
-    { role: 'waiter', email: 'waiter@restaurant.com', name: 'Table Management' },
-    { role: 'chef', email: 'chef@restaurant.com', name: 'Kitchen Display' },
+    { email: 'admin@restaurant.com', name: 'Admin Dashboard' },
+    { email: 'cashier@restaurant.com', name: 'POS System' },
+    { email: 'waiter@restaurant.com', name: 'Table Management' },
+    { email: 'chef@restaurant.com', name: 'Kitchen Display' },
   ];
 
-  const quickLogin = (demoRole: UserRole, demoEmail: string) => {
+  const quickLogin = (demoEmail: string) => {
     setEmail(demoEmail);
     setPassword('demo123');
-    setRole(demoRole);
   };
 
   return (
@@ -102,23 +92,6 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-                  <SelectTrigger>
-                    <div className="flex items-center">
-                      <User className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Select your role" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="cashier">Cashier</SelectItem>
-                    <SelectItem value="waiter">Waiter</SelectItem>
-                    <SelectItem value="chef">Chef</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <Button 
                 type="submit" 
@@ -135,12 +108,12 @@ const Login: React.FC = () => {
                 Quick Demo Access
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {demoCredentials.map((demo) => (
+                {demoCredentials.map((demo, index) => (
                   <Button
-                    key={demo.role}
+                    key={index}
                     variant="outline"
                     size="sm"
-                    onClick={() => quickLogin(demo.role as UserRole, demo.email)}
+                    onClick={() => quickLogin(demo.email)}
                     className="text-xs"
                   >
                     {demo.name}

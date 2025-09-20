@@ -1,5 +1,15 @@
 export type UserRole = 'admin' | 'cashier' | 'waiter' | 'chef';
 
+// Backend role mapping
+export const BACKEND_ROLES = {
+  'ADMIN': 'admin',
+  'MANAGER': 'admin',
+  'CASHIER': 'cashier', 
+  'WAITER': 'waiter',
+  'KITCHEN_STAFF': 'chef',
+  'CHEF': 'chef'
+} as const;
+
 export interface User {
   id: string;
   name: string;
@@ -10,7 +20,7 @@ export interface User {
 
 export interface AuthContext {
   user: User | null;
-  login: (email: string, password: string, role: UserRole) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
