@@ -1,4 +1,3 @@
-// src/types/restaurant.ts
 export interface MenuItem {
   id: string;
   name: string;
@@ -8,7 +7,6 @@ export interface MenuItem {
   available: boolean;
 }
 
-// Add this new interface
 export interface APIMenuItem {
   id: string;
   name: string;
@@ -45,6 +43,33 @@ export interface APITable {
   capacity: number;
   status: "Available" | "Occupied" | "Reserved" | "NeedCleaning";
   restaurantId: string;
+}
+
+export interface APIOrder {
+  id: string;
+  status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED";
+  totalAmount: number;
+  paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
+  createdAt: string;
+  updatedAt: string;
+  restaurantId: string;
+  tableId: string | null;
+  userId: string | null;
+  orderItems: Array<{
+    id: string;
+    quantity: number;
+    price: number;
+    menuItemId: string;
+    menuItem: {
+      id: string;
+      name: string;
+      description: string | null;
+      price: number;
+      isAvailable: boolean;
+      restaurantId: string;
+      categoryId: string | null;
+    };
+  }>;
 }
 
 export interface Table {

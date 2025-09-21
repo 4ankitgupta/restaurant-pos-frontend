@@ -194,6 +194,20 @@ class ApiService {
     });
   }
 
+  async addItemsToOrder(
+    orderId: string,
+    items: Array<{ menuItemId: string; quantity: number }>
+  ) {
+    return this.request<ApiResponse<any>>(`/orders/${orderId}/items`, {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    });
+  }
+
+  async getOrderDetails(orderId: string) {
+    return this.request<ApiResponse<any>>(`/orders/${orderId}`);
+  }
+
   // Payment Management
   async createPayment(paymentData: {
     orderId: string;
@@ -233,6 +247,20 @@ class ApiService {
       method: "PATCH",
       body: JSON.stringify({ status }),
     });
+  }
+
+  async seatTable(tableId: string, partySize: number) {
+    return this.request<ApiResponse<{ updatedTable: APITable; newOrder: any }>>(
+      `/tables/${tableId}/seat`,
+      {
+        method: "POST",
+        body: JSON.stringify({ partySize }),
+      }
+    );
+  }
+
+  async getActiveOrderForTable(tableId: string) {
+    return this.request<ApiResponse<any>>(`/tables/${tableId}/active-order`);
   }
 
   // Inventory Management

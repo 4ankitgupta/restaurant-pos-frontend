@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { MenuItem, OrderItem, APIMenuItem } from "@/types/restaurant"; // Import APIMenuItem
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -48,9 +49,14 @@ interface Table {
 }
 
 const POSSystem: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+
+  const { orderId: incomingOrderId, tableId: incomingTableId } =
+    location.state || {};
 
   const { loading: categoriesLoading, execute: executeCategories } = useApi<{
     data: MenuCategory[];
@@ -62,6 +68,7 @@ const POSSystem: React.FC = () => {
   }>();
   const { loading: orderLoading, execute: executeOrder } = useApi<any>();
   const { loading: paymentLoading, execute: executePayment } = useApi<any>();
+  const { execute: executeGetOrder } = useApi<any>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -84,10 +91,49 @@ const POSSystem: React.FC = () => {
     fetchData();
   }, [executeCategories, executeMenu, executeTables]);
 
+  useEffect(() => {
+    const loadOrder = async (orderId: string, tableId: string) => {
+      setSelectedTableId(tableId);
+      setCurrentOrderId(orderId);
+      try {
+        const response = await executeGetOrder(() =>
+          apiService.getOrderDetails(orderId)
+        );
+        if (response && response.data && response.data.orderItems) {
+          // Convert fetched order items to cart format
+          const loadedCartItems: OrderItem[] = response.data.orderItems.map(
+            (item: any) => ({
+              id: item.id,
+              menuItem: {
+                id: item.menuItem.id,
+                name: item.menuItem.name,
+                price: Number(item.menuItem.price),
+                category: item.menuItem.category?.name || "Unknown",
+                available: item.menuItem.isAvailable,
+              },
+              quantity: item.quantity,
+              status: "served", // Assume existing items are served
+            })
+          );
+          setCart(loadedCartItems);
+        }
+      } catch (error) {
+        console.error("Failed to load order details:", error);
+        // If order load fails, navigate back or show error
+        navigate("/tables");
+      }
+    };
+
+    if (incomingOrderId && incomingTableId) {
+      loadOrder(incomingOrderId, incomingTableId);
+    }
+  }, [incomingOrderId, incomingTableId, executeGetOrder, navigate]);
+
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [cart, setCart] = useState<OrderItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTableId, setSelectedTableId] = useState<string>("");
+  const [currentOrderId, setCurrentOrderId] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "CARD" | "UPI" | "WALLET"
@@ -166,46 +212,52 @@ const POSSystem: React.FC = () => {
   };
 
   const processOrder = async () => {
-    if (!selectedTableId || cart.length === 0) return;
-
-    try {
-      const orderItems = cart.map((item) => ({
+    // Filter out items that are already "served"
+    const newItems = cart
+      .filter((item) => item.status === "pending")
+      .map((item) => ({
         menuItemId: item.menuItem.id,
         quantity: item.quantity,
       }));
 
+    if (newItems.length === 0) {
+      setPaymentDialogOpen(true); // No new items, proceed to payment
+      return;
+    }
+    if (!currentOrderId) return; // Must have an order ID now
+
+    try {
       const response = await executeOrder(() =>
-        apiService.createOrder({
-          tableId: selectedTableId,
-          items: orderItems,
-        })
+        apiService.addItemsToOrder(currentOrderId, newItems)
       );
 
       if (response) {
         setPaymentDialogOpen(true);
       }
     } catch (error) {
-      console.error("Failed to create order:", error);
+      console.error("Failed to add items to order:", error);
     }
   };
 
   const processPayment = async () => {
-    if (!selectedTableId) return;
+    if (!currentOrderId) return;
 
     try {
-      const response = await executePayment(() =>
+      await executePayment(() =>
         apiService.createPayment({
-          orderId: "current-order-id", // Would come from order creation response
+          orderId: currentOrderId, // Use the actual order ID
           amount: getFinalTotal(),
           paymentMethod,
         })
       );
+      // On successful payment, also update the table status to 'NeedCleaning'
+      await apiService.updateTableStatus(selectedTableId, "NeedCleaning");
 
-      if (response) {
-        setCart([]);
-        setSelectedTableId("");
-        setPaymentDialogOpen(false);
-      }
+      setCart([]);
+      setSelectedTableId("");
+      setCurrentOrderId("");
+      setPaymentDialogOpen(false);
+      navigate("/tables"); // Navigate back to table management
     } catch (error) {
       console.error("Failed to process payment:", error);
     }
@@ -287,7 +339,11 @@ const POSSystem: React.FC = () => {
         </div>
 
         <div className="mb-4">
-          <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+          <Select
+            value={selectedTableId}
+            onValueChange={setSelectedTableId}
+            disabled={!!incomingTableId}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select a table" />
             </SelectTrigger>
