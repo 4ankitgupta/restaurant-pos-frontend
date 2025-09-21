@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import POSSystem from "./pages/POSSystem";
 import TableManagement from "./pages/TableManagement";
 import KitchenDisplay from "./pages/KitchenDisplay";
+import Inventory from "./pages/Inventory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,11 @@ const App = () => (
               <Route path="kitchen" element={
                 <ProtectedRoute allowedRoles={['admin', 'chef']}>
                   <KitchenDisplay />
+                </ProtectedRoute>
+              } />
+              <Route path="inventory" element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Inventory />
                 </ProtectedRoute>
               } />
             </Route>

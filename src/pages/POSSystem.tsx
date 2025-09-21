@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Plus, 
   Minus, 
@@ -10,46 +12,94 @@ import {
   DollarSign, 
   Receipt, 
   Trash2,
-  Search
+  Search,
+  Smartphone,
+  Wallet
 } from 'lucide-react';
 import { MenuItem, OrderItem } from '@/types/restaurant';
+import { apiService } from '@/services/apiService';
+import { useApi } from '@/hooks/useApi';
+
+interface MenuCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  restaurantId: string;
+}
+
+interface APIMenuItem {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  isAvailable: boolean;
+  restaurantId: string;
+  categoryId: string | null;
+}
+
+interface Table {
+  id: string;
+  tableNumber: string;
+  capacity: number;
+  status: 'Available' | 'Occupied' | 'Reserved';
+  restaurantId: string;
+}
 
 const POSSystem: React.FC = () => {
-  // Mock menu data
-  const menuCategories = [
-    {
-      name: 'Appetizers',
-      items: [
-        { id: '1', name: 'Caesar Salad', price: 12.99, category: 'Appetizers', available: true },
-        { id: '2', name: 'Garlic Bread', price: 8.99, category: 'Appetizers', available: true },
-        { id: '3', name: 'Buffalo Wings', price: 14.99, category: 'Appetizers', available: true },
-      ]
-    },
-    {
-      name: 'Main Course',
-      items: [
-        { id: '4', name: 'Margherita Pizza', price: 18.99, category: 'Main Course', available: true },
-        { id: '5', name: 'Beef Burger', price: 16.99, category: 'Main Course', available: true },
-        { id: '6', name: 'Grilled Chicken', price: 22.99, category: 'Main Course', available: true },
-        { id: '7', name: 'Pasta Carbonara', price: 19.99, category: 'Main Course', available: true },
-      ]
-    },
-    {
-      name: 'Beverages',
-      items: [
-        { id: '8', name: 'Coca Cola', price: 3.99, category: 'Beverages', available: true },
-        { id: '9', name: 'Fresh Orange Juice', price: 5.99, category: 'Beverages', available: true },
-        { id: '10', name: 'Coffee', price: 4.99, category: 'Beverages', available: true },
-      ]
-    }
-  ];
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
+  const [tables, setTables] = useState<Table[]>([]);
+  const { loading: categoriesLoading, execute: executeCategories } = useApi<{ data: MenuCategory[] }>();
+  const { loading: menuLoading, execute: executeMenu } = useApi<{ data: APIMenuItem[] }>();
+  const { loading: tablesLoading, execute: executeTables } = useApi<{ data: Table[] }>();
+  const { loading: orderLoading, execute: executeOrder } = useApi<any>();
+  const { loading: paymentLoading, execute: executePayment } = useApi<any>();
 
-  const [activeCategory, setActiveCategory] = useState('Appetizers');
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [categoriesResponse, menuResponse, tablesResponse] = await Promise.all([
+          executeCategories(() => apiService.getMenuCategories()),
+          executeMenu(() => apiService.getMenuItems()),
+          executeTables(() => apiService.getTables())
+        ]);
+
+        if (categoriesResponse) setCategories(categoriesResponse.data);
+        if (menuResponse) setMenuItems(menuResponse.data);
+        if (tablesResponse) setTables(tablesResponse.data);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      }
+    };
+
+    fetchData();
+  }, [executeCategories, executeMenu, executeTables]);
+
+  const [activeCategory, setActiveCategory] = useState<string>('');
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [tableNumber, setTableNumber] = useState('');
+  const [selectedTableId, setSelectedTableId] = useState<string>('');
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'WALLET'>('CASH');
 
-  const addToCart = (menuItem: MenuItem) => {
+  // Set first category as active when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
+
+  const addToCart = (apiMenuItem: APIMenuItem) => {
+    // Convert API menu item to our MenuItem format
+    const menuItem: MenuItem = {
+      id: apiMenuItem.id,
+      name: apiMenuItem.name,
+      price: apiMenuItem.price,
+      category: categories.find(c => c.id === apiMenuItem.categoryId)?.name || 'Unknown',
+      description: apiMenuItem.description || undefined,
+      available: apiMenuItem.isAvailable
+    };
+
     const existingItem = cart.find(item => item.menuItem.id === menuItem.id);
     
     if (existingItem) {
@@ -97,8 +147,50 @@ const POSSystem: React.FC = () => {
     return getTotal() + getTax();
   };
 
-  const currentItems = menuCategories.find(cat => cat.name === activeCategory)?.items || [];
-  const filteredItems = currentItems.filter(item => 
+  const processOrder = async () => {
+    if (!selectedTableId || cart.length === 0) return;
+
+    try {
+      const orderItems = cart.map(item => ({
+        menuItemId: item.menuItem.id,
+        quantity: item.quantity
+      }));
+
+      const response = await executeOrder(() => apiService.createOrder({
+        tableId: selectedTableId,
+        items: orderItems
+      }));
+
+      if (response) {
+        setPaymentDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Failed to create order:', error);
+    }
+  };
+
+  const processPayment = async () => {
+    if (!selectedTableId) return;
+
+    try {
+      const response = await executePayment(() => apiService.createPayment({
+        orderId: 'current-order-id', // Would come from order creation response
+        amount: getFinalTotal(),
+        paymentMethod
+      }));
+
+      if (response) {
+        setCart([]);
+        setSelectedTableId('');
+        setPaymentDialogOpen(false);
+      }
+    } catch (error) {
+      console.error('Failed to process payment:', error);
+    }
+  };
+
+  const currentItems = menuItems.filter(item => 
+    item.categoryId === activeCategory && 
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -120,13 +212,13 @@ const POSSystem: React.FC = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex space-x-2 mb-6">
-          {menuCategories.map((category) => (
+        <div className="flex space-x-2 mb-6 overflow-x-auto">
+          {categories.map((category) => (
             <Button
-              key={category.name}
-              variant={activeCategory === category.name ? 'pos-selected' : 'pos'}
-              onClick={() => setActiveCategory(category.name)}
-              className="px-6"
+              key={category.id}
+              variant={activeCategory === category.id ? 'pos-selected' : 'pos'}
+              onClick={() => setActiveCategory(category.id)}
+              className="px-6 whitespace-nowrap"
             >
               {category.name}
             </Button>
@@ -135,17 +227,21 @@ const POSSystem: React.FC = () => {
 
         {/* Menu Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-250px)]">
-          {filteredItems.map((item) => (
+          {currentItems.map((item) => (
             <Button
               key={item.id}
               variant="pos"
               size="pos"
               onClick={() => addToCart(item)}
               className="h-32"
+              disabled={!item.isAvailable}
             >
               <div className="w-full">
                 <h3 className="font-semibold text-left line-clamp-2">{item.name}</h3>
-                <p className="text-primary font-bold text-left mt-2">${item.price}</p>
+                <p className="text-primary font-bold text-left mt-2">${item.price.toFixed(2)}</p>
+                {!item.isAvailable && (
+                  <Badge variant="secondary" className="mt-1">Unavailable</Badge>
+                )}
               </div>
             </Button>
           ))}
@@ -162,11 +258,18 @@ const POSSystem: React.FC = () => {
         </div>
 
         <div className="mb-4">
-          <Input
-            placeholder="Table number (optional)"
-            value={tableNumber}
-            onChange={(e) => setTableNumber(e.target.value)}
-          />
+          <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a table" />
+            </SelectTrigger>
+            <SelectContent>
+              {tables.filter(table => table.status === 'Available').map((table) => (
+                <SelectItem key={table.id} value={table.id}>
+                  Table {table.tableNumber} (Capacity: {table.capacity})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Cart Items */}
@@ -223,23 +326,79 @@ const POSSystem: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="flex-col h-16">
-                <DollarSign className="h-5 w-5 mb-1" />
-                <span className="text-xs">Cash</span>
-              </Button>
-              <Button variant="outline" className="flex-col h-16">
-                <CreditCard className="h-5 w-5 mb-1" />
-                <span className="text-xs">Card</span>
-              </Button>
-            </div>
-
-            <Button size="lg" className="w-full bg-gradient-primary">
+            <Button 
+              size="lg" 
+              className="w-full bg-gradient-primary"
+              onClick={processOrder}
+              disabled={!selectedTableId || cart.length === 0 || orderLoading}
+            >
               <Receipt className="mr-2 h-5 w-5" />
-              Process Order
+              {orderLoading ? 'Processing...' : 'Process Order'}
             </Button>
           </div>
         )}
+
+        {/* Payment Dialog */}
+        <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Process Payment</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold">${getFinalTotal().toFixed(2)}</p>
+                <p className="text-muted-foreground">Total Amount</p>
+              </div>
+              
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Payment Method</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('CASH')}
+                    className="flex-col h-16"
+                  >
+                    <DollarSign className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Cash</span>
+                  </Button>
+                  <Button
+                    variant={paymentMethod === 'CARD' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('CARD')}
+                    className="flex-col h-16"
+                  >
+                    <CreditCard className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Card</span>
+                  </Button>
+                  <Button
+                    variant={paymentMethod === 'UPI' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('UPI')}
+                    className="flex-col h-16"
+                  >
+                    <Smartphone className="h-5 w-5 mb-1" />
+                    <span className="text-xs">UPI</span>
+                  </Button>
+                  <Button
+                    variant={paymentMethod === 'WALLET' ? 'default' : 'outline'}
+                    onClick={() => setPaymentMethod('WALLET')}
+                    className="flex-col h-16"
+                  >
+                    <Wallet className="h-5 w-5 mb-1" />
+                    <span className="text-xs">Wallet</span>
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={processPayment} disabled={paymentLoading}>
+                  {paymentLoading ? 'Processing...' : 'Complete Payment'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

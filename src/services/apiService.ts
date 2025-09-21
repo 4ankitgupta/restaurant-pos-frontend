@@ -126,6 +126,32 @@ class ApiService {
     });
   }
 
+  // Menu Management
+  async getMenuCategories() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        restaurantId: string;
+      }>;
+    }>('/menu-categories');
+  }
+
+  async getMenuItems() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        price: number;
+        isAvailable: boolean;
+        restaurantId: string;
+        categoryId: string | null;
+      }>;
+    }>('/menu');
+  }
+
   // Order Management
   async createOrder(orderData: {
     tableId: string;
@@ -134,35 +160,86 @@ class ApiService {
       quantity: number;
     }>;
   }) {
-    return this.request<ApiResponse<{
-      id: string;
-      status: string;
-      totalAmount: number;
-      paymentStatus: string;
-      tableId: string;
-      userId: string;
-      orderItems: Array<{
+    return this.request<{
+      data: {
         id: string;
-        quantity: number;
-        price: number;
-        menuItemId: string;
-      }>;
-    }>>('/orders', {
+        status: string;
+        totalAmount: number;
+        paymentStatus: string;
+        restaurantId: string;
+        tableId: string;
+        userId: string;
+        orderItems: Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          menuItemId: string;
+        }>;
+      };
+    }>('/orders', {
       method: 'POST',
       body: JSON.stringify(orderData),
     });
   }
 
   async updateOrderStatus(orderId: string, status: string) {
-    return this.request<ApiResponse<{
-      id: string;
-      status: string;
-      totalAmount: number;
-      paymentStatus: string;
-    }>>(`/orders/${orderId}/status`, {
+    return this.request<{
+      data: {
+        id: string;
+        status: string;
+        totalAmount: number;
+        paymentStatus: string;
+      };
+    }>(`/orders/${orderId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+  }
+
+  // Payment Management
+  async createPayment(paymentData: {
+    orderId: string;
+    amount: number;
+    paymentMethod: 'CASH' | 'CARD' | 'UPI' | 'WALLET';
+  }) {
+    return this.request<{
+      data: {
+        id: string;
+        amount: number;
+        paymentMethod: string;
+        status: string;
+        orderId: string;
+      };
+    }>('/payments', {
+      method: 'POST',
+      body: JSON.stringify(paymentData),
+    });
+  }
+
+  // Table Management
+  async getTables() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        tableNumber: string;
+        capacity: number;
+        status: 'Available' | 'Occupied' | 'Reserved';
+        restaurantId: string;
+      }>;
+    }>('/tables');
+  }
+
+  // Inventory Management
+  async getInventory() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        name: string;
+        unit: string;
+        quantity: number;
+        threshold: number;
+      }>;
+    }>('/inventory');
   }
 }
 
