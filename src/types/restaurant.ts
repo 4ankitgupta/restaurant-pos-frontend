@@ -1,11 +1,21 @@
 export interface MenuItem {
   id: string;
   name: string;
+  description?: string;
   price: number;
   category: string;
-  description?: string;
-  image?: string;
   available: boolean;
+}
+
+// Add this new interface
+export interface APIMenuItem {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  isAvailable: boolean;
+  restaurantId: string;
+  categoryId: string | null;
 }
 
 export interface OrderItem {
@@ -13,7 +23,7 @@ export interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   notes?: string;
-  status: 'pending' | 'preparing' | 'ready' | 'served';
+  status: "pending" | "preparing" | "ready" | "served";
 }
 
 export interface Order {
@@ -21,7 +31,7 @@ export interface Order {
   tableNumber?: number;
   customerName?: string;
   items: OrderItem[];
-  status: 'pending' | 'preparing' | 'ready' | 'served' | 'paid';
+  status: "pending" | "preparing" | "ready" | "served" | "paid";
   total: number;
   createdAt: Date;
   updatedAt: Date;
@@ -32,7 +42,7 @@ export interface Table {
   id: string;
   number: number;
   capacity: number;
-  status: 'available' | 'occupied' | 'reserved' | 'needs-cleaning';
+  status: "available" | "occupied" | "reserved" | "needs-cleaning";
   currentOrder?: Order;
   x?: number;
   y?: number;

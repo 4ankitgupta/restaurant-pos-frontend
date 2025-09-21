@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types/auth';
-import { Utensils, Lock, User, Mail } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserRole } from "@/types/auth";
+import { Utensils, Lock, User, Mail } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -23,7 +29,7 @@ const Login: React.FC = () => {
 
     try {
       await login(email, password);
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
       // Error handling is done in AuthContext
     } finally {
@@ -32,15 +38,16 @@ const Login: React.FC = () => {
   };
 
   const demoCredentials = [
-    { email: 'admin@restaurant.com', name: 'Admin Dashboard' },
-    { email: 'cashier@restaurant.com', name: 'POS System' },
-    { email: 'waiter@restaurant.com', name: 'Table Management' },
-    { email: 'chef@restaurant.com', name: 'Kitchen Display' },
+    { email: "admin@vishalparatha.com", name: "Admin Dashboard" },
+    { email: "manager@vishalparatha.com", name: "Manager Dashboard" },
+    { email: "cashier@vishalparatha.com", name: "POS System(Cashier)" },
+    { email: "waiter@vishalparatha.com", name: "Table Management(Waiter)" },
+    { email: "chef@vishalparatha.com", name: "Kitchen Display(Chef)" },
   ];
 
   const quickLogin = (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword('demo123');
+    setPassword("demo123");
   };
 
   return (
@@ -92,14 +99,13 @@ const Login: React.FC = () => {
                 </div>
               </div>
 
-
-              <Button 
-                type="submit" 
-                className="w-full" 
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
                 size="lg"
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 

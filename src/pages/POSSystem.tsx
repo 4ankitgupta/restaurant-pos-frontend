@@ -1,24 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Plus, 
-  Minus, 
-  CreditCard, 
-  DollarSign, 
-  Receipt, 
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { MenuItem, OrderItem, APIMenuItem } from "@/types/restaurant"; // Import APIMenuItem
+import { apiService } from "@/services/apiService";
+import { useApi } from "@/hooks/useApi";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Plus,
+  Minus,
+  CreditCard,
+  DollarSign,
+  Receipt,
   Trash2,
   Search,
   Smartphone,
-  Wallet
-} from 'lucide-react';
-import { MenuItem, OrderItem } from '@/types/restaurant';
-import { apiService } from '@/services/apiService';
-import { useApi } from '@/hooks/useApi';
+  Wallet,
+} from "lucide-react";
 
 interface MenuCategory {
   id: string;
@@ -27,21 +38,11 @@ interface MenuCategory {
   restaurantId: string;
 }
 
-interface APIMenuItem {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  isAvailable: boolean;
-  restaurantId: string;
-  categoryId: string | null;
-}
-
 interface Table {
   id: string;
   tableNumber: string;
   capacity: number;
-  status: 'Available' | 'Occupied' | 'Reserved';
+  status: "Available" | "Occupied" | "Reserved";
   restaurantId: string;
 }
 
@@ -49,38 +50,47 @@ const POSSystem: React.FC = () => {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
-  const { loading: categoriesLoading, execute: executeCategories } = useApi<{ data: MenuCategory[] }>();
-  const { loading: menuLoading, execute: executeMenu } = useApi<{ data: APIMenuItem[] }>();
-  const { loading: tablesLoading, execute: executeTables } = useApi<{ data: Table[] }>();
+
+  const { loading: categoriesLoading, execute: executeCategories } = useApi<{
+    data: MenuCategory[];
+  }>();
+  const { loading: menuLoading, execute: executeMenu } =
+    useApi<APIMenuItem[]>();
+  const { loading: tablesLoading, execute: executeTables } = useApi<{
+    data: Table[];
+  }>();
   const { loading: orderLoading, execute: executeOrder } = useApi<any>();
   const { loading: paymentLoading, execute: executePayment } = useApi<any>();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [categoriesResponse, menuResponse, tablesResponse] = await Promise.all([
-          executeCategories(() => apiService.getMenuCategories()),
-          executeMenu(() => apiService.getMenuItems()),
-          executeTables(() => apiService.getTables())
-        ]);
+        const [categoriesResponse, menuResponse, tablesResponse] =
+          await Promise.all([
+            executeCategories(() => apiService.getMenuCategories()),
+            executeMenu(() => apiService.getMenuItems()),
+            executeTables(() => apiService.getTables()),
+          ]);
 
         if (categoriesResponse) setCategories(categoriesResponse.data);
-        if (menuResponse) setMenuItems(menuResponse.data);
+        if (menuResponse) setMenuItems(menuResponse);
         if (tablesResponse) setTables(tablesResponse.data);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        console.error("Failed to fetch data:", error);
       }
     };
 
     fetchData();
   }, [executeCategories, executeMenu, executeTables]);
 
-  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<string>("");
   const [cart, setCart] = useState<OrderItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTableId, setSelectedTableId] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTableId, setSelectedTableId] = useState<string>("");
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'CARD' | 'UPI' | 'WALLET'>('CASH');
+  const [paymentMethod, setPaymentMethod] = useState<
+    "CASH" | "CARD" | "UPI" | "WALLET"
+  >("CASH");
 
   // Set first category as active when categories load
   useEffect(() => {
@@ -94,26 +104,30 @@ const POSSystem: React.FC = () => {
     const menuItem: MenuItem = {
       id: apiMenuItem.id,
       name: apiMenuItem.name,
-      price: apiMenuItem.price,
-      category: categories.find(c => c.id === apiMenuItem.categoryId)?.name || 'Unknown',
+      price: Number(apiMenuItem.price),
+      category:
+        categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
+        "Unknown",
       description: apiMenuItem.description || undefined,
-      available: apiMenuItem.isAvailable
+      available: apiMenuItem.isAvailable,
     };
 
-    const existingItem = cart.find(item => item.menuItem.id === menuItem.id);
-    
+    const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
+
     if (existingItem) {
-      setCart(cart.map(item => 
-        item.menuItem.id === menuItem.id 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
+      setCart(
+        cart.map((item) =>
+          item.menuItem.id === menuItem.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
     } else {
       const newOrderItem: OrderItem = {
         id: `${Date.now()}-${menuItem.id}`,
         menuItem,
         quantity: 1,
-        status: 'pending'
+        status: "pending",
       };
       setCart([...cart, newOrderItem]);
     }
@@ -121,13 +135,13 @@ const POSSystem: React.FC = () => {
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setCart(cart.filter(item => item.id !== itemId));
+      setCart(cart.filter((item) => item.id !== itemId));
     } else {
-      setCart(cart.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity: newQuantity }
-          : item
-      ));
+      setCart(
+        cart.map((item) =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        )
+      );
     }
   };
 
@@ -136,7 +150,10 @@ const POSSystem: React.FC = () => {
   };
 
   const getTotal = () => {
-    return cart.reduce((total, item) => total + (item.menuItem.price * item.quantity), 0);
+    return cart.reduce(
+      (total, item) => total + item.menuItem.price * item.quantity,
+      0
+    );
   };
 
   const getTax = () => {
@@ -151,21 +168,23 @@ const POSSystem: React.FC = () => {
     if (!selectedTableId || cart.length === 0) return;
 
     try {
-      const orderItems = cart.map(item => ({
+      const orderItems = cart.map((item) => ({
         menuItemId: item.menuItem.id,
-        quantity: item.quantity
+        quantity: item.quantity,
       }));
 
-      const response = await executeOrder(() => apiService.createOrder({
-        tableId: selectedTableId,
-        items: orderItems
-      }));
+      const response = await executeOrder(() =>
+        apiService.createOrder({
+          tableId: selectedTableId,
+          items: orderItems,
+        })
+      );
 
       if (response) {
         setPaymentDialogOpen(true);
       }
     } catch (error) {
-      console.error('Failed to create order:', error);
+      console.error("Failed to create order:", error);
     }
   };
 
@@ -173,25 +192,28 @@ const POSSystem: React.FC = () => {
     if (!selectedTableId) return;
 
     try {
-      const response = await executePayment(() => apiService.createPayment({
-        orderId: 'current-order-id', // Would come from order creation response
-        amount: getFinalTotal(),
-        paymentMethod
-      }));
+      const response = await executePayment(() =>
+        apiService.createPayment({
+          orderId: "current-order-id", // Would come from order creation response
+          amount: getFinalTotal(),
+          paymentMethod,
+        })
+      );
 
       if (response) {
         setCart([]);
-        setSelectedTableId('');
+        setSelectedTableId("");
         setPaymentDialogOpen(false);
       }
     } catch (error) {
-      console.error('Failed to process payment:', error);
+      console.error("Failed to process payment:", error);
     }
   };
 
-  const currentItems = menuItems.filter(item => 
-    item.categoryId === activeCategory && 
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const currentItems = menuItems.filter(
+    (item) =>
+      item.categoryId === activeCategory &&
+      item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -216,7 +238,7 @@ const POSSystem: React.FC = () => {
           {categories.map((category) => (
             <Button
               key={category.id}
-              variant={activeCategory === category.id ? 'pos-selected' : 'pos'}
+              variant={activeCategory === category.id ? "pos-selected" : "pos"}
               onClick={() => setActiveCategory(category.id)}
               className="px-6 whitespace-nowrap"
             >
@@ -237,10 +259,16 @@ const POSSystem: React.FC = () => {
               disabled={!item.isAvailable}
             >
               <div className="w-full">
-                <h3 className="font-semibold text-left line-clamp-2">{item.name}</h3>
-                <p className="text-primary font-bold text-left mt-2">${item.price.toFixed(2)}</p>
+                <h3 className="font-semibold text-left line-clamp-2">
+                  {item.name}
+                </h3>
+                <p className="text-primary font-bold text-left mt-2">
+                  ${Number(item.price).toFixed(2)}
+                </p>
                 {!item.isAvailable && (
-                  <Badge variant="secondary" className="mt-1">Unavailable</Badge>
+                  <Badge variant="secondary" className="mt-1">
+                    Unavailable
+                  </Badge>
                 )}
               </div>
             </Button>
@@ -263,11 +291,13 @@ const POSSystem: React.FC = () => {
               <SelectValue placeholder="Select a table" />
             </SelectTrigger>
             <SelectContent>
-              {tables.filter(table => table.status === 'Available').map((table) => (
-                <SelectItem key={table.id} value={table.id}>
-                  Table {table.tableNumber} (Capacity: {table.capacity})
-                </SelectItem>
-              ))}
+              {tables
+                .filter((table) => table.status === "Available")
+                .map((table) => (
+                  <SelectItem key={table.id} value={table.id}>
+                    Table {table.tableNumber} (Capacity: {table.capacity})
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
@@ -281,10 +311,15 @@ const POSSystem: React.FC = () => {
             </div>
           ) : (
             cart.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
+              >
                 <div className="flex-1">
                   <h4 className="font-medium text-sm">{item.menuItem.name}</h4>
-                  <p className="text-xs text-muted-foreground">${item.menuItem.price} each</p>
+                  <p className="text-xs text-muted-foreground">
+                    ${item.menuItem.price.toFixed(2)} each
+                  </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
@@ -294,7 +329,9 @@ const POSSystem: React.FC = () => {
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
-                  <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                  <span className="w-8 text-center text-sm font-medium">
+                    {item.quantity}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -326,14 +363,14 @@ const POSSystem: React.FC = () => {
               </div>
             </div>
 
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               className="w-full bg-gradient-primary"
               onClick={processOrder}
               disabled={!selectedTableId || cart.length === 0 || orderLoading}
             >
               <Receipt className="mr-2 h-5 w-5" />
-              {orderLoading ? 'Processing...' : 'Process Order'}
+              {orderLoading ? "Processing..." : "Process Order"}
             </Button>
           </div>
         )}
@@ -346,40 +383,42 @@ const POSSystem: React.FC = () => {
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-2xl font-bold">${getFinalTotal().toFixed(2)}</p>
+                <p className="text-2xl font-bold">
+                  ${getFinalTotal().toFixed(2)}
+                </p>
                 <p className="text-muted-foreground">Total Amount</p>
               </div>
-              
+
               <div className="space-y-3">
                 <label className="text-sm font-medium">Payment Method</label>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
-                    variant={paymentMethod === 'CASH' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('CASH')}
+                    variant={paymentMethod === "CASH" ? "default" : "outline"}
+                    onClick={() => setPaymentMethod("CASH")}
                     className="flex-col h-16"
                   >
                     <DollarSign className="h-5 w-5 mb-1" />
                     <span className="text-xs">Cash</span>
                   </Button>
                   <Button
-                    variant={paymentMethod === 'CARD' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('CARD')}
+                    variant={paymentMethod === "CARD" ? "default" : "outline"}
+                    onClick={() => setPaymentMethod("CARD")}
                     className="flex-col h-16"
                   >
                     <CreditCard className="h-5 w-5 mb-1" />
                     <span className="text-xs">Card</span>
                   </Button>
                   <Button
-                    variant={paymentMethod === 'UPI' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('UPI')}
+                    variant={paymentMethod === "UPI" ? "default" : "outline"}
+                    onClick={() => setPaymentMethod("UPI")}
                     className="flex-col h-16"
                   >
                     <Smartphone className="h-5 w-5 mb-1" />
                     <span className="text-xs">UPI</span>
                   </Button>
                   <Button
-                    variant={paymentMethod === 'WALLET' ? 'default' : 'outline'}
-                    onClick={() => setPaymentMethod('WALLET')}
+                    variant={paymentMethod === "WALLET" ? "default" : "outline"}
+                    onClick={() => setPaymentMethod("WALLET")}
                     className="flex-col h-16"
                   >
                     <Wallet className="h-5 w-5 mb-1" />
@@ -387,13 +426,16 @@ const POSSystem: React.FC = () => {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" onClick={() => setPaymentDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setPaymentDialogOpen(false)}
+                >
                   Cancel
                 </Button>
                 <Button onClick={processPayment} disabled={paymentLoading}>
-                  {paymentLoading ? 'Processing...' : 'Complete Payment'}
+                  {paymentLoading ? "Processing..." : "Complete Payment"}
                 </Button>
               </div>
             </div>
