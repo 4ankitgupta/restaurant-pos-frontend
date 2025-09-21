@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import POSSystem from "./pages/POSSystem";
@@ -26,35 +26,50 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/login" element={<Login />} />
-            
-            <Route path="/" element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }>
+
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="dashboard" element={<Dashboard />} />
-              <Route path="pos" element={
-                <ProtectedRoute allowedRoles={['admin', 'cashier']}>
-                  <POSSystem />
-                </ProtectedRoute>
-              } />
-              <Route path="tables" element={
-                <ProtectedRoute allowedRoles={['admin', 'waiter']}>
-                  <TableManagement />
-                </ProtectedRoute>
-              } />
-              <Route path="kitchen" element={
-                <ProtectedRoute allowedRoles={['admin', 'chef']}>
-                  <KitchenDisplay />
-                </ProtectedRoute>
-              } />
-              <Route path="inventory" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <Inventory />
-                </ProtectedRoute>
-              } />
+              <Route
+                path="pos"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "cashier"]}>
+                    <POSSystem />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="tables"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "waiter"]}>
+                    <TableManagement />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="kitchen"
+                element={
+                  <ProtectedRoute allowedRoles={["admin", "chef"]}>
+                    <KitchenDisplay />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="inventory"
+                element={
+                  <ProtectedRoute allowedRoles={["admin"]}>
+                    <Inventory />
+                  </ProtectedRoute>
+                }
+              />
             </Route>
-            
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

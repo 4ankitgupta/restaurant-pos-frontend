@@ -1,14 +1,30 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { User, UserRole, AuthContext as AuthContextType, BACKEND_ROLES } from '@/types/auth';
-import { apiService, ApiError } from '@/services/apiService';
-import { toast } from '@/hooks/use-toast';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
+import {
+  User,
+  AuthContext as AuthContextType,
+  BACKEND_ROLES,
+} from "@/types/auth";
+import { apiService, ApiError } from "@/services/apiService";
+import { toast } from "@/hooks/use-toast";
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Updated interface for the context
+interface IAuthContext extends AuthContextType {
+  login: (email: string, password: string) => Promise<void>;
+  isLoading: boolean;
+}
+
+const AuthContext = createContext<IAuthContext | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -19,83 +35,92 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Start loading until session is checked
 
   useEffect(() => {
-    // Check for existing auth data on app load
-    const storedUser = localStorage.getItem('user');
-    const accessToken = localStorage.getItem('accessToken');
-    
-    if (storedUser && accessToken) {
+    const checkUserSession = () => {
       try {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
+        const storedUser = localStorage.getItem("user");
+        const accessToken = localStorage.getItem("accessToken");
+
+        if (storedUser && accessToken) {
+          setUser(JSON.parse(storedUser));
+        }
       } catch (error) {
-        // Clear invalid stored data
-        localStorage.removeItem('user');
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        console.error("Failed to parse auth data from localStorage", error);
+        localStorage.clear();
+      } finally {
+        setIsLoading(false); // Finished checking
       }
-    }
+    };
+
+    checkUserSession();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       const response = await apiService.login(email, password);
-      
+
       const { user: userData, tokens } = response.data;
-      
-      // Map backend role to frontend role
-      const frontendRole = BACKEND_ROLES[userData.role as keyof typeof BACKEND_ROLES] || 'waiter';
-      
-      const user: User = {
+
+      const frontendRole =
+        BACKEND_ROLES[userData.role as keyof typeof BACKEND_ROLES] || "waiter";
+
+      const userToStore: User = {
         id: userData.id,
         name: userData.name,
         email: userData.email,
         role: frontendRole,
-        avatar: `https://ui-avatars.com/api/?name=${userData.name}&background=f97316&color=fff`
+        avatar: `https://ui-avatars.com/api/?name=${userData.name.replace(
+          /\s/g,
+          "+"
+        )}&background=f97316&color=fff`,
       };
 
-      // Store tokens and user data
-      localStorage.setItem('accessToken', tokens.accessToken);
-      localStorage.setItem('refreshToken', tokens.refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      
-      setUser(user);
-      
+      localStorage.setItem("accessToken", tokens.accessToken);
+      localStorage.setItem("refreshToken", tokens.refreshToken);
+      localStorage.setItem("user", JSON.stringify(userToStore));
+
+      setUser(userToStore);
+
       toast({
         title: "Login successful",
         description: response.message,
       });
     } catch (error) {
       const apiError = error as ApiError;
-      
+
       toast({
         title: "Login failed",
-        description: apiError.message || "Please check your credentials and try again.",
+        description:
+          apiError.message || "Please check your credentials and try again.",
         variant: "destructive",
       });
-      
+
       throw error;
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("user");
     setUser(null);
-    
+
     toast({
       title: "Logged out",
       description: "You have been successfully logged out.",
     });
   };
 
-  const value = {
+  const isAuthenticated = !!user;
+
+  const value: IAuthContext = {
     user,
     login,
     logout,
-    isAuthenticated: !!user,
+    isAuthenticated,
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

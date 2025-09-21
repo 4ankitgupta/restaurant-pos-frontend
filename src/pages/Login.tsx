@@ -4,17 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { UserRole } from "@/types/auth";
-import { Utensils, Lock, User, Mail } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { Utensils, Lock, Mail } from "lucide-react";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -31,7 +22,8 @@ const Login: React.FC = () => {
       await login(email, password);
       navigate("/dashboard");
     } catch (error) {
-      // Error handling is done in AuthContext
+      // Error is displayed via toast in AuthContext
+      console.error("Login failed:", error);
     } finally {
       setIsLoading(false);
     }
