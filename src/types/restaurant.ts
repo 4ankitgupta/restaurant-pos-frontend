@@ -1,3 +1,4 @@
+// src/types/restaurant.ts
 export interface MenuItem {
   id: string;
   name: string;
@@ -36,6 +37,14 @@ export interface Order {
   createdAt: Date;
   updatedAt: Date;
   waiterId?: string;
+}
+
+export interface APITable {
+  id: string;
+  tableNumber: string;
+  capacity: number;
+  status: "Available" | "Occupied" | "Reserved" | "NeedCleaning";
+  restaurantId: string;
 }
 
 export interface Table {

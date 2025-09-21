@@ -1,106 +1,114 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { 
-  Users, 
-  Clock, 
-  Plus, 
-  Edit, 
-  CheckCircle, 
+// src/pages/TableManagement.tsx
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Users,
+  Clock,
+  CheckCircle,
   XCircle,
-  AlertCircle
-} from 'lucide-react';
-import { apiService } from '@/services/apiService';
-import { useApi } from '@/hooks/useApi';
-
-interface APITable {
-  id: string;
-  tableNumber: string;
-  capacity: number;
-  status: 'Available' | 'Occupied' | 'Reserved';
-  restaurantId: string;
-}
+  Trash2,
+  AlertCircle,
+} from "lucide-react";
+import { apiService } from "@/services/apiService";
+import { useApi } from "@/hooks/useApi";
+import { APITable } from "@/types/restaurant";
 
 const TableManagement: React.FC = () => {
   const [tables, setTables] = useState<APITable[]>([]);
-  const { loading, error, execute } = useApi<{ data: APITable[] }>();
+  const {
+    loading,
+    error,
+    execute: fetchTables,
+  } = useApi<{ data: APITable[] }>();
+  const { execute: executeTableAction } = useApi();
+
+  const loadTables = async () => {
+    try {
+      const response = await fetchTables(() => apiService.getTables());
+      if (response) {
+        setTables(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch tables:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTables = async () => {
-      try {
-        const response = await execute(() => apiService.getTables());
-        if (response) {
-          setTables(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch tables:', error);
-      }
-    };
-
-    fetchTables();
-  }, [execute]);
+    loadTables();
+  }, []);
 
   const [selectedTable, setSelectedTable] = useState<APITable | null>(null);
-  const [customerName, setCustomerName] = useState('');
-  const [partySize, setPartySize] = useState('');
+  const [partySize, setPartySize] = useState("");
+  const [orderId, setOrderId] = useState("dummy-order-id");
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'available': return 'bg-success text-success-foreground';
-      case 'occupied': return 'bg-warning text-warning-foreground';
-      case 'reserved': return 'bg-secondary text-secondary-foreground';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const getOrderStatusColor = (status: string) => {
+  const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
-      case 'pending': return 'text-warning';
-      case 'preparing': return 'text-secondary';
-      case 'ready': return 'text-success';
-      case 'served': return 'text-primary';
-      default: return 'text-muted-foreground';
+      case "Available":
+        return "bg-success text-success-foreground";
+      case "Occupied":
+        return "bg-warning text-warning-foreground";
+      case "Reserved":
+        return "bg-secondary text-secondary-foreground";
+      case "NeedCleaning":
+        return "bg-destructive text-destructive-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'available': return <CheckCircle className="h-4 w-4" />;
-      case 'occupied': return <Users className="h-4 w-4" />;
-      case 'reserved': return <Clock className="h-4 w-4" />;
-      default: return <XCircle className="h-4 w-4" />;
+  const getStatusIcon = (status: APITable["status"]) => {
+    switch (status) {
+      case "Available":
+        return <CheckCircle className="h-4 w-4" />;
+      case "Occupied":
+        return <Users className="h-4 w-4" />;
+      case "Reserved":
+        return <Clock className="h-4 w-4" />;
+      case "NeedCleaning":
+        return <AlertCircle className="h-4 w-4" />;
+      default:
+        return <XCircle className="h-4 w-4" />;
     }
   };
 
-  const updateTableStatus = (tableId: string, newStatus: APITable['status']) => {
-    // In a real app, this would make an API call
-    setTables(tables.map(table => 
-      table.id === tableId 
-        ? { ...table, status: newStatus }
-        : table
-    ));
-    setSelectedTable(null);
+  const handleUpdateStatus = async (
+    tableId: string,
+    status: APITable["status"]
+  ) => {
+    try {
+      await executeTableAction(() =>
+        apiService.updateTableStatus(tableId, status)
+      );
+      loadTables();
+      setSelectedTable(null);
+    } catch (error) {
+      console.error("Failed to update table status:", error);
+    }
   };
 
-  const seatCustomers = (tableId: string) => {
-    if (!customerName || !partySize) return;
-    
-    // In a real app, this would make an API call
-    setTables(tables.map(table => 
-      table.id === tableId 
-        ? { ...table, status: 'Occupied' }
-        : table
-    ));
-    
-    setCustomerName('');
-    setPartySize('');
-    setSelectedTable(null);
-  };
+  const handleSeatCustomers = async () => {
+    if (!selectedTable || !partySize) return;
 
-  const availableTables = tables.filter(table => table.status === 'Available').length;
-  const occupiedTables = tables.filter(table => table.status === 'Occupied').length;
+    try {
+      await executeTableAction(() =>
+        apiService.allocateTable(selectedTable.id, orderId, parseInt(partySize))
+      );
+      loadTables();
+      setPartySize("");
+      setSelectedTable(null);
+    } catch (error) {
+      console.error("Failed to seat customers:", error);
+    }
+  };
+  const availableTables = tables.filter(
+    (table) => table.status === "Available"
+  ).length;
+  const occupiedTables = tables.filter(
+    (table) => table.status === "Occupied"
+  ).length;
 
   return (
     <div className="p-6 space-y-6">
@@ -108,15 +116,21 @@ const TableManagement: React.FC = () => {
         <h1 className="text-3xl font-bold">Table Management</h1>
         <div className="flex space-x-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-success">{availableTables}</div>
+            <div className="text-2xl font-bold text-success">
+              {availableTables}
+            </div>
             <div className="text-sm text-muted-foreground">Available</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-warning">{occupiedTables}</div>
+            <div className="text-2xl font-bold text-warning">
+              {occupiedTables}
+            </div>
             <div className="text-sm text-muted-foreground">Occupied</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{tables.length}</div>
+            <div className="text-2xl font-bold text-primary">
+              {tables.length}
+            </div>
             <div className="text-sm text-muted-foreground">Total Tables</div>
           </div>
         </div>
@@ -140,31 +154,38 @@ const TableManagement: React.FC = () => {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {tables.map((table) => (
-            <Card 
-              key={table.id} 
+            <Card
+              key={table.id}
               className={`cursor-pointer transition-all hover:shadow-lg ${
-                selectedTable?.id === table.id ? 'ring-2 ring-primary' : ''
+                selectedTable?.id === table.id ? "ring-2 ring-primary" : ""
               }`}
               onClick={() => setSelectedTable(table)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Table {table.tableNumber}</CardTitle>
+                  <CardTitle className="text-lg">
+                    Table {table.tableNumber}
+                  </CardTitle>
                   <Badge className={getStatusColor(table.status)}>
                     {getStatusIcon(table.status)}
-                    <span className="ml-1 capitalize">{table.status.toLowerCase()}</span>
+                    <span className="ml-1 capitalize">
+                      {table.status.toLowerCase()}
+                    </span>
                   </Badge>
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Capacity: {table.capacity} people
                 </div>
               </CardHeader>
-              
               <CardContent>
                 <div className="text-sm text-muted-foreground">
-                  {table.status === 'Available' ? 'Ready for guests' : 
-                   table.status === 'Reserved' ? 'Reserved for later' : 
-                   'Currently occupied'}
+                  {table.status === "Available"
+                    ? "Ready for guests"
+                    : table.status === "Reserved"
+                    ? "Reserved for later"
+                    : table.status === "NeedCleaning"
+                    ? "Needs cleaning"
+                    : "Currently occupied"}
                 </div>
               </CardContent>
             </Card>
@@ -187,7 +208,9 @@ const TableManagement: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Badge className={getStatusColor(selectedTable.status)}>
                       {getStatusIcon(selectedTable.status)}
-                      <span className="ml-1 capitalize">{selectedTable.status.toLowerCase()}</span>
+                      <span className="ml-1 capitalize">
+                        {selectedTable.status.toLowerCase()}
+                      </span>
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -199,23 +222,18 @@ const TableManagement: React.FC = () => {
               {/* Actions */}
               <div>
                 <h3 className="font-semibold mb-3">Quick Actions</h3>
-                
-                {selectedTable.status === 'Available' && (
+
+                {selectedTable.status === "Available" && (
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Customer name"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                    />
                     <Input
                       placeholder="Party size"
                       type="number"
                       value={partySize}
                       onChange={(e) => setPartySize(e.target.value)}
                     />
-                    <Button 
-                      onClick={() => seatCustomers(selectedTable.id)}
-                      disabled={!customerName || !partySize}
+                    <Button
+                      onClick={handleSeatCustomers}
+                      disabled={!partySize}
                       className="w-full"
                     >
                       <Users className="mr-2 h-4 w-4" />
@@ -225,35 +243,65 @@ const TableManagement: React.FC = () => {
                 )}
 
                 <div className="grid grid-cols-2 gap-2 mt-4">
-                  {selectedTable.status === 'Occupied' && (
+                  {selectedTable.status === "Occupied" && (
+                    <>
+                      <Button
+                        variant="destructive"
+                        onClick={() =>
+                          handleUpdateStatus(selectedTable.id, "NeedCleaning")
+                        }
+                      >
+                        <AlertCircle className="mr-2 h-4 w-4" />
+                        Mark for Cleaning
+                      </Button>
+                      <Button
+                        variant="success"
+                        onClick={() =>
+                          handleUpdateStatus(selectedTable.id, "Available")
+                        }
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Mark as Available
+                      </Button>
+                    </>
+                  )}
+
+                  {selectedTable.status === "NeedCleaning" && (
                     <Button
                       variant="success"
-                      onClick={() => updateTableStatus(selectedTable.id, 'Available')}
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "Available")
+                      }
                       className="col-span-2"
                     >
-                      Clear Table
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Mark as Clean & Available
                     </Button>
                   )}
-                  
-                  {selectedTable.status === 'Available' && (
+
+                  {selectedTable.status === "Available" && (
                     <Button
                       variant="secondary"
-                      onClick={() => updateTableStatus(selectedTable.id, 'Reserved')}
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "Reserved")
+                      }
                       className="col-span-2"
                     >
                       <Clock className="mr-2 h-4 w-4" />
                       Reserve Table
                     </Button>
                   )}
-                  
-                  {selectedTable.status === 'Reserved' && (
+
+                  {selectedTable.status === "Reserved" && (
                     <Button
-                      variant="success"
-                      onClick={() => updateTableStatus(selectedTable.id, 'Available')}
+                      variant="outline"
+                      onClick={() =>
+                        handleUpdateStatus(selectedTable.id, "Available")
+                      }
                       className="col-span-2"
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Make Available
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancel Reservation
                     </Button>
                   )}
                 </div>

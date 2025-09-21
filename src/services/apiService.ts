@@ -1,11 +1,13 @@
+// src/services/apiService.ts
 import { API_BASE_URL, API_ENDPOINTS } from "@/config/apiConfig";
-import { APIMenuItem } from "@/types/restaurant";
+import { APIMenuItem, APITable } from "@/types/restaurant";
 
 export interface ApiError {
   code: number;
   message: string;
   errors?: Array<{
     field: string;
+
     message: string;
   }>;
 }
@@ -215,14 +217,22 @@ class ApiService {
   // Table Management
   async getTables() {
     return this.request<{
-      data: Array<{
-        id: string;
-        tableNumber: string;
-        capacity: number;
-        status: "Available" | "Occupied" | "Reserved";
-        restaurantId: string;
-      }>;
+      data: Array<APITable>;
     }>("/tables");
+  }
+
+  async allocateTable(tableId: string, orderId: string, partySize: number) {
+    return this.request<ApiResponse<APITable>>(`/tables/${tableId}/allocate`, {
+      method: "POST",
+      body: JSON.stringify({ orderId, partySize }),
+    });
+  }
+
+  async updateTableStatus(tableId: string, status: APITable["status"]) {
+    return this.request<ApiResponse<APITable>>(`/tables/${tableId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    });
   }
 
   // Inventory Management

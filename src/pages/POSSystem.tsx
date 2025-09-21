@@ -38,11 +38,12 @@ interface MenuCategory {
   restaurantId: string;
 }
 
+// FIX: Add "NeedCleaning" to the status types
 interface Table {
   id: string;
   tableNumber: string;
   capacity: number;
-  status: "Available" | "Occupied" | "Reserved";
+  status: "Available" | "Occupied" | "Reserved" | "NeedCleaning";
   restaurantId: string;
 }
 
