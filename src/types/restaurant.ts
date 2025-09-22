@@ -11,7 +11,7 @@ export interface APIMenuItem {
   id: string;
   name: string;
   description: string | null;
-  price: string; // API actually returns price as string
+  price: number;
   isAvailable: boolean;
   restaurantId: string;
   categoryId: string | null;
