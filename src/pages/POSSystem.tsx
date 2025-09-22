@@ -62,7 +62,7 @@ const POSSystem: React.FC = () => {
     data: MenuCategory[];
   }>();
   const { loading: menuLoading, execute: executeMenu } =
-    useApi<APIMenuItem[]>();
+    useApi<{ data: APIMenuItem[] }>();
   const { loading: tablesLoading, execute: executeTables } = useApi<{
     data: Table[];
   }>();
@@ -81,7 +81,8 @@ const POSSystem: React.FC = () => {
           ]);
 
         if (categoriesResponse) setCategories(categoriesResponse.data);
-        if (menuResponse) setMenuItems(menuResponse);
+        // Menu items API returns array directly, not wrapped in data property
+        if (menuResponse) setMenuItems(Array.isArray(menuResponse) ? menuResponse : []);
         if (tablesResponse) setTables(tablesResponse.data);
       } catch (error) {
         console.error("Failed to fetch data:", error);

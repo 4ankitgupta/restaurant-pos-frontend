@@ -15,10 +15,12 @@ import {
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
+import { useAuth } from "@/contexts/AuthContext";
 import { APITable, APIOrder } from "@/types/restaurant";
 
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [tables, setTables] = useState<APITable[]>([]);
   const {
     loading,
@@ -106,19 +108,57 @@ const TableManagement: React.FC = () => {
     }
   };
 
-  // --- NEW: Logic for taking an order ---
+  // --- MODIFIED: Logic for taking/viewing an order ---
   const handleTakeOrder = async (tableId: string) => {
     try {
-      const response = await getActiveOrder(() =>
-        apiService.getActiveOrderForTable(tableId)
-      );
-      if (response && response.data) {
-        navigate("/pos", {
-          state: { orderId: response.data.id, tableId: tableId },
-        });
+      // Navigate to different components based on user role
+      if (user?.role === "cashier" || user?.role === "admin") {
+        // Cashiers and admins use full POS system
+        const response = await getActiveOrder(() =>
+          apiService.getActiveOrderForTable(tableId)
+        );
+        
+        if (response && (response as any)?.data) {
+          navigate("/pos", {
+            state: { orderId: (response as any).data.id, tableId: tableId },
+          });
+        } else {
+          const createOrderResponse = await executeTableAction(() =>
+            apiService.createOrder({
+              tableId: tableId,
+              items: []
+            })
+          );
+          
+          if (createOrderResponse && (createOrderResponse as any)?.data) {
+            navigate("/pos", {
+              state: { orderId: (createOrderResponse as any).data.id, tableId: tableId },
+            });
+          }
+        }
+      } else {
+        // Waiters use simplified order management
+        const response = await getActiveOrder(() =>
+          apiService.getActiveOrderForTable(tableId)
+        );
+        
+        if (response && (response as any)?.data) {
+          navigate("/waiter-order", {
+            state: { orderId: (response as any).data.id, tableId: tableId },
+          });
+        } else {
+          navigate("/waiter-order", {
+            state: { tableId: tableId },
+          });
+        }
       }
     } catch (error) {
-      console.error("Could not find an active order for this table:", error);
+      console.error("Failed to handle order for table:", error);
+      // Fallback navigation based on role
+      const fallbackRoute = (user?.role === "cashier" || user?.role === "admin") ? "/pos" : "/waiter-order";
+      navigate(fallbackRoute, {
+        state: { tableId: tableId },
+      });
     }
   };
   const availableTables = tables.filter(
@@ -253,6 +293,18 @@ const TableManagement: React.FC = () => {
                 </div>
               )}
 
+              {selectedTable.status === "NeedCleaning" && (
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => handleUpdateStatus(selectedTable.id, "Available")}
+                    className="w-full bg-success text-success-foreground"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Mark as Clean & Available
+                  </Button>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2 mt-4">
                 {selectedTable.status === "Occupied" && (
                   <>
@@ -266,7 +318,7 @@ const TableManagement: React.FC = () => {
                       Mark for Cleaning
                     </Button>
                     <Button
-                      variant="success"
+                      variant="outline"
                       onClick={() =>
                         handleUpdateStatus(selectedTable.id, "Available")
                       }
@@ -277,7 +329,31 @@ const TableManagement: React.FC = () => {
                   </>
                 )}
 
-                {/* ... (Other status buttons are same as before) */}
+                {selectedTable.status === "Available" && (
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      handleUpdateStatus(selectedTable.id, "Reserved")
+                    }
+                    className="col-span-2"
+                  >
+                    <Clock className="mr-2 h-4 w-4" />
+                    Mark as Reserved
+                  </Button>
+                )}
+
+                {selectedTable.status === "Reserved" && (
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      handleUpdateStatus(selectedTable.id, "Available")
+                    }
+                    className="col-span-2"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Cancel Reservation
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

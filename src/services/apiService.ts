@@ -147,7 +147,42 @@ class ApiService {
   }
 
   async getMenuItems() {
-    return this.request<APIMenuItem[]>(API_ENDPOINTS.menu.items);
+    return this.request<{ data: APIMenuItem[] }>(API_ENDPOINTS.menu.items);
+  }
+
+  async updateMenuItem(itemId: string, itemData: {
+    name: string;
+    description: string;
+    price: number;
+    categoryId?: string;
+    isAvailable?: boolean;
+  }) {
+    return this.request<ApiResponse<APIMenuItem>>(`/menu/items/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(itemData),
+    });
+  }
+
+  async deleteMenuItem(itemId: string) {
+    return this.request<ApiResponse<void>>(`/menu/items/${itemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async updateCategory(categoryId: string, categoryData: {
+    name: string;
+    description: string;
+  }) {
+    return this.request<ApiResponse<any>>(`/menu/categories/${categoryId}`, {
+      method: "PATCH",
+      body: JSON.stringify(categoryData),
+    });
+  }
+
+  async deleteCategory(categoryId: string) {
+    return this.request<ApiResponse<void>>(`/menu/categories/${categoryId}`, {
+      method: "DELETE",
+    });
   }
 
   // Order Management
@@ -274,6 +309,86 @@ class ApiService {
         threshold: number;
       }>;
     }>("/inventory");
+  }
+
+  async createInventoryItem(itemData: {
+    name: string;
+    unit: string;
+    quantity: number;
+    threshold: number;
+  }) {
+    return this.request<ApiResponse<any>>("/inventory", {
+      method: "POST",
+      body: JSON.stringify(itemData),
+    });
+  }
+
+  async updateInventoryItem(itemId: string, itemData: {
+    name: string;
+    unit: string;
+    quantity: number;
+    threshold: number;
+  }) {
+    return this.request<ApiResponse<any>>(`/inventory/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(itemData),
+    });
+  }
+
+  async deleteInventoryItem(itemId: string) {
+    return this.request<ApiResponse<void>>(`/inventory/${itemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // User Management
+  async getUsers() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        name: string;
+        email: string;
+        phone?: string;
+        role: "ADMIN" | "MANAGER" | "CASHIER" | "WAITER" | "KITCHEN_STAFF";
+      }>;
+    }>("/users");
+  }
+
+  async updateUser(userId: string, userData: {
+    name: string;
+    email: string;
+    phone?: string;
+    role: string;
+  }) {
+    return this.request<ApiResponse<any>>(`/users/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.request<ApiResponse<void>>(`/users/${userId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Reports
+  async getSalesReport(startDate: string, endDate: string) {
+    return this.request<{
+      totalRevenue: number;
+      totalOrders: number;
+      averageOrderValue: number;
+      topSellingItems: Array<{
+        name: string;
+        quantity: number;
+        revenue: number;
+      }>;
+      dailySales: Array<{
+        date: string;
+        revenue: number;
+        orders: number;
+      }>;
+    }>(`/reports/sales?startDate=${startDate}&endDate=${endDate}`);
   }
 }
 
