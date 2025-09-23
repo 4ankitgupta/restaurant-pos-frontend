@@ -215,13 +215,70 @@ class ApiService {
     });
   }
 
+  async getAllOrders() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
+        totalAmount: number;
+        paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
+        createdAt: string;
+        updatedAt: string;
+        restaurantId: string;
+        tableId: string | null;
+        userId: string | null;
+        orderItems: Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          menuItemId: string;
+          menuItem: {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number;
+            isAvailable: boolean;
+            restaurantId: string;
+            categoryId: string | null;
+          };
+        }>;
+        table?: {
+          id: string;
+          tableNumber: string;
+          capacity: number;
+          status: string;
+        };
+      }>;
+    }>("/orders");
+  }
+
   async updateOrderStatus(orderId: string, status: string) {
     return this.request<{
       data: {
         id: string;
-        status: string;
+        status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
         totalAmount: number;
-        paymentStatus: string;
+        paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
+        createdAt: string;
+        updatedAt: string;
+        restaurantId: string;
+        tableId: string | null;
+        userId: string | null;
+        orderItems: Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          menuItemId: string;
+          menuItem: {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number;
+            isAvailable: boolean;
+            restaurantId: string;
+            categoryId: string | null;
+          };
+        }>;
       };
     }>(`/orders/${orderId}/status`, {
       method: "PATCH",
@@ -369,6 +426,78 @@ class ApiService {
   async deleteUser(userId: string) {
     return this.request<ApiResponse<void>>(`/users/${userId}`, {
       method: "DELETE",
+    });
+  }
+
+  // Chef Management
+  async getPreparingOrders() {
+    return this.request<{
+      data: Array<{
+        id: string;
+        status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED";
+        totalAmount: number;
+        paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
+        createdAt: string;
+        updatedAt: string;
+        restaurantId: string;
+        tableId: string | null;
+        userId: string | null;
+        orderItems: Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          menuItemId: string;
+          menuItem: {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number;
+            isAvailable: boolean;
+            restaurantId: string;
+            categoryId: string | null;
+          };
+        }>;
+        table?: {
+          id: string;
+          tableNumber: string;
+          capacity: number;
+          status: string;
+        };
+      }>;
+    }>("/chef/orders/preparing");
+  }
+
+  async updateOrderStatusByChef(orderId: string, status: 'PREPARED') {
+    return this.request<{
+      data: {
+        id: string;
+        status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED" | "PREPARED";
+        totalAmount: number;
+        paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
+        createdAt: string;
+        updatedAt: string;
+        restaurantId: string;
+        tableId: string | null;
+        userId: string | null;
+        orderItems: Array<{
+          id: string;
+          quantity: number;
+          price: number;
+          menuItemId: string;
+          menuItem: {
+            id: string;
+            name: string;
+            description: string | null;
+            price: number;
+            isAvailable: boolean;
+            restaurantId: string;
+            categoryId: string | null;
+          };
+        }>;
+      };
+    }>(`/chef/orders/${orderId}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
     });
   }
 

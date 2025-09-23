@@ -1,22 +1,27 @@
-import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { APIMenuItem } from "@/types/restaurant";
-import { apiService } from "@/services/apiService";
-import { useApi } from "@/hooks/useApi";
-import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
-import {
-  Plus,
-  Minus,
-  ArrowLeft,
-  Search,
-  Trash2,
-  Save,
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { 
+  Plus, 
+  Minus, 
+  Receipt, 
+  Search, 
   CheckCircle,
-} from "lucide-react";
+  Clock,
+  Users,
+  ChefHat,
+  ArrowLeft,
+  Trash2,
+  Save
+} from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useWebSocket } from '@/contexts/WebSocketContext';
+import { apiService } from '@/services/apiService';
+import { useApi } from '@/hooks/useApi';
+import { toast } from '@/hooks/use-toast';
+import { APIMenuItem, MenuItem, OrderItem } from '@/types/restaurant';
 
 interface MenuCategory {
   id: string;
@@ -25,35 +30,24 @@ interface MenuCategory {
   restaurantId: string;
 }
 
-interface OrderItem {
-  id: string;
-  menuItem: {
-    id: string;
-    name: string;
-    price: number;
-    category: string;
-    available: boolean;
-  };
-  quantity: number;
-  status: "pending" | "preparing" | "ready" | "served";
-}
-
 const WaiterOrderManagement: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { orders } = useWebSocket();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const { orderId, tableId } = location.state || {};
+  const { orderId: incomingOrderId, tableId: incomingTableId } = location.state || {};
+  
+  // Get current order from WebSocket context
+  const currentOrder = orders.find(order => order.id === incomingOrderId);
 
   const { loading: categoriesLoading, execute: executeCategories } = useApi<{ data: MenuCategory[] }>();
   const { loading: menuLoading, execute: executeMenu } = useApi<{ data: APIMenuItem[] }>();
   const { loading: orderLoading, execute: executeOrder } = useApi<any>();
-  const { execute: executeGetOrder } = useApi<any>();
-  const { execute: executeAddItems } = useApi<any>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -66,46 +60,12 @@ const WaiterOrderManagement: React.FC = () => {
         if (categoriesResponse) setCategories(categoriesResponse.data);
         if (menuResponse) setMenuItems(Array.isArray(menuResponse) ? menuResponse : []);
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error('Failed to fetch data:', error);
       }
     };
 
     fetchData();
-  }, []);
-
-  // Load existing order if orderId is provided
-  useEffect(() => {
-    const loadOrder = async (orderIdParam: string) => {
-      try {
-        const response = await executeGetOrder(() =>
-          apiService.getOrderDetails(orderIdParam)
-        );
-        if (response?.data?.orderItems) {
-          const loadedCartItems: OrderItem[] = response.data.orderItems.map(
-            (item: any) => ({
-              id: item.id,
-              menuItem: {
-                id: item.menuItem.id,
-                name: item.menuItem.name,
-                price: Number(item.menuItem.price),
-                category: item.menuItem.category?.name || "Unknown",
-                available: item.menuItem.isAvailable,
-              },
-              quantity: item.quantity,
-              status: "served",
-            })
-          );
-          setCart(loadedCartItems);
-        }
-      } catch (error) {
-        console.error("Failed to load order details:", error);
-      }
-    };
-
-    if (orderId) {
-      loadOrder(orderId);
-    }
-  }, [orderId]);
+  }, [executeCategories, executeMenu]);
 
   // Set first category as active when categories load
   useEffect(() => {
@@ -114,32 +74,49 @@ const WaiterOrderManagement: React.FC = () => {
     }
   }, [categories, activeCategory]);
 
+  // Load existing order items if editing an order
+  useEffect(() => {
+    if (currentOrder && currentOrder.orderItems) {
+      const loadedCartItems: OrderItem[] = currentOrder.orderItems.map((item: any) => ({
+        id: item.id,
+        menuItem: {
+          id: item.menuItem.id,
+          name: item.menuItem.name,
+          price: Number(item.menuItem.price),
+          category: categories.find(c => c.id === item.menuItem.categoryId)?.name || 'Unknown',
+          available: item.menuItem.isAvailable,
+        },
+        quantity: item.quantity,
+        status: 'served', // Existing items are considered served
+      }));
+      setCart(loadedCartItems);
+    }
+  }, [currentOrder, categories]);
+
   const addToCart = (apiMenuItem: APIMenuItem) => {
-    const menuItem = {
+    const menuItem: MenuItem = {
       id: apiMenuItem.id,
       name: apiMenuItem.name,
       price: Number(apiMenuItem.price),
-      category:
-        categories.find((c) => c.id === apiMenuItem.categoryId)?.name || "Unknown",
+      category: categories.find(c => c.id === apiMenuItem.categoryId)?.name || 'Unknown',
+      description: apiMenuItem.description || undefined,
       available: apiMenuItem.isAvailable,
     };
 
-    const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
+    const existingItem = cart.find(item => item.menuItem.id === menuItem.id);
 
     if (existingItem) {
-      setCart(
-        cart.map((item) =>
-          item.menuItem.id === menuItem.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      );
+      setCart(cart.map(item =>
+        item.menuItem.id === menuItem.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
     } else {
       const newOrderItem: OrderItem = {
         id: `${Date.now()}-${menuItem.id}`,
         menuItem,
         quantity: 1,
-        status: "pending",
+        status: 'pending',
       };
       setCart([...cart, newOrderItem]);
     }
@@ -147,13 +124,11 @@ const WaiterOrderManagement: React.FC = () => {
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
-      setCart(cart.filter((item) => item.id !== itemId));
+      setCart(cart.filter(item => item.id !== itemId));
     } else {
-      setCart(
-        cart.map((item) =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      );
+      setCart(cart.map(item =>
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      ));
     }
   };
 
@@ -162,25 +137,32 @@ const WaiterOrderManagement: React.FC = () => {
   };
 
   const getTotal = () => {
-    return cart.reduce(
-      (total, item) => total + item.menuItem.price * item.quantity,
-      0
-    );
+    return cart.reduce((total, item) => total + item.menuItem.price * item.quantity, 0);
   };
 
-  const saveOrder = async () => {
-    if (!tableId) {
+  const handleOrderStatusUpdate = async (orderId: string, status: string) => {
+    try {
+      await apiService.updateOrderStatus(orderId, status);
+      toast({
+        title: "Success",
+        description: `Order ${status.toLowerCase()} successfully`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error updating order status:', error);
       toast({
         title: "Error",
-        description: "No table selected",
+        description: "Failed to update order status",
         variant: "destructive",
       });
-      return;
     }
+  };
 
+  const processOrder = async () => {
+    // Filter out items that are already "served"
     const newItems = cart
-      .filter((item) => item.status === "pending")
-      .map((item) => ({
+      .filter(item => item.status === 'pending')
+      .map(item => ({
         menuItemId: item.menuItem.id,
         quantity: item.quantity,
       }));
@@ -189,46 +171,57 @@ const WaiterOrderManagement: React.FC = () => {
       toast({
         title: "Info",
         description: "No new items to add",
+        variant: "default",
+      });
+      return;
+    }
+
+    if (!incomingOrderId && !incomingTableId) {
+      toast({
+        title: "Error",
+        description: "No table or order selected",
+        variant: "destructive",
       });
       return;
     }
 
     try {
-      if (orderId) {
-        // Update existing order
-        await executeAddItems(() =>
-          apiService.addItemsToOrder(orderId, newItems)
-        );
-      } else {
+      if (incomingOrderId) {
+        // Add items to existing order
+        await executeOrder(() => apiService.addItemsToOrder(incomingOrderId, newItems));
+      } else if (incomingTableId) {
         // Create new order
-        await executeOrder(() =>
-          apiService.createOrder({
-            tableId: tableId,
-            items: newItems,
-          })
-        );
+        await executeOrder(() => apiService.createOrder({
+          tableId: incomingTableId,
+          items: newItems
+        }));
       }
 
       toast({
         title: "Success",
-        description: "Order saved successfully",
+        description: "Order processed successfully",
+        variant: "default",
       });
-
-      // Mark items as served
-      setCart(cart.map(item => ({ ...item, status: "served" as const })));
+      
+      // Mark items as served in the local state
+      setCart(cart.map(item => ({ ...item, status: 'served' as const })));
     } catch (error) {
-      console.error("Failed to save order:", error);
+      console.error('Failed to process order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process order",
+        variant: "destructive",
+      });
     }
   };
 
   const goBack = () => {
-    navigate("/tables");
+    navigate('/tables');
   };
 
-  const currentItems = menuItems.filter(
-    (item) =>
-      item.categoryId === activeCategory &&
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const currentItems = menuItems.filter(item =>
+    item.categoryId === activeCategory &&
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -241,7 +234,7 @@ const WaiterOrderManagement: React.FC = () => {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Tables
             </Button>
-            <h1 className="text-3xl font-bold">Order Management</h1>
+            <h1 className="text-3xl font-bold">Waiter Order Management</h1>
           </div>
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -255,15 +248,15 @@ const WaiterOrderManagement: React.FC = () => {
         </div>
 
         {/* Table Info */}
-        {tableId && (
+        {incomingTableId && (
           <Card className="mb-6">
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div className="text-lg font-semibold">
-                  Managing order for Table {tableId}
+                  Managing order for Table {incomingTableId}
                 </div>
-                {orderId && (
-                  <Badge variant="outline">Order ID: {orderId.slice(0, 8)}...</Badge>
+                {incomingOrderId && (
+                  <Badge variant="outline">Order ID: {incomingOrderId.slice(-6)}...</Badge>
                 )}
               </div>
             </CardContent>
@@ -272,10 +265,10 @@ const WaiterOrderManagement: React.FC = () => {
 
         {/* Category Tabs */}
         <div className="flex space-x-2 mb-6 overflow-x-auto">
-          {categories.map((category) => (
+          {categories.map(category => (
             <Button
               key={category.id}
-              variant={activeCategory === category.id ? "default" : "outline"}
+              variant={activeCategory === category.id ? "pos-selected" : "pos"}
               onClick={() => setActiveCategory(category.id)}
               className="px-6 whitespace-nowrap"
             >
@@ -286,23 +279,24 @@ const WaiterOrderManagement: React.FC = () => {
 
         {/* Menu Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-350px)]">
-          {currentItems.map((item) => (
+          {currentItems.map(item => (
             <Button
               key={item.id}
-              variant="outline"
+              variant="pos"
+              size="pos"
               onClick={() => addToCart(item)}
-              className="h-32 p-4 flex flex-col justify-between"
+              className="h-32"
               disabled={!item.isAvailable}
             >
-              <div className="w-full text-left">
-                <h3 className="font-semibold text-sm line-clamp-2 mb-2">
+              <div className="w-full">
+                <h3 className="font-semibold text-left line-clamp-2">
                   {item.name}
                 </h3>
-                <p className="text-primary font-bold">
+                <p className="text-primary font-bold text-left mt-2">
                   ${Number(item.price).toFixed(2)}
                 </p>
                 {!item.isAvailable && (
-                  <Badge variant="secondary" className="mt-1 text-xs">
+                  <Badge variant="secondary" className="mt-1">
                     Unavailable
                   </Badge>
                 )}
@@ -312,28 +306,72 @@ const WaiterOrderManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Summary Section */}
+      {/* Order Section */}
       <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Order Summary</h2>
+          <h2 className="text-xl font-bold">Current Order</h2>
           <Button variant="ghost" size="sm" onClick={clearCart}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
 
+        {/* Current Order Status */}
+        {currentOrder && (
+          <div className="mb-4 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Order Status:</span>
+              <Badge className={
+                currentOrder.status === 'PENDING' ? 'bg-secondary' :
+                currentOrder.status === 'ORDERED' ? 'bg-warning text-warning-foreground' :
+                currentOrder.status === 'PREPARING' ? 'bg-warning text-warning-foreground' :
+                currentOrder.status === 'PREPARED' ? 'bg-success text-success-foreground' :
+                currentOrder.status === 'SERVED' ? 'bg-success text-success-foreground' :
+                'bg-muted'
+              }>
+                {currentOrder.status}
+              </Badge>
+            </div>
+            
+            {/* Order Actions */}
+            <div className="space-y-2 mt-3">
+              {currentOrder.status === 'PREPARED' && (
+                <Button 
+                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'SERVED')}
+                  className="w-full bg-success text-success-foreground"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Mark as Served
+                </Button>
+              )}
+              
+              {currentOrder.status === 'SERVED' && (
+                <Button 
+                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'COMPLETED')}
+                  className="w-full bg-gradient-primary"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Complete Order
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Order Items */}
         <div className="flex-1 overflow-y-auto space-y-3 mb-6">
           {cart.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              <CheckCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <ChefHat className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p>No items in order</p>
             </div>
           ) : (
-            cart.map((item) => (
+            cart.map(item => (
               <div
                 key={item.id}
                 className={`flex items-center justify-between p-3 rounded-lg border ${
-                  item.status === "served" ? "bg-muted/30" : "bg-background"
+                  item.status === 'served' ? 'bg-muted/30' : 'bg-background'
                 }`}
               >
                 <div className="flex-1">
@@ -341,7 +379,7 @@ const WaiterOrderManagement: React.FC = () => {
                   <p className="text-xs text-muted-foreground">
                     ${item.menuItem.price.toFixed(2)} each
                   </p>
-                  {item.status === "served" && (
+                  {item.status === 'served' && (
                     <Badge variant="outline" className="text-xs mt-1">
                       In Kitchen
                     </Badge>
@@ -352,7 +390,7 @@ const WaiterOrderManagement: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.status === "served"}
+                    disabled={item.status === 'served'}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -363,7 +401,7 @@ const WaiterOrderManagement: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={item.status === "served"}
+                    disabled={item.status === 'served'}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -373,7 +411,7 @@ const WaiterOrderManagement: React.FC = () => {
           )}
         </div>
 
-        {/* Order Total */}
+        {/* Order Summary */}
         {cart.length > 0 && (
           <div className="space-y-4">
             <div className="p-4 bg-muted/30 rounded-lg">
@@ -386,11 +424,11 @@ const WaiterOrderManagement: React.FC = () => {
             <Button
               size="lg"
               className="w-full bg-gradient-primary"
-              onClick={saveOrder}
-              disabled={orderLoading || cart.filter(item => item.status === "pending").length === 0}
+              onClick={processOrder}
+              disabled={cart.filter(item => item.status === 'pending').length === 0 || orderLoading}
             >
               <Save className="mr-2 h-5 w-5" />
-              {orderLoading ? "Saving..." : "Save Order"}
+              {orderLoading ? 'Processing...' : 'Save Order'}
             </Button>
           </div>
         )}

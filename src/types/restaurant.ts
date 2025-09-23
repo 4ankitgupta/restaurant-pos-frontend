@@ -47,9 +47,9 @@ export interface APITable {
 
 export interface APIOrder {
   id: string;
-  status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED";
+  status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
   totalAmount: number;
-  paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
+  paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
   createdAt: string;
   updatedAt: string;
   restaurantId: string;

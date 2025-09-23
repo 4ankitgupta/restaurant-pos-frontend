@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MenuItem, OrderItem, APIMenuItem } from "@/types/restaurant"; // Import APIMenuItem
+import { MenuItem, OrderItem, APIMenuItem } from "@/types/restaurant";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useWebSocket } from "@/contexts/WebSocketContext";
+import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +32,8 @@ import {
   Search,
   Smartphone,
   Wallet,
+  CheckCircle,
+  Clock,
 } from "lucide-react";
 
 interface MenuCategory {
@@ -51,12 +55,16 @@ interface Table {
 const POSSystem: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { orders } = useWebSocket();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
 
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
+
+  // Get current order from WebSocket context
+  const currentOrder = orders.find(order => order.id === incomingOrderId);
 
   const { loading: categoriesLoading, execute: executeCategories } = useApi<{
     data: MenuCategory[];
@@ -139,6 +147,24 @@ const POSSystem: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "CARD" | "UPI" | "WALLET"
   >("CASH");
+
+  const handleOrderStatusUpdate = async (orderId: string, status: string) => {
+    try {
+      await apiService.updateOrderStatus(orderId, status);
+      toast({
+        title: "Success",
+        description: `Order ${status.toLowerCase()} successfully`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update order status",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Set first category as active when categories load
   useEffect(() => {
@@ -338,6 +364,60 @@ const POSSystem: React.FC = () => {
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Current Order Status */}
+        {currentOrder && (
+          <div className="mb-4 p-4 bg-muted/30 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Order Status:</span>
+              <Badge className={
+                currentOrder.status === 'PENDING' ? 'bg-secondary' :
+                currentOrder.status === 'ORDERED' ? 'bg-warning text-warning-foreground' :
+                currentOrder.status === 'PREPARING' ? 'bg-warning text-warning-foreground' :
+                currentOrder.status === 'PREPARED' ? 'bg-success text-success-foreground' :
+                currentOrder.status === 'SERVED' ? 'bg-success text-success-foreground' :
+                'bg-muted'
+              }>
+                {currentOrder.status}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Payment Status:</span>
+              <Badge className={
+                currentOrder.paymentStatus === 'UNPAID' ? 'bg-destructive text-destructive-foreground' :
+                currentOrder.paymentStatus === 'PARTIAL' ? 'bg-warning text-warning-foreground' :
+                'bg-success text-success-foreground'
+              }>
+                {currentOrder.paymentStatus}
+              </Badge>
+            </div>
+            
+            {/* Order Actions */}
+            <div className="space-y-2 mt-3">
+              {currentOrder.status === 'PREPARED' && (
+                <Button 
+                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'SERVED')}
+                  className="w-full bg-success text-success-foreground"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Mark as Served
+                </Button>
+              )}
+              
+              {currentOrder.status === 'SERVED' && currentOrder.paymentStatus === 'PAID' && (
+                <Button 
+                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'COMPLETED')}
+                  className="w-full bg-gradient-primary"
+                  size="sm"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Complete Order
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="mb-4">
           <Select

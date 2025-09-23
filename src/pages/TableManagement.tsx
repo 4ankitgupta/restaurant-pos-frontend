@@ -1,6 +1,5 @@
-// src/pages/TableManagement.tsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,16 +10,19 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  BookOpen, // New Icon
+  BookOpen,
+  DollarSign,
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWebSocket } from "@/contexts/WebSocketContext";
 import { APITable, APIOrder } from "@/types/restaurant";
 
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { orders } = useWebSocket();
   const [tables, setTables] = useState<APITable[]>([]);
   const {
     loading,
@@ -245,6 +247,23 @@ const TableManagement: React.FC = () => {
                     ? "Needs cleaning"
                     : "Currently occupied"}
                 </div>
+                
+                {/* Show payment status for occupied tables */}
+                {table.status === "Occupied" && (() => {
+                  const tableOrder = orders.find(order => order.tableId === table.id);
+                  return tableOrder ? (
+                    <div className="flex items-center gap-2 mt-2">
+                      <DollarSign className="h-4 w-4" />
+                      <Badge className={
+                        tableOrder.paymentStatus === 'UNPAID' ? 'bg-destructive text-destructive-foreground' :
+                        tableOrder.paymentStatus === 'PARTIAL' ? 'bg-warning text-warning-foreground' :
+                        'bg-success text-success-foreground'
+                      }>
+                        {tableOrder.paymentStatus}
+                      </Badge>
+                    </div>
+                  ) : null;
+                })()}
               </CardContent>
             </Card>
           ))}
