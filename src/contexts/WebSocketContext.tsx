@@ -47,8 +47,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           
         case 'ORDER_ITEMS_UPDATED':
           setOrders(prev => prev.map(order => 
-            order.id === message.payload.orderId 
-              ? { ...order, orderItems: message.payload.orderItems }
+            order.id === message.payload.id || order.id === message.payload.orderId
+              ? { ...order, ...message.payload }
               : order
           ));
           break;
@@ -87,9 +87,18 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Create WebSocket connection
     const websocket = new WebSocket(`ws://127.0.0.1:8000?token=${token}`);
     
-    websocket.onopen = () => {
+    websocket.onopen = async () => {
       console.log('WebSocket connected');
       setIsConnected(true);
+      
+      // Initial data load - fetch all existing orders
+      try {
+        const { apiService } = await import('@/services/apiService');
+        const response = await apiService.getAllOrders();
+        setOrders(response.data);
+      } catch (error) {
+        console.error('Error fetching initial orders:', error);
+      }
     };
     
     websocket.onmessage = handleWebSocketMessage;
