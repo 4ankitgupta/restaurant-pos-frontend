@@ -13,8 +13,6 @@ import {
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useWebSocket } from "@/contexts/WebSocketContext";
-import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -38,15 +36,11 @@ import {
   Search,
   Smartphone,
   Wallet,
-  CheckCircle,
-  Clock,
 } from "lucide-react";
 
 interface MenuCategory {
   id: string;
   name: string;
-  description: string | null;
-  restaurantId: string;
 }
 
 interface Table {
@@ -54,32 +48,29 @@ interface Table {
   tableNumber: string;
   capacity: number;
   status: "Available" | "Occupied" | "Reserved" | "NeedCleaning";
-  restaurantId: string;
 }
 
 const POSSystem: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { orders } = useWebSocket();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [tables, setTables] = useState<Table[]>([]);
+  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [selectedTableId, setSelectedTableId] = useState<string>("");
+  const [currentOrderId, setCurrentOrderId] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<
+    "CASH" | "CARD" | "UPI" | "WALLET"
+  >("CASH");
 
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
 
-  // Get current order from WebSocket context
-  const currentOrder = orders.find((order) => order.id === incomingOrderId);
-
-  const { loading: categoriesLoading, execute: executeCategories } = useApi<{
-    data: MenuCategory[];
-  }>();
-  const { loading: menuLoading, execute: executeMenu } = useApi<{
-    data: APIMenuItem[];
-  }>();
-  const { loading: tablesLoading, execute: executeTables } = useApi<{
-    data: Table[];
-  }>();
+  const { execute: executeCategories } = useApi<{ data: MenuCategory[] }>();
+  const { execute: executeMenu } = useApi<{ data: APIMenuItem[] }>();
+  const { execute: executeTables } = useApi<{ data: Table[] }>();
   const { loading: orderLoading, execute: executeOrder } = useApi<any>();
   const { loading: paymentLoading, execute: executePayment } = useApi<any>();
   const { execute: executeGetOrder } = useApi<any>();
@@ -95,7 +86,6 @@ const POSSystem: React.FC = () => {
           ]);
 
         if (categoriesResponse) setCategories(categoriesResponse.data);
-        // Menu items API returns array directly, not wrapped in data property
         if (menuResponse)
           setMenuItems(Array.isArray(menuResponse) ? menuResponse : []);
         if (tablesResponse) setTables(tablesResponse.data);
@@ -103,77 +93,46 @@ const POSSystem: React.FC = () => {
         console.error("Failed to fetch data:", error);
       }
     };
-
     fetchData();
   }, [executeCategories, executeMenu, executeTables]);
 
   useEffect(() => {
-    const loadOrder = async (orderId: string, tableId: string) => {
-      setSelectedTableId(tableId);
-      setCurrentOrderId(orderId);
-      try {
-        const response = await executeGetOrder(() =>
-          apiService.getOrderDetails(orderId)
-        );
-        if (response && response.data && response.data.orderItems) {
-          // Convert fetched order items to cart format
-          const loadedCartItems: OrderItem[] = response.data.orderItems.map(
-            (item: any) => ({
-              id: item.id,
-              menuItem: {
-                id: item.menuItem.id,
-                name: item.menuItem.name,
-                price: Number(item.menuItem.price),
-                category: item.menuItem.category?.name || "Unknown",
-                available: item.menuItem.isAvailable,
-              },
-              quantity: item.quantity,
-              status: item.status, // Use the actual item status
-            })
-          );
-          setCart(loadedCartItems);
-        }
-      } catch (error) {
-        console.error("Failed to load order details:", error);
-        // If order load fails, navigate back or show error
-        navigate("/tables");
-      }
-    };
-
     if (incomingOrderId && incomingTableId) {
-      loadOrder(incomingOrderId, incomingTableId);
+      setSelectedTableId(incomingTableId);
+      setCurrentOrderId(incomingOrderId);
+      const loadOrder = async () => {
+        try {
+          const response = await executeGetOrder(() =>
+            apiService.getOrderDetails(incomingOrderId)
+          );
+          if (response?.data?.orderItems) {
+            const loadedCartItems: OrderItem[] = response.data.orderItems.map(
+              (item: any) => ({
+                id: item.id,
+                menuItem: {
+                  id: item.menuItem.id,
+                  name: item.menuItem.name,
+                  price: Number(item.menuItem.price),
+                  category: item.menuItem.category?.name || "Unknown",
+                  available: item.menuItem.isAvailable,
+                },
+                quantity: item.quantity,
+                status: item.status,
+              })
+            );
+            setCart(loadedCartItems);
+          }
+        } catch (error) {
+          console.error("Failed to load order details:", error);
+          navigate("/tables");
+        }
+      };
+      loadOrder();
     }
   }, [incomingOrderId, incomingTableId, executeGetOrder, navigate]);
 
   const [activeCategory, setActiveCategory] = useState<string>("");
-  const [cart, setCart] = useState<OrderItem[]>([]);
-  const [selectedTableId, setSelectedTableId] = useState<string>("");
-  const [currentOrderId, setCurrentOrderId] = useState<string>("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<
-    "CASH" | "CARD" | "UPI" | "WALLET"
-  >("CASH");
 
-  const handleOrderStatusUpdate = async (orderId: string, status: string) => {
-    try {
-      await apiService.updateOrderStatus(orderId, status);
-      toast({
-        title: "Success",
-        description: `Order status updated to ${status.toLowerCase()} successfully`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error updating order status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update order status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Set first category as active when categories load
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0].id);
@@ -181,7 +140,6 @@ const POSSystem: React.FC = () => {
   }, [categories, activeCategory]);
 
   const addToCart = (apiMenuItem: APIMenuItem) => {
-    // Convert API menu item to our MenuItem format
     const menuItem: MenuItem = {
       id: apiMenuItem.id,
       name: apiMenuItem.name,
@@ -189,12 +147,10 @@ const POSSystem: React.FC = () => {
       category:
         categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
         "Unknown",
-      description: apiMenuItem.description || undefined,
       available: apiMenuItem.isAvailable,
     };
 
     const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
-
     if (existingItem) {
       setCart(
         cart.map((item) =>
@@ -204,13 +160,10 @@ const POSSystem: React.FC = () => {
         )
       );
     } else {
-      const newOrderItem: OrderItem = {
-        id: `${Date.now()}-${menuItem.id}`,
-        menuItem,
-        quantity: 1,
-        status: "ORDERED", // Set the initial status
-      };
-      setCart([...cart, newOrderItem]);
+      setCart([
+        ...cart,
+        { id: Date.now().toString(), menuItem, quantity: 1, status: "ORDERED" },
+      ]);
     }
   };
 
@@ -226,56 +179,32 @@ const POSSystem: React.FC = () => {
     }
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const getTotal = () => {
-    return cart.reduce(
+  const getTotal = () =>
+    cart.reduce(
       (total, item) => total + item.menuItem.price * item.quantity,
       0
     );
-  };
-
-  const getTax = () => {
-    return getTotal() * 0.1; // 10% tax
-  };
-
-  const getFinalTotal = () => {
-    return getTotal() + getTax();
-  };
 
   const processOrder = async () => {
-    // Filter out items that are already confirmed on the backend
     const newItems = cart
-      .filter((item) => item.status === "ORDERED")
+      .filter((item) => !item.id.includes("-")) // Filter for backend-generated IDs
       .map((item) => ({
         menuItemId: item.menuItem.id,
         quantity: item.quantity,
       }));
 
     if (newItems.length === 0) {
-      setPaymentDialogOpen(true); // No new items, proceed to payment
+      setPaymentDialogOpen(true);
       return;
     }
-    if (!currentOrderId) return; // Must have an order ID now
+
+    if (!currentOrderId) return;
 
     try {
-      const response = await executeOrder(() =>
+      await executeOrder(() =>
         apiService.addItemsToOrder(currentOrderId, newItems)
       );
-
-      if (response) {
-        // Update local state to reflect that new items have been ordered
-        setCart(
-          cart.map((item) => ({
-            ...item,
-            status: item.status === "ORDERED" ? "PREPARING" : item.status, // Transition new items to preparing
-          }))
-        );
-
-        setPaymentDialogOpen(true);
-      }
+      setPaymentDialogOpen(true);
     } catch (error) {
       console.error("Failed to add items to order:", error);
     }
@@ -287,19 +216,18 @@ const POSSystem: React.FC = () => {
     try {
       await executePayment(() =>
         apiService.createPayment({
-          orderId: currentOrderId, // Use the actual order ID
-          amount: getFinalTotal(),
+          orderId: currentOrderId,
+          amount: getTotal(),
           paymentMethod,
         })
       );
-      // On successful payment, also update the table status to 'NeedCleaning'
       await apiService.updateTableStatus(selectedTableId, "NeedCleaning");
 
       setCart([]);
       setSelectedTableId("");
       setCurrentOrderId("");
       setPaymentDialogOpen(false);
-      navigate("/tables"); // Navigate back to table management
+      navigate("/tables");
     } catch (error) {
       console.error("Failed to process payment:", error);
     }
@@ -328,8 +256,6 @@ const POSSystem: React.FC = () => {
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const hasPendingItems = cart.some((item) => item.status === "ORDERED");
-
   return (
     <div className="flex h-screen bg-background">
       {/* Menu Section */}
@@ -347,7 +273,6 @@ const POSSystem: React.FC = () => {
           </div>
         </div>
 
-        {/* Category Tabs */}
         <div className="flex space-x-2 mb-6 overflow-x-auto">
           {categories.map((category) => (
             <Button
@@ -361,7 +286,6 @@ const POSSystem: React.FC = () => {
           ))}
         </div>
 
-        {/* Menu Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-250px)]">
           {currentItems.map((item) => (
             <Button
@@ -394,78 +318,10 @@ const POSSystem: React.FC = () => {
       <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Current Order</h2>
-          <Button variant="ghost" size="sm" onClick={clearCart}>
+          <Button variant="ghost" size="sm" onClick={() => setCart([])}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Current Order Status */}
-        {currentOrder && (
-          <div className="mb-4 p-4 bg-muted/30 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Order Status:</span>
-              <Badge
-                className={
-                  currentOrder.status === "PENDING"
-                    ? "bg-secondary"
-                    : currentOrder.status === "IN_PROGRESS"
-                    ? "bg-warning text-warning-foreground"
-                    : currentOrder.status === "COMPLETED"
-                    ? "bg-success text-success-foreground"
-                    : "bg-muted"
-                }
-              >
-                {currentOrder.status}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Payment Status:</span>
-              <Badge
-                className={
-                  currentOrder.paymentStatus === "UNPAID"
-                    ? "bg-destructive text-destructive-foreground"
-                    : currentOrder.paymentStatus === "PARTIAL"
-                    ? "bg-warning text-warning-foreground"
-                    : "bg-success text-success-foreground"
-                }
-              >
-                {currentOrder.paymentStatus}
-              </Badge>
-            </div>
-
-            {/* Order Actions */}
-            <div className="space-y-2 mt-3">
-              {currentOrder.orderItems.some(
-                (item) => item.status === "PREPARED"
-              ) && (
-                <Button
-                  onClick={() =>
-                    handleOrderStatusUpdate(currentOrder.id, "SERVED")
-                  }
-                  className="w-full bg-success text-success-foreground"
-                  size="sm"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Served
-                </Button>
-              )}
-
-              {currentOrder.status === "SERVED" &&
-                currentOrder.paymentStatus === "PAID" && (
-                  <Button
-                    onClick={() =>
-                      handleOrderStatusUpdate(currentOrder.id, "COMPLETED")
-                    }
-                    className="w-full bg-gradient-primary"
-                    size="sm"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Complete Order
-                  </Button>
-                )}
-            </div>
-          </div>
-        )}
 
         <div className="mb-4">
           <Select
@@ -488,7 +344,6 @@ const POSSystem: React.FC = () => {
           </Select>
         </div>
 
-        {/* Cart Items */}
         <div className="flex-1 overflow-y-auto space-y-3 mb-6">
           {cart.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
@@ -518,7 +373,7 @@ const POSSystem: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.status !== "ORDERED"} // Only new items can be changed
+                    disabled={item.status !== "ORDERED"}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -529,7 +384,7 @@ const POSSystem: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={item.status !== "ORDERED"} // Only new items can be changed
+                    disabled={item.status !== "ORDERED"}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -539,21 +394,12 @@ const POSSystem: React.FC = () => {
           )}
         </div>
 
-        {/* Order Summary */}
         {cart.length > 0 && (
           <div className="space-y-4">
             <div className="space-y-2 p-4 bg-muted/30 rounded-lg">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${getTotal().toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Tax (10%):</span>
-                <span>${getTax().toFixed(2)}</span>
-              </div>
               <div className="flex justify-between font-bold text-lg border-t pt-2">
                 <span>Total:</span>
-                <span>${getFinalTotal().toFixed(2)}</span>
+                <span>${getTotal().toFixed(2)}</span>
               </div>
             </div>
 
@@ -564,7 +410,7 @@ const POSSystem: React.FC = () => {
               disabled={!selectedTableId || cart.length === 0 || orderLoading}
             >
               <Receipt className="mr-2 h-5 w-5" />
-              {orderLoading ? "Processing..." : "Process Order"}
+              {orderLoading ? "Processing..." : "Process Order & Pay"}
             </Button>
           </div>
         )}
@@ -577,9 +423,7 @@ const POSSystem: React.FC = () => {
             </DialogHeader>
             <div className="space-y-4">
               <div className="text-center">
-                <p className="text-2xl font-bold">
-                  ${getFinalTotal().toFixed(2)}
-                </p>
+                <p className="text-2xl font-bold">${getTotal().toFixed(2)}</p>
                 <p className="text-muted-foreground">Total Amount</p>
               </div>
 

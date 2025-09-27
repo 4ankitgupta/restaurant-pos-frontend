@@ -11,12 +11,10 @@ import {
   Receipt,
   Search,
   CheckCircle,
-  Clock,
-  Users,
-  ChefHat,
+  XCircle,
+  Save,
   ArrowLeft,
   Trash2,
-  Save,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
@@ -33,8 +31,6 @@ import {
 interface MenuCategory {
   id: string;
   name: string;
-  description: string | null;
-  restaurantId: string;
 }
 
 const WaiterOrderManagement: React.FC = () => {
@@ -50,15 +46,10 @@ const WaiterOrderManagement: React.FC = () => {
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
 
-  // Get current order from WebSocket context
   const currentOrder = orders.find((order) => order.id === incomingOrderId);
 
-  const { loading: categoriesLoading, execute: executeCategories } = useApi<{
-    data: MenuCategory[];
-  }>();
-  const { loading: menuLoading, execute: executeMenu } = useApi<{
-    data: APIMenuItem[];
-  }>();
+  const { execute: executeCategories } = useApi<{ data: MenuCategory[] }>();
+  const { execute: executeMenu } = useApi<{ data: APIMenuItem[] }>();
   const { loading: orderLoading, execute: executeOrder } = useApi<any>();
 
   useEffect(() => {
@@ -80,16 +71,14 @@ const WaiterOrderManagement: React.FC = () => {
     fetchData();
   }, [executeCategories, executeMenu]);
 
-  // Set first category as active when categories load
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
       setActiveCategory(categories[0].id);
     }
   }, [categories, activeCategory]);
 
-  // Load existing order items if editing an order
   useEffect(() => {
-    if (currentOrder && currentOrder.orderItems) {
+    if (currentOrder?.orderItems) {
       const loadedCartItems: OrderItem[] = currentOrder.orderItems.map(
         (item: any) => ({
           id: item.id,
@@ -103,7 +92,7 @@ const WaiterOrderManagement: React.FC = () => {
             available: item.menuItem.isAvailable,
           },
           quantity: item.quantity,
-          status: item.status, // Use the actual item status
+          status: item.status,
         })
       );
       setCart(loadedCartItems);
@@ -122,7 +111,6 @@ const WaiterOrderManagement: React.FC = () => {
       available: apiMenuItem.isAvailable,
     };
 
-    // Check if the item is already in the cart (newly added or existing)
     const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
 
     if (existingItem) {
@@ -135,10 +123,10 @@ const WaiterOrderManagement: React.FC = () => {
       );
     } else {
       const newOrderItem: OrderItem = {
-        id: `${Date.now()}-${menuItem.id}`, // Temporary ID for newly added items
+        id: `${Date.now()}-${menuItem.id}`,
         menuItem,
         quantity: 1,
-        status: "ORDERED", // New items start with 'ORDERED' status
+        status: "ORDERED",
       };
       setCart([...cart, newOrderItem]);
     }
@@ -156,37 +144,45 @@ const WaiterOrderManagement: React.FC = () => {
     }
   };
 
-  const clearCart = () => {
-    setCart([]);
-  };
-
-  const getTotal = () => {
-    return cart.reduce(
-      (total, item) => total + item.menuItem.price * item.quantity,
-      0
-    );
-  };
-
-  const handleOrderStatusUpdate = async (orderId: string, status: string) => {
+  const handleUpdateItemStatus = async (
+    itemId: string,
+    status: "SERVED" | "CANCELLED"
+  ) => {
     try {
-      await apiService.updateOrderStatus(orderId, status);
+      await apiService.updateOrderItemStatus(itemId, status);
       toast({
         title: "Success",
-        description: `Order ${status.toLowerCase()} successfully`,
-        variant: "default",
+        description: `Item marked as ${status.toLowerCase()}`,
       });
     } catch (error) {
-      console.error("Error updating order status:", error);
       toast({
         title: "Error",
-        description: "Failed to update order status",
+        description: "Failed to update item status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCompleteOrder = async () => {
+    if (!currentOrder) return;
+    try {
+      await apiService.completeOrder(currentOrder.id);
+      toast({
+        title: "Success",
+        description: "Order marked as completed",
+      });
+      navigate("/tables");
+    } catch (error) {
+      const apiError = error as ApiError;
+      toast({
+        title: "Error",
+        description: apiError.message || "Failed to complete order",
         variant: "destructive",
       });
     }
   };
 
   const processOrder = async () => {
-    // Filter out items that are already confirmed on the backend
     const newItems = cart
       .filter((item) => item.status === "ORDERED")
       .map((item) => ({
@@ -198,7 +194,6 @@ const WaiterOrderManagement: React.FC = () => {
       toast({
         title: "Info",
         description: "No new items to add",
-        variant: "default",
       });
       return;
     }
@@ -213,14 +208,13 @@ const WaiterOrderManagement: React.FC = () => {
     }
 
     try {
+      let response;
       if (incomingOrderId) {
-        // Add items to existing order
-        await executeOrder(() =>
+        response = await executeOrder(() =>
           apiService.addItemsToOrder(incomingOrderId, newItems)
         );
       } else if (incomingTableId) {
-        // Create new order
-        await executeOrder(() =>
+        response = await executeOrder(() =>
           apiService.createOrder({
             tableId: incomingTableId,
             items: newItems,
@@ -228,31 +222,23 @@ const WaiterOrderManagement: React.FC = () => {
         );
       }
 
+      if (response) {
+        navigate("/waiter-order", {
+          state: { orderId: response.data.id, tableId: response.data.tableId },
+        });
+      }
+
       toast({
         title: "Success",
-        description: "Order processed successfully",
-        variant: "default",
+        description: "Order sent to kitchen",
       });
-
-      // Update local state to reflect that new items have been ordered
-      setCart(
-        cart.map((item) => ({
-          ...item,
-          status: item.status === "ORDERED" ? "PREPARING" : item.status, // Transition new items to preparing
-        }))
-      );
     } catch (error) {
-      console.error("Failed to process order:", error);
       toast({
         title: "Error",
         description: "Failed to process order",
         variant: "destructive",
       });
     }
-  };
-
-  const goBack = () => {
-    navigate("/tables");
   };
 
   const getBadgeVariant = (status: OrderItemStatus) => {
@@ -278,15 +264,19 @@ const WaiterOrderManagement: React.FC = () => {
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const hasPendingItems = cart.some((item) => item.status === "ORDERED");
+  const canCompleteOrder =
+    currentOrder &&
+    currentOrder.orderItems.every(
+      (item) => item.status === "SERVED" || item.status === "CANCELLED"
+    );
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Menu Section */}
       <div className="flex-1 p-6 overflow-hidden">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={goBack}>
+            <Button variant="ghost" onClick={() => navigate("/tables")}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Tables
             </Button>
@@ -303,25 +293,7 @@ const WaiterOrderManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Table Info */}
-        {incomingTableId && (
-          <Card className="mb-6">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <div className="text-lg font-semibold">
-                  Managing order for Table {incomingTableId}
-                </div>
-                {incomingOrderId && (
-                  <Badge variant="outline">
-                    Order ID: {incomingOrderId.slice(-6)}...
-                  </Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Category Tabs */}
+        {/* Categories & Menu */}
         <div className="flex space-x-2 mb-6 overflow-x-auto">
           {categories.map((category) => (
             <Button
@@ -334,9 +306,7 @@ const WaiterOrderManagement: React.FC = () => {
             </Button>
           ))}
         </div>
-
-        {/* Menu Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-350px)]">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-250px)]">
           {currentItems.map((item) => (
             <Button
               key={item.id}
@@ -364,86 +334,20 @@ const WaiterOrderManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Order Section */}
+      {/* Cart Section */}
       <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Current Order</h2>
-          <Button variant="ghost" size="sm" onClick={clearCart}>
+          <Button variant="ghost" size="sm" onClick={() => setCart([])}>
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
 
-        {/* Current Order Status */}
-        {currentOrder && (
-          <div className="mb-4 p-4 bg-muted/30 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium">Order Status:</span>
-              <Badge
-                className={
-                  currentOrder.status === "PENDING"
-                    ? "bg-secondary"
-                    : currentOrder.status === "IN_PROGRESS"
-                    ? "bg-warning text-warning-foreground"
-                    : currentOrder.status === "COMPLETED"
-                    ? "bg-success text-success-foreground"
-                    : "bg-muted"
-                }
-              >
-                {currentOrder.status}
-              </Badge>
-            </div>
-
-            {/* Order Actions */}
-            <div className="space-y-2 mt-3">
-              {currentOrder.orderItems.some(
-                (item) => item.status === "PREPARED"
-              ) && (
-                <Button
-                  onClick={() =>
-                    handleOrderStatusUpdate(currentOrder.id, "SERVED")
-                  }
-                  className="w-full bg-success text-success-foreground"
-                  size="sm"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Mark as Served (for now, this will update whole order. In
-                  future, this will be handled by individual order items.)
-                </Button>
-              )}
-
-              {currentOrder.status === "SERVED" && (
-                <Button
-                  onClick={() =>
-                    handleOrderStatusUpdate(currentOrder.id, "COMPLETED")
-                  }
-                  className="w-full bg-gradient-primary"
-                  size="sm"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Complete Order
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Order Items */}
+        {/* Cart Items */}
         <div className="flex-1 overflow-y-auto space-y-3 mb-6">
-          {cart.length === 0 ? (
-            <div className="text-center text-muted-foreground py-8">
-              <ChefHat className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>No items in order</p>
-            </div>
-          ) : (
-            cart.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  item.status === "SERVED" || item.status === "PREPARED"
-                    ? "bg-muted/30"
-                    : "bg-background"
-                }`}
-              >
+          {cart.map((item) => (
+            <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <h4 className="font-medium text-sm">{item.menuItem.name}</h4>
                   <p className="text-xs text-muted-foreground">
@@ -459,7 +363,7 @@ const WaiterOrderManagement: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     disabled={item.status !== "ORDERED"}
                   >
@@ -470,7 +374,7 @@ const WaiterOrderManagement: React.FC = () => {
                   </span>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="icon"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     disabled={item.status !== "ORDERED"}
                   >
@@ -478,31 +382,56 @@ const WaiterOrderManagement: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            ))
-          )}
+              {item.status === "PREPARED" && (
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleUpdateItemStatus(item.id, "SERVED")}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" /> Serve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="flex-1"
+                    onClick={() => handleUpdateItemStatus(item.id, "CANCELLED")}
+                  >
+                    <XCircle className="h-4 w-4 mr-2" /> Cancel
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
 
-        {/* Order Summary */}
-        {cart.length > 0 && (
-          <div className="space-y-4">
-            <div className="p-4 bg-muted/30 rounded-lg">
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span>${getTotal().toFixed(2)}</span>
-              </div>
-            </div>
-
+        {/* Actions */}
+        <div className="space-y-4">
+          <Button
+            size="lg"
+            className="w-full bg-gradient-primary"
+            onClick={processOrder}
+            disabled={
+              cart.filter((item) => item.status === "ORDERED").length === 0 ||
+              orderLoading
+            }
+          >
+            <Save className="mr-2 h-5 w-5" />
+            {orderLoading ? "Processing..." : "Send to Kitchen"}
+          </Button>
+          {currentOrder && (
             <Button
               size="lg"
-              className="w-full bg-gradient-primary"
-              onClick={processOrder}
-              disabled={!hasPendingItems || orderLoading}
+              className="w-full"
+              variant="outline"
+              onClick={handleCompleteOrder}
+              disabled={!canCompleteOrder}
             >
-              <Save className="mr-2 h-5 w-5" />
-              {orderLoading ? "Processing..." : "Send to Kitchen"}
+              <CheckCircle className="mr-2 h-5 w-5" />
+              Complete Order
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
