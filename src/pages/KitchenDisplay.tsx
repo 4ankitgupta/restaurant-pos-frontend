@@ -32,7 +32,8 @@ const KitchenDisplay: React.FC = () => {
     status: OrderItemStatus
   ) => {
     try {
-      await apiService.updateOrderItemStatus(orderItemId, status);
+      // Changed this line to call the correct function for chefs
+      await apiService.updateOrderItemStatusByChef(orderItemId, status);
 
       toast({
         title: "Success",
