@@ -1,3 +1,5 @@
+// src/types/restaurant.ts
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -11,18 +13,26 @@ export interface APIMenuItem {
   id: string;
   name: string;
   description: string | null;
-  price: string; // API actually returns price as string
+  price: string;
   isAvailable: boolean;
   restaurantId: string;
   categoryId: string | null;
 }
+
+// New status enum reflecting backend changes for a single item
+export type OrderItemStatus =
+  | "ORDERED"
+  | "PREPARING"
+  | "PREPARED"
+  | "SERVED"
+  | "CANCELLED";
 
 export interface OrderItem {
   id: string;
   menuItem: MenuItem;
   quantity: number;
   notes?: string;
-  status: "pending" | "preparing" | "ready" | "served";
+  status: OrderItemStatus; // Updated type
 }
 
 export interface Order {
@@ -45,9 +55,10 @@ export interface APITable {
   restaurantId: string;
 }
 
+// APIOrder now has a simplified status but individual items have a detailed status
 export interface APIOrder {
   id: string;
-  status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"; // Updated to reflect backend
   totalAmount: number;
   paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
   createdAt: string;
@@ -59,6 +70,7 @@ export interface APIOrder {
     id: string;
     quantity: number;
     price: number;
+    status: OrderItemStatus; // Added new status field for each item
     menuItemId: string;
     menuItem: {
       id: string;

@@ -1,13 +1,17 @@
 // src/services/apiService.ts
 import { API_BASE_URL, API_ENDPOINTS } from "@/config/apiConfig";
-import { APIMenuItem, APITable } from "@/types/restaurant";
+import {
+  APIMenuItem,
+  APITable,
+  APIOrder,
+  OrderItemStatus,
+} from "@/types/restaurant";
 
 export interface ApiError {
   code: number;
   message: string;
   errors?: Array<{
     field: string;
-
     message: string;
   }>;
 }
@@ -107,7 +111,7 @@ class ApiService {
         description: string;
         restaurantId: string;
       }>
-    >("/menu/categories", {
+    >("/menu-categories", {
       method: "POST",
       body: JSON.stringify(categoryData),
     });
@@ -128,7 +132,7 @@ class ApiService {
         isAvailable: boolean;
         categoryId: string;
       }>
-    >("/menu/items", {
+    >("/menu-items", {
       method: "POST",
       body: JSON.stringify(itemData),
     });
@@ -143,44 +147,50 @@ class ApiService {
         description: string | null;
         restaurantId: string;
       }>;
-    }>(API_ENDPOINTS.menu.categories);
+    }>("/menu-categories");
   }
 
   async getMenuItems() {
-    return this.request<{ data: APIMenuItem[] }>(API_ENDPOINTS.menu.items);
+    return this.request<{ data: APIMenuItem[] }>("/menu-items");
   }
 
-  async updateMenuItem(itemId: string, itemData: {
-    name: string;
-    description: string;
-    price: number;
-    categoryId?: string;
-    isAvailable?: boolean;
-  }) {
-    return this.request<ApiResponse<APIMenuItem>>(`/menu/items/${itemId}`, {
-      method: "PATCH",
+  async updateMenuItem(
+    itemId: string,
+    itemData: {
+      name: string;
+      description: string;
+      price: number;
+      categoryId?: string;
+      isAvailable?: boolean;
+    }
+  ) {
+    return this.request<ApiResponse<APIMenuItem>>(`/menu-items/${itemId}`, {
+      method: "PUT",
       body: JSON.stringify(itemData),
     });
   }
 
   async deleteMenuItem(itemId: string) {
-    return this.request<ApiResponse<void>>(`/menu/items/${itemId}`, {
+    return this.request<ApiResponse<void>>(`/menu-items/${itemId}`, {
       method: "DELETE",
     });
   }
 
-  async updateCategory(categoryId: string, categoryData: {
-    name: string;
-    description: string;
-  }) {
-    return this.request<ApiResponse<any>>(`/menu/categories/${categoryId}`, {
+  async updateCategory(
+    categoryId: string,
+    categoryData: {
+      name: string;
+      description: string;
+    }
+  ) {
+    return this.request<ApiResponse<any>>(`/menu-categories/${categoryId}`, {
       method: "PATCH",
       body: JSON.stringify(categoryData),
     });
   }
 
   async deleteCategory(categoryId: string) {
-    return this.request<ApiResponse<void>>(`/menu/categories/${categoryId}`, {
+    return this.request<ApiResponse<void>>(`/menu-categories/${categoryId}`, {
       method: "DELETE",
     });
   }
@@ -194,21 +204,7 @@ class ApiService {
     }>;
   }) {
     return this.request<{
-      data: {
-        id: string;
-        status: string;
-        totalAmount: number;
-        paymentStatus: string;
-        restaurantId: string;
-        tableId: string;
-        userId: string;
-        orderItems: Array<{
-          id: string;
-          quantity: number;
-          price: number;
-          menuItemId: string;
-        }>;
-      };
+      data: APIOrder;
     }>("/orders", {
       method: "POST",
       body: JSON.stringify(orderData),
@@ -217,69 +213,15 @@ class ApiService {
 
   async getAllOrders() {
     return this.request<{
-      data: Array<{
-        id: string;
-        status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
-        totalAmount: number;
-        paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
-        createdAt: string;
-        updatedAt: string;
-        restaurantId: string;
-        tableId: string | null;
-        userId: string | null;
-        orderItems: Array<{
-          id: string;
-          quantity: number;
-          price: number;
-          menuItemId: string;
-          menuItem: {
-            id: string;
-            name: string;
-            description: string | null;
-            price: number;
-            isAvailable: boolean;
-            restaurantId: string;
-            categoryId: string | null;
-          };
-        }>;
-        table?: {
-          id: string;
-          tableNumber: string;
-          capacity: number;
-          status: string;
-        };
-      }>;
+      data: APIOrder[];
     }>("/orders");
   }
 
+  // DEPRECATED - This endpoint is no longer for changing individual order status
+  // It's still used by the waiter to mark as Served or Completed
   async updateOrderStatus(orderId: string, status: string) {
     return this.request<{
-      data: {
-        id: string;
-        status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED";
-        totalAmount: number;
-        paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
-        createdAt: string;
-        updatedAt: string;
-        restaurantId: string;
-        tableId: string | null;
-        userId: string | null;
-        orderItems: Array<{
-          id: string;
-          quantity: number;
-          price: number;
-          menuItemId: string;
-          menuItem: {
-            id: string;
-            name: string;
-            description: string | null;
-            price: number;
-            isAvailable: boolean;
-            restaurantId: string;
-            categoryId: string | null;
-          };
-        }>;
-      };
+      data: APIOrder;
     }>(`/orders/${orderId}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
@@ -380,12 +322,15 @@ class ApiService {
     });
   }
 
-  async updateInventoryItem(itemId: string, itemData: {
-    name: string;
-    unit: string;
-    quantity: number;
-    threshold: number;
-  }) {
+  async updateInventoryItem(
+    itemId: string,
+    itemData: {
+      name: string;
+      unit: string;
+      quantity: number;
+      threshold: number;
+    }
+  ) {
     return this.request<ApiResponse<any>>(`/inventory/${itemId}`, {
       method: "PATCH",
       body: JSON.stringify(itemData),
@@ -411,12 +356,15 @@ class ApiService {
     }>("/users");
   }
 
-  async updateUser(userId: string, userData: {
-    name: string;
-    email: string;
-    phone?: string;
-    role: string;
-  }) {
+  async updateUser(
+    userId: string,
+    userData: {
+      name: string;
+      email: string;
+      phone?: string;
+      role: string;
+    }
+  ) {
     return this.request<ApiResponse<any>>(`/users/${userId}`, {
       method: "PATCH",
       body: JSON.stringify(userData),
@@ -431,75 +379,25 @@ class ApiService {
 
   // Chef Management
   async getPreparingOrders() {
+    // This endpoint now fetches orders that have at least one item in PREPARING status
     return this.request<{
-      data: Array<{
-        id: string;
-        status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED";
-        totalAmount: number;
-        paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
-        createdAt: string;
-        updatedAt: string;
-        restaurantId: string;
-        tableId: string | null;
-        userId: string | null;
-        orderItems: Array<{
-          id: string;
-          quantity: number;
-          price: number;
-          menuItemId: string;
-          menuItem: {
-            id: string;
-            name: string;
-            description: string | null;
-            price: number;
-            isAvailable: boolean;
-            restaurantId: string;
-            categoryId: string | null;
-          };
-        }>;
-        table?: {
-          id: string;
-          tableNumber: string;
-          capacity: number;
-          status: string;
-        };
-      }>;
+      data: Array<APIOrder>;
     }>("/chef/orders/preparing");
   }
 
-  async updateOrderStatusByChef(orderId: string, status: 'PREPARED') {
-    return this.request<{
-      data: {
-        id: string;
-        status: "PENDING" | "PREPARING" | "SERVED" | "COMPLETED" | "CANCELLED" | "PREPARED";
-        totalAmount: number;
-        paymentStatus: "UNPAID" | "PAID" | "PARTIAL";
-        createdAt: string;
-        updatedAt: string;
-        restaurantId: string;
-        tableId: string | null;
-        userId: string | null;
-        orderItems: Array<{
-          id: string;
-          quantity: number;
-          price: number;
-          menuItemId: string;
-          menuItem: {
-            id: string;
-            name: string;
-            description: string | null;
-            price: number;
-            isAvailable: boolean;
-            restaurantId: string;
-            categoryId: string | null;
-          };
-        }>;
-      };
-    }>(`/chef/orders/${orderId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
+  // NEW: This call is for updating a single order item, not the whole order
+  async updateOrderItemStatus(orderItemId: string, status: OrderItemStatus) {
+    return this.request<{ data: any }>(
+      `/chef/order-items/${orderItemId}/status`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ status }),
+      }
+    );
   }
+
+  // DEPRECATED: Old Chef function for updating order status. Replaced by `updateOrderItemStatus`
+  // async updateOrderStatusByChef(orderId: string, status: 'PREPARED') { ... }
 
   // Reports
   async getSalesReport(startDate: string, endDate: string) {

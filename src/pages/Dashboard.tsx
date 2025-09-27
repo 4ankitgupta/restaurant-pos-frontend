@@ -1,9 +1,11 @@
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { AdminDashboard } from '@/components/dashboard/AdminDashboard';
-import { CashierDashboard } from '@/components/dashboard/CashierDashboard';
-import { WaiterDashboard } from '@/components/dashboard/WaiterDashboard';
-import { ChefDashboard } from '@/components/dashboard/ChefDashboard';
+// src/pages/Dashboard.tsx
+
+import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import { CashierDashboard } from "@/components/dashboard/CashierDashboard";
+import { WaiterDashboard } from "@/components/dashboard/WaiterDashboard";
+import { ChefDashboard } from "@/components/dashboard/ChefDashboard";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -11,13 +13,13 @@ const Dashboard: React.FC = () => {
   if (!user) return null;
 
   switch (user.role) {
-    case 'admin':
+    case "admin":
       return <AdminDashboard />;
-    case 'cashier':
+    case "cashier":
       return <CashierDashboard />;
-    case 'waiter':
+    case "waiter":
       return <WaiterDashboard />;
-    case 'chef':
+    case "chef":
       return <ChefDashboard />;
     default:
       return (

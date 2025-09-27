@@ -1,9 +1,15 @@
+// src/pages/POSSystem.tsx
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MenuItem, OrderItem, APIMenuItem } from "@/types/restaurant";
+import {
+  MenuItem,
+  OrderItem,
+  APIMenuItem,
+  OrderItemStatus,
+} from "@/types/restaurant";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -43,7 +49,6 @@ interface MenuCategory {
   restaurantId: string;
 }
 
-// FIX: Add "NeedCleaning" to the status types
 interface Table {
   id: string;
   tableNumber: string;
@@ -64,13 +69,14 @@ const POSSystem: React.FC = () => {
     location.state || {};
 
   // Get current order from WebSocket context
-  const currentOrder = orders.find(order => order.id === incomingOrderId);
+  const currentOrder = orders.find((order) => order.id === incomingOrderId);
 
   const { loading: categoriesLoading, execute: executeCategories } = useApi<{
     data: MenuCategory[];
   }>();
-  const { loading: menuLoading, execute: executeMenu } =
-    useApi<{ data: APIMenuItem[] }>();
+  const { loading: menuLoading, execute: executeMenu } = useApi<{
+    data: APIMenuItem[];
+  }>();
   const { loading: tablesLoading, execute: executeTables } = useApi<{
     data: Table[];
   }>();
@@ -90,7 +96,8 @@ const POSSystem: React.FC = () => {
 
         if (categoriesResponse) setCategories(categoriesResponse.data);
         // Menu items API returns array directly, not wrapped in data property
-        if (menuResponse) setMenuItems(Array.isArray(menuResponse) ? menuResponse : []);
+        if (menuResponse)
+          setMenuItems(Array.isArray(menuResponse) ? menuResponse : []);
         if (tablesResponse) setTables(tablesResponse.data);
       } catch (error) {
         console.error("Failed to fetch data:", error);
@@ -121,7 +128,7 @@ const POSSystem: React.FC = () => {
                 available: item.menuItem.isAvailable,
               },
               quantity: item.quantity,
-              status: "served", // Assume existing items are served
+              status: item.status, // Use the actual item status
             })
           );
           setCart(loadedCartItems);
@@ -153,11 +160,11 @@ const POSSystem: React.FC = () => {
       await apiService.updateOrderStatus(orderId, status);
       toast({
         title: "Success",
-        description: `Order ${status.toLowerCase()} successfully`,
+        description: `Order status updated to ${status.toLowerCase()} successfully`,
         variant: "default",
       });
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error("Error updating order status:", error);
       toast({
         title: "Error",
         description: "Failed to update order status",
@@ -201,7 +208,7 @@ const POSSystem: React.FC = () => {
         id: `${Date.now()}-${menuItem.id}`,
         menuItem,
         quantity: 1,
-        status: "pending",
+        status: "ORDERED", // Set the initial status
       };
       setCart([...cart, newOrderItem]);
     }
@@ -239,9 +246,9 @@ const POSSystem: React.FC = () => {
   };
 
   const processOrder = async () => {
-    // Filter out items that are already "served"
+    // Filter out items that are already confirmed on the backend
     const newItems = cart
-      .filter((item) => item.status === "pending")
+      .filter((item) => item.status === "ORDERED")
       .map((item) => ({
         menuItemId: item.menuItem.id,
         quantity: item.quantity,
@@ -259,6 +266,14 @@ const POSSystem: React.FC = () => {
       );
 
       if (response) {
+        // Update local state to reflect that new items have been ordered
+        setCart(
+          cart.map((item) => ({
+            ...item,
+            status: item.status === "ORDERED" ? "PREPARING" : item.status, // Transition new items to preparing
+          }))
+        );
+
         setPaymentDialogOpen(true);
       }
     } catch (error) {
@@ -290,11 +305,30 @@ const POSSystem: React.FC = () => {
     }
   };
 
+  const getBadgeVariant = (status: OrderItemStatus) => {
+    switch (status) {
+      case "ORDERED":
+        return "secondary";
+      case "PREPARING":
+        return "warning";
+      case "PREPARED":
+        return "success";
+      case "SERVED":
+        return "default";
+      case "CANCELLED":
+        return "destructive";
+      default:
+        return "outline";
+    }
+  };
+
   const currentItems = menuItems.filter(
     (item) =>
       item.categoryId === activeCategory &&
       item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const hasPendingItems = cart.some((item) => item.status === "ORDERED");
 
   return (
     <div className="flex h-screen bg-background">
@@ -370,33 +404,44 @@ const POSSystem: React.FC = () => {
           <div className="mb-4 p-4 bg-muted/30 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Order Status:</span>
-              <Badge className={
-                currentOrder.status === 'PENDING' ? 'bg-secondary' :
-                currentOrder.status === 'ORDERED' ? 'bg-warning text-warning-foreground' :
-                currentOrder.status === 'PREPARING' ? 'bg-warning text-warning-foreground' :
-                currentOrder.status === 'PREPARED' ? 'bg-success text-success-foreground' :
-                currentOrder.status === 'SERVED' ? 'bg-success text-success-foreground' :
-                'bg-muted'
-              }>
+              <Badge
+                className={
+                  currentOrder.status === "PENDING"
+                    ? "bg-secondary"
+                    : currentOrder.status === "IN_PROGRESS"
+                    ? "bg-warning text-warning-foreground"
+                    : currentOrder.status === "COMPLETED"
+                    ? "bg-success text-success-foreground"
+                    : "bg-muted"
+                }
+              >
                 {currentOrder.status}
               </Badge>
             </div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Payment Status:</span>
-              <Badge className={
-                currentOrder.paymentStatus === 'UNPAID' ? 'bg-destructive text-destructive-foreground' :
-                currentOrder.paymentStatus === 'PARTIAL' ? 'bg-warning text-warning-foreground' :
-                'bg-success text-success-foreground'
-              }>
+              <Badge
+                className={
+                  currentOrder.paymentStatus === "UNPAID"
+                    ? "bg-destructive text-destructive-foreground"
+                    : currentOrder.paymentStatus === "PARTIAL"
+                    ? "bg-warning text-warning-foreground"
+                    : "bg-success text-success-foreground"
+                }
+              >
                 {currentOrder.paymentStatus}
               </Badge>
             </div>
-            
+
             {/* Order Actions */}
             <div className="space-y-2 mt-3">
-              {currentOrder.status === 'PREPARED' && (
-                <Button 
-                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'SERVED')}
+              {currentOrder.orderItems.some(
+                (item) => item.status === "PREPARED"
+              ) && (
+                <Button
+                  onClick={() =>
+                    handleOrderStatusUpdate(currentOrder.id, "SERVED")
+                  }
                   className="w-full bg-success text-success-foreground"
                   size="sm"
                 >
@@ -404,17 +449,20 @@ const POSSystem: React.FC = () => {
                   Mark as Served
                 </Button>
               )}
-              
-              {currentOrder.status === 'SERVED' && currentOrder.paymentStatus === 'PAID' && (
-                <Button 
-                  onClick={() => handleOrderStatusUpdate(currentOrder.id, 'COMPLETED')}
-                  className="w-full bg-gradient-primary"
-                  size="sm"
-                >
-                  <CheckCircle className="mr-2 h-4 w-4" />
-                  Complete Order
-                </Button>
-              )}
+
+              {currentOrder.status === "SERVED" &&
+                currentOrder.paymentStatus === "PAID" && (
+                  <Button
+                    onClick={() =>
+                      handleOrderStatusUpdate(currentOrder.id, "COMPLETED")
+                    }
+                    className="w-full bg-gradient-primary"
+                    size="sm"
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Complete Order
+                  </Button>
+                )}
             </div>
           </div>
         )}
@@ -458,12 +506,19 @@ const POSSystem: React.FC = () => {
                   <p className="text-xs text-muted-foreground">
                     ${item.menuItem.price.toFixed(2)} each
                   </p>
+                  <Badge
+                    variant={getBadgeVariant(item.status)}
+                    className="mt-1"
+                  >
+                    {item.status}
+                  </Badge>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    disabled={item.status !== "ORDERED"} // Only new items can be changed
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -474,6 +529,7 @@ const POSSystem: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    disabled={item.status !== "ORDERED"} // Only new items can be changed
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
