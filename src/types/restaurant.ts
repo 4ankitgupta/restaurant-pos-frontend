@@ -21,6 +21,7 @@ export interface APIMenuItem {
 
 // New status enum reflecting backend changes for a single item
 export type OrderItemStatus =
+  | "PENDING"
   | "ORDERED"
   | "PREPARING"
   | "PREPARED"

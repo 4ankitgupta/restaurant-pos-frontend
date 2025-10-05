@@ -120,7 +120,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) return;
 
     // Create WebSocket connection
-    const websocket = new WebSocket(`ws://127.0.0.1:8000?token=${token}`);
+    const websocket = new WebSocket(`ws://192.168.29.213:8000?token=${token}`);
 
     websocket.onopen = async () => {
       console.log("WebSocket connected");

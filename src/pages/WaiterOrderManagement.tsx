@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { apiService } from "@/services/apiService";
+import { apiService, ApiError } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -79,25 +79,32 @@ const WaiterOrderManagement: React.FC = () => {
 
   useEffect(() => {
     if (currentOrder?.orderItems) {
-      const loadedCartItems: OrderItem[] = currentOrder.orderItems.map(
-        (item: any) => ({
-          id: item.id,
-          menuItem: {
-            id: item.menuItem.id,
-            name: item.menuItem.name,
-            price: Number(item.menuItem.price),
-            category:
-              categories.find((c) => c.id === item.menuItem.categoryId)?.name ||
-              "Unknown",
-            available: item.menuItem.isAvailable,
-          },
-          quantity: item.quantity,
-          status: item.status,
+      const loadedCartItems: OrderItem[] = currentOrder.orderItems
+        .map((item: any) => {
+          const menuItemDetails =
+            item.menuItem || menuItems.find((mi) => mi.id === item.menuItemId);
+          if (!menuItemDetails) {
+            return null;
+          }
+          return {
+            id: item.id,
+            menuItem: {
+              id: menuItemDetails.id,
+              name: menuItemDetails.name,
+              price: Number(menuItemDetails.price),
+              category:
+                categories.find((c) => c.id === menuItemDetails.categoryId)
+                  ?.name || "Unknown",
+              available: menuItemDetails.isAvailable,
+            },
+            quantity: item.quantity,
+            status: item.status,
+          };
         })
-      );
+        .filter((item): item is OrderItem => item !== null);
       setCart(loadedCartItems);
     }
-  }, [currentOrder, categories]);
+  }, [currentOrder, categories, menuItems]);
 
   const addToCart = (apiMenuItem: APIMenuItem) => {
     const menuItem: MenuItem = {
@@ -111,12 +118,14 @@ const WaiterOrderManagement: React.FC = () => {
       available: apiMenuItem.isAvailable,
     };
 
-    const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
+    const existingItem = cart.find(
+      (item) => item.menuItem.id === menuItem.id && item.status === "PENDING"
+    );
 
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.menuItem.id === menuItem.id
+          item.menuItem.id === menuItem.id && item.status === "PENDING"
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -126,7 +135,7 @@ const WaiterOrderManagement: React.FC = () => {
         id: `${Date.now()}-${menuItem.id}`,
         menuItem,
         quantity: 1,
-        status: "ORDERED",
+        status: "PENDING",
       };
       setCart([...cart, newOrderItem]);
     }
@@ -184,7 +193,7 @@ const WaiterOrderManagement: React.FC = () => {
 
   const processOrder = async () => {
     const newItems = cart
-      .filter((item) => item.status === "ORDERED")
+      .filter((item) => item.status === "PENDING")
       .map((item) => ({
         menuItemId: item.menuItem.id,
         quantity: item.quantity,
@@ -243,6 +252,8 @@ const WaiterOrderManagement: React.FC = () => {
 
   const getBadgeVariant = (status: OrderItemStatus) => {
     switch (status) {
+      case "PENDING":
+        return "outline";
       case "ORDERED":
         return "secondary";
       case "PREPARING":
@@ -365,7 +376,7 @@ const WaiterOrderManagement: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.status !== "ORDERED"}
+                    disabled={item.status !== "PENDING"}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -376,7 +387,7 @@ const WaiterOrderManagement: React.FC = () => {
                     variant="ghost"
                     size="icon"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={item.status !== "ORDERED"}
+                    disabled={item.status !== "PENDING"}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
@@ -412,7 +423,7 @@ const WaiterOrderManagement: React.FC = () => {
             className="w-full bg-gradient-primary"
             onClick={processOrder}
             disabled={
-              cart.filter((item) => item.status === "ORDERED").length === 0 ||
+              cart.filter((item) => item.status === "PENDING").length === 0 ||
               orderLoading
             }
           >
