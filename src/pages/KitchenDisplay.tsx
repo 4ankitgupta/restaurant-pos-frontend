@@ -1,223 +1,171 @@
 // src/pages/KitchenDisplay.tsx
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+import React, { useMemo } from "react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  ChefHat,
-  Users,
-  Timer,
-  RefreshCw,
-} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/contexts/WebSocketContext";
-import { apiService } from "@/services/apiService";
 import { toast } from "@/hooks/use-toast";
-import { APIOrder, OrderItemStatus } from "@/types/restaurant";
+import { apiService } from "@/services/apiService";
+import { OrderItemStatus } from "@/types/restaurant";
+import { format, parseISO } from "date-fns";
+import { ChefHat, Clock, CheckCircle } from "lucide-react";
 
 const KitchenDisplay: React.FC = () => {
   const { orders, isConnected } = useWebSocket();
 
-  // Filter orders for kitchen display - show orders with items that are ORDERED or PREPARING
-  const kitchenOrders = orders.filter((order) =>
-    order.orderItems.some(
-      (item) => item.status === "ORDERED" || item.status === "PREPARING"
-    )
-  );
-
-  const updateItemStatus = async (
-    orderItemId: string,
+  const handleUpdateItemStatus = async (
+    itemId: string,
     status: OrderItemStatus
   ) => {
     try {
-      // Changed this line to call the correct function for chefs
-      await apiService.updateOrderItemStatusByChef(orderItemId, status);
-
+      await apiService.updateOrderItemStatusByChef(itemId, status);
       toast({
         title: "Success",
-        description: `Order item marked as ${status.toLowerCase()} successfully`,
-        variant: "default",
+        description: `Item marked as ${status.toLowerCase()}`,
       });
     } catch (error) {
-      console.error("Error updating order item status:", error);
       toast({
         title: "Error",
-        description: "Failed to update order item status",
+        description: "Failed to update item status",
         variant: "destructive",
       });
     }
   };
 
-  const getTimeSinceOrder = (createdAt: string) => {
-    const minutes = Math.floor(
-      (Date.now() - new Date(createdAt).getTime()) / (1000 * 60)
-    );
-    return minutes;
-  };
+  const activeOrders = useMemo(() => {
+    return orders
+      .filter(
+        (order) =>
+          (order.status === "IN_PROGRESS" || order.status === "PENDING") &&
+          order.orderItems.some(
+            (item) => item.status === "ORDERED" || item.status === "PREPARING"
+          )
+      )
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+  }, [orders]);
 
-  const getOrderPriority = (createdAt: string) => {
-    const minutes = getTimeSinceOrder(createdAt);
-    if (minutes > 12) return "urgent";
-    if (minutes > 8) return "high";
-    return "normal";
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "border-l-destructive bg-destructive/5";
-      case "high":
-        return "border-l-warning bg-warning/5";
+  const getStatusColor = (status: OrderItemStatus) => {
+    switch (status) {
+      case "ORDERED":
+        return "bg-blue-500";
+      case "PREPARING":
+        return "bg-yellow-500";
       default:
-        return "border-l-primary bg-primary/5";
+        return "bg-gray-400";
     }
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <ChefHat className="h-8 w-8 text-primary" />
-          Kitchen Display System
-        </h1>
-        <div className="flex items-center space-x-6">
-          <div
-            className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${
-              isConnected
-                ? "bg-success/10 text-success"
-                : "bg-destructive/10 text-destructive"
+    <div className="bg-gray-50 min-h-screen p-6 text-gray-800">
+      <header className="mb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <ChefHat className="h-10 w-10 text-gray-700" />
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+            Kitchen Display
+          </h1>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span
+            className={`w-3 h-3 rounded-full ${
+              isConnected ? "bg-green-500" : "bg-red-500"
             }`}
-          >
-            <div
-              className={`w-2 h-2 rounded-full ${
-                isConnected ? "bg-success" : "bg-destructive"
-              }`}
-            />
+          ></span>
+          <span className="text-sm font-medium text-gray-600">
             {isConnected ? "Connected" : "Disconnected"}
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-warning">
-              {kitchenOrders.length}
-            </div>
-            <div className="text-sm text-muted-foreground">Active Orders</div>
-          </div>
+          </span>
         </div>
-      </div>
-
-      {kitchenOrders.length === 0 ? (
-        <div className="text-center py-12">
-          <ChefHat className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <p className="text-lg font-medium text-muted-foreground">
-            No active orders
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Orders will appear here when they're ready for preparation
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {kitchenOrders.map((order) => {
-            const priority = getOrderPriority(order.createdAt);
-            const timeSince = getTimeSinceOrder(order.createdAt);
-
-            return (
-              <Card
-                key={order.id}
-                className={`border-l-4 ${getPriorityColor(priority)}`}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      Order #{order.id.slice(-6)}
-                      {priority === "urgent" && (
-                        <AlertTriangle className="h-4 w-4 text-destructive" />
-                      )}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Timer className="h-4 w-4" />
-                      <span>{timeSince}m</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>Table {order.tableId || "N/A"}</span>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-3">
-                  {/* Order Items */}
-                  <div className="space-y-2">
-                    {order.orderItems
-                      .filter(
-                        (item) =>
-                          item.status === "ORDERED" ||
-                          item.status === "PREPARING"
-                      )
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-2 rounded-lg bg-muted/30"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-sm">
-                              {item.menuItem.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Qty: {item.quantity}
-                            </div>
-                          </div>
-                          <Badge
-                            className={
-                              item.status === "ORDERED"
-                                ? "bg-secondary"
-                                : "bg-warning text-warning-foreground"
+      </header>
+      <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {activeOrders.map((order) => (
+          <motion.div
+            key={order.id}
+            layout
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="bg-white border-gray-200 h-full flex flex-col shadow-md rounded-xl">
+              <CardHeader className="p-4">
+                <CardTitle className="flex justify-between items-center text-2xl font-bold text-gray-900">
+                  <span>Table {order.table?.tableNumber || "N/A"}</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    {format(parseISO(order.createdAt), "p")}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <Separator className="border-gray-200" />
+              <CardContent className="p-4 flex-grow space-y-4">
+                {order.orderItems
+                  .filter(
+                    (item) =>
+                      item.status === "ORDERED" || item.status === "PREPARING"
+                  )
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 bg-gray-100 rounded-lg"
+                    >
+                      <div className="flex items-center">
+                        <span
+                          className={`w-3 h-3 rounded-full mr-4 flex-shrink-0 ${getStatusColor(
+                            item.status
+                          )}`}
+                        ></span>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-lg text-gray-800">
+                            {item.quantity}x {item.menuItem?.name || "..."}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {item.status === "ORDERED" && (
+                          <Button
+                            size="sm"
+                            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
+                            onClick={() =>
+                              handleUpdateItemStatus(item.id, "PREPARING")
                             }
                           >
-                            {item.status}
-                          </Badge>
-                        </div>
-                      ))}
-                  </div>
-
-                  {/* Order Actions */}
-                  <div className="pt-3 border-t space-y-2">
-                    {/* The action buttons now need to be tied to the individual items, not the whole order */}
-                    {order.orderItems
-                      .filter((item) => item.status === "ORDERED")
-                      .map((item) => (
-                        <Button
-                          key={item.id}
-                          onClick={() => updateItemStatus(item.id, "PREPARING")}
-                          className="w-full bg-warning text-warning-foreground hover:bg-warning/90"
-                          size="sm"
-                        >
-                          <Clock className="mr-2 h-4 w-4" />
-                          Mark '{item.menuItem.name}' as Preparing
-                        </Button>
-                      ))}
-
-                    {order.orderItems
-                      .filter((item) => item.status === "PREPARING")
-                      .map((item) => (
-                        <Button
-                          key={item.id}
-                          onClick={() => updateItemStatus(item.id, "PREPARED")}
-                          className="w-full bg-gradient-primary"
-                          size="sm"
-                        >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Mark '{item.menuItem.name}' as Prepared
-                        </Button>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                            <Clock className="h-4 w-4 mr-2" />
+                            Prepare
+                          </Button>
+                        )}
+                        {item.status === "PREPARING" && (
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600 text-white font-semibold"
+                            onClick={() =>
+                              handleUpdateItemStatus(item.id, "PREPARED")
+                            }
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Ready
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+        {activeOrders.length === 0 && (
+          <div className="col-span-full text-center py-20">
+            <h2 className="text-3xl font-semibold text-gray-500">
+              No active orders
+            </h2>
+            <p className="text-gray-400 mt-2">
+              New orders will appear here automatically.
+            </p>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
