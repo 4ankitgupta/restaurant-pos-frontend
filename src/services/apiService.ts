@@ -369,15 +369,15 @@ class ApiService {
 
   // User Management
   async getUsers() {
-    return this.request<{
-      data: Array<{
+    return this.request<
+      {
         id: string;
         name: string;
         email: string;
         phone?: string;
         role: "ADMIN" | "MANAGER" | "CASHIER" | "WAITER" | "KITCHEN_STAFF";
-      }>;
-    }>("/users");
+      }[]
+    >("/users");
   }
 
   async updateUser(
@@ -389,14 +389,14 @@ class ApiService {
       role: string;
     }
   ) {
-    return this.request<ApiResponse<any>>(`/users/${userId}`, {
-      method: "PATCH",
+    return this.request<ApiResponse<any>>(`/auth/${userId}`, {
+      method: "PUT",
       body: JSON.stringify(userData),
     });
   }
 
   async deleteUser(userId: string) {
-    return this.request<ApiResponse<void>>(`/users/${userId}`, {
+    return this.request<ApiResponse<void>>(`/auth/${userId}`, {
       method: "DELETE",
     });
   }
