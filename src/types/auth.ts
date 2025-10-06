@@ -1,9 +1,9 @@
-export type UserRole = "admin" | "cashier" | "waiter" | "chef";
+export type UserRole = "admin" | "manager" | "cashier" | "waiter" | "chef";
 
 // Backend role mapping
 export const BACKEND_ROLES = {
   ADMIN: "admin",
-  MANAGER: "admin",
+  MANAGER: "manager",
   CASHIER: "cashier",
   WAITER: "waiter",
   KITCHEN_STAFF: "chef",

@@ -29,87 +29,93 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/login" element={<Login />} />
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/login" element={<Login />} />
 
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <AppLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
               <Route
-                path="pos"
+                path="/"
                 element={
-                  <ProtectedRoute allowedRoles={["admin", "cashier"]}>
-                    <POSSystem />
+                  <ProtectedRoute>
+                    <AppLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="waiter-order"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "waiter"]}>
-                    <WaiterOrderManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="tables"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "waiter"]}>
-                    <TableManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="kitchen"
-                element={
-                  <ProtectedRoute allowedRoles={["admin", "chef"]}>
-                    <KitchenDisplay />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="inventory"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Inventory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="menu"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Menu />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="users"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Users />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="reports"
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <Reports />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
+              >
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route
+                  path="pos"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["admin", "cashier", "manager"]}
+                    >
+                      <POSSystem />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="waiter-order"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["admin", "waiter", "manager"]}
+                    >
+                      <WaiterOrderManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="tables"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={["admin", "waiter", "manager"]}
+                    >
+                      <TableManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="kitchen"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "chef", "manager"]}>
+                      <KitchenDisplay />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="inventory"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <Inventory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="menu"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <Menu />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="users"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <Users />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="reports"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin"]}>
+                      <Reports />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </WebSocketProvider>
       </AuthProvider>
