@@ -101,3 +101,14 @@ export interface SalesData {
   averageOrderValue: number;
   topItems: Array<{ name: string; sales: number }>;
 }
+
+// --- NEW: InventoryItem Type ---
+export interface InventoryItem {
+  id: string;
+  name: string;
+  unit: string;
+  currentStock: number;
+  reorderLevel: number;
+  lastUpdated: string;
+  restaurantId: string;
+}

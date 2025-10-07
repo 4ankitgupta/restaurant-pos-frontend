@@ -5,6 +5,7 @@ import {
   APITable,
   APIOrder,
   OrderItemStatus,
+  InventoryItem, // Import the new InventoryItem type
 } from "@/types/restaurant";
 
 export interface ApiError {
@@ -321,26 +322,18 @@ class ApiService {
     return this.request<ApiResponse<any>>(`/tables/${tableId}/active-order`);
   }
 
-  // Inventory Management
+  // --- NEW: Inventory Management ---
   async getInventory() {
-    return this.request<{
-      data: Array<{
-        id: string;
-        name: string;
-        unit: string;
-        quantity: number;
-        threshold: number;
-      }>;
-    }>("/inventory");
+    return this.request<ApiResponse<InventoryItem[]>>("/inventory");
   }
 
   async createInventoryItem(itemData: {
     name: string;
     unit: string;
-    quantity: number;
-    threshold: number;
+    currentStock: number;
+    reorderLevel: number;
   }) {
-    return this.request<ApiResponse<any>>("/inventory", {
+    return this.request<ApiResponse<InventoryItem>>("/inventory", {
       method: "POST",
       body: JSON.stringify(itemData),
     });
@@ -349,13 +342,13 @@ class ApiService {
   async updateInventoryItem(
     itemId: string,
     itemData: {
-      name: string;
-      unit: string;
-      quantity: number;
-      threshold: number;
+      name?: string;
+      unit?: string;
+      currentStock?: number;
+      reorderLevel?: number;
     }
   ) {
-    return this.request<ApiResponse<any>>(`/inventory/${itemId}`, {
+    return this.request<ApiResponse<InventoryItem>>(`/inventory/${itemId}`, {
       method: "PATCH",
       body: JSON.stringify(itemData),
     });
