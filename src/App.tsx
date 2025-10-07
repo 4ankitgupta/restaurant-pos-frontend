@@ -16,6 +16,8 @@ import KitchenDisplay from "./pages/KitchenDisplay";
 import Inventory from "./pages/Inventory";
 import Menu from "./pages/Menu";
 import Users from "./pages/Users";
+import Suppliers from "./pages/Suppliers";
+import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 

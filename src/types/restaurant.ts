@@ -112,3 +112,54 @@ export interface InventoryItem {
   lastUpdated: string;
   restaurantId: string;
 }
+
+// --- NEW: Supplier Type ---
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+}
+
+// --- NEW: PurchaseOrder Types ---
+export interface PurchaseOrderItem {
+  id: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  inventoryItem: InventoryItem;
+}
+
+export interface PurchaseOrder {
+  id: string;
+  supplier: Supplier;
+  invoiceNumber?: string | null;
+  totalAmount: number;
+  purchaseDate: string;
+  purchaseItems: PurchaseOrderItem[];
+}
+
+// --- NEW: StockLog Type ---
+export type StockChangeType = "ADD" | "REMOVE" | "ADJUST" | "WASTAGE";
+
+export interface StockLog {
+  id: string;
+  changeType: StockChangeType;
+  quantity: number;
+  remarks?: string | null;
+  createdAt: string;
+  inventoryItem: InventoryItem;
+}
+
+// Ensure InventoryItem is exported if it's not already
+export interface InventoryItem {
+  id: string;
+  name: string;
+  unit: string;
+  currentStock: number;
+  reorderLevel: number;
+  lastUpdated: string;
+  restaurantId: string;
+}

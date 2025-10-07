@@ -11,6 +11,7 @@ import {
   Package,
   LogOut,
   Utensils,
+  Truck,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {

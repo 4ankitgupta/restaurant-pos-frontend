@@ -5,7 +5,10 @@ import {
   APITable,
   APIOrder,
   OrderItemStatus,
-  InventoryItem, // Import the new InventoryItem type
+  InventoryItem,
+  Supplier,
+  PurchaseOrder,
+  StockChangeType,
 } from "@/types/restaurant";
 
 export interface ApiError {
@@ -322,44 +325,6 @@ class ApiService {
     return this.request<ApiResponse<any>>(`/tables/${tableId}/active-order`);
   }
 
-  // --- NEW: Inventory Management ---
-  async getInventory() {
-    return this.request<ApiResponse<InventoryItem[]>>("/inventory");
-  }
-
-  async createInventoryItem(itemData: {
-    name: string;
-    unit: string;
-    currentStock: number;
-    reorderLevel: number;
-  }) {
-    return this.request<ApiResponse<InventoryItem>>("/inventory", {
-      method: "POST",
-      body: JSON.stringify(itemData),
-    });
-  }
-
-  async updateInventoryItem(
-    itemId: string,
-    itemData: {
-      name?: string;
-      unit?: string;
-      currentStock?: number;
-      reorderLevel?: number;
-    }
-  ) {
-    return this.request<ApiResponse<InventoryItem>>(`/inventory/${itemId}`, {
-      method: "PATCH",
-      body: JSON.stringify(itemData),
-    });
-  }
-
-  async deleteInventoryItem(itemId: string) {
-    return this.request<ApiResponse<void>>(`/inventory/${itemId}`, {
-      method: "DELETE",
-    });
-  }
-
   // User Management
   async getUsers() {
     return this.request<
@@ -391,6 +356,104 @@ class ApiService {
   async deleteUser(userId: string) {
     return this.request<ApiResponse<void>>(`/auth/${userId}`, {
       method: "DELETE",
+    });
+  }
+
+  // --- Inventory Management ---
+  async getInventory() {
+    return this.request<ApiResponse<InventoryItem[]>>("/inventory");
+  }
+
+  async createInventoryItem(itemData: {
+    name: string;
+    unit: string;
+    currentStock: number;
+    reorderLevel: number;
+  }) {
+    return this.request<ApiResponse<InventoryItem>>("/inventory", {
+      method: "POST",
+      body: JSON.stringify(itemData),
+    });
+  }
+
+  async updateInventoryItem(
+    itemId: string,
+    itemData: Partial<
+      Omit<InventoryItem, "id" | "lastUpdated" | "restaurantId">
+    >
+  ) {
+    return this.request<ApiResponse<InventoryItem>>(`/inventory/${itemId}`, {
+      method: "PATCH",
+      body: JSON.stringify(itemData),
+    });
+  }
+
+  async deleteInventoryItem(itemId: string) {
+    return this.request<ApiResponse<void>>(`/inventory/${itemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // --- NEW: Supplier Management ---
+  async getSuppliers() {
+    return this.request<ApiResponse<Supplier[]>>("/suppliers");
+  }
+
+  async createSupplier(supplierData: Omit<Supplier, "id">) {
+    return this.request<ApiResponse<Supplier>>("/suppliers", {
+      method: "POST",
+      body: JSON.stringify(supplierData),
+    });
+  }
+
+  async updateSupplier(
+    supplierId: string,
+    supplierData: Partial<Omit<Supplier, "id">>
+  ) {
+    return this.request<ApiResponse<Supplier>>(`/suppliers/${supplierId}`, {
+      method: "PATCH",
+      body: JSON.stringify(supplierData),
+    });
+  }
+
+  async deleteSupplier(supplierId: string) {
+    return this.request<ApiResponse<void>>(`/suppliers/${supplierId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // --- NEW: Purchase Order Management ---
+  async getPurchaseOrders() {
+    return this.request<ApiResponse<PurchaseOrder[]>>("/purchase-orders");
+  }
+
+  async createPurchaseOrder(orderData: {
+    supplierId: string;
+    invoiceNumber?: string;
+    totalAmount: number;
+    purchaseDate?: string;
+    items: {
+      inventoryItemId: string;
+      quantity: number;
+      unitPrice: number;
+    }[];
+  }) {
+    return this.request<ApiResponse<PurchaseOrder>>("/purchase-orders", {
+      method: "POST",
+      body: JSON.stringify(orderData),
+    });
+  }
+
+  // --- NEW: Stock Log (Stock Adjustment) ---
+  async adjustStock(logData: {
+    inventoryItemId: string;
+    changeType: StockChangeType;
+    quantity: number;
+    remarks?: string;
+  }) {
+    return this.request<ApiResponse<InventoryItem>>("/stock-logs", {
+      method: "POST",
+      body: JSON.stringify(logData),
     });
   }
 }
