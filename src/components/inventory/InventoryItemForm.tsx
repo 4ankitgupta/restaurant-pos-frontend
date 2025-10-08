@@ -34,7 +34,6 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
   const [form, setForm] = useState({
     name: "",
     unit: "",
-    currentStock: "0",
     reorderLevel: "0",
   });
 
@@ -43,14 +42,12 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
       setForm({
         name: editingItem.name,
         unit: editingItem.unit,
-        currentStock: String(editingItem.currentStock),
         reorderLevel: String(editingItem.reorderLevel),
       });
     } else {
       setForm({
         name: "",
         unit: "",
-        currentStock: "0",
         reorderLevel: "0",
       });
     }
@@ -61,7 +58,6 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
     const itemData = {
       name: form.name,
       unit: form.unit,
-      currentStock: parseFloat(form.currentStock),
       reorderLevel: parseFloat(form.reorderLevel),
     };
 
@@ -75,7 +71,9 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
           description: "Inventory item updated successfully",
         });
       } else {
-        await executeCreate(() => apiService.createInventoryItem(itemData));
+        await executeCreate(() =>
+          apiService.createInventoryItem({ ...itemData, currentStock: 0 })
+        );
         toast({
           title: "Success",
           description: "Inventory item created successfully",
@@ -124,19 +122,6 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
                 setForm((prev) => ({ ...prev, unit: e.target.value }))
               }
               placeholder="e.g., kg, pieces, liters"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="item-stock">Current Stock</Label>
-            <Input
-              id="item-stock"
-              type="number"
-              step="0.01"
-              value={form.currentStock}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, currentStock: e.target.value }))
-              }
               required
             />
           </div>

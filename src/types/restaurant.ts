@@ -142,7 +142,7 @@ export interface PurchaseOrder {
 }
 
 // --- NEW: StockLog Type ---
-export type StockChangeType = "ADD" | "REMOVE" | "ADJUST" | "WASTAGE";
+export type StockChangeType = "ADD" | "REMOVE" | "ADJUST" | "WASTAGE" | "USAGE";
 
 export interface StockLog {
   id: string;

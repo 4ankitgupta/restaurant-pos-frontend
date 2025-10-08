@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Package, Plus, Edit, Trash2 } from "lucide-react";
+import { Package, Plus, Edit, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,8 @@ import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import { InventoryItem } from "@/types/restaurant";
-import { InventoryItemForm } from "@/components/inventory/InventoryItemForm"; // Import the new form component
+import { InventoryItemForm } from "@/components/inventory/InventoryItemForm";
+import { StockAdjustmentForm } from "@/components/inventory/StockAdjustmentForm";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Inventory: React.FC = () => {
@@ -28,7 +29,8 @@ const Inventory: React.FC = () => {
   const { loading: deleteLoading, execute: executeDelete } = useApi();
 
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isItemFormOpen, setIsItemFormOpen] = useState(false);
+  const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
   const fetchInventory = async () => {
@@ -61,7 +63,7 @@ const Inventory: React.FC = () => {
 
   const startEditItem = (item: InventoryItem) => {
     setEditingItem(item);
-    setIsFormOpen(true);
+    setIsItemFormOpen(true);
   };
 
   const getStockStatus = (item: InventoryItem) => {
@@ -100,20 +102,35 @@ const Inventory: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Inventory Management</h1>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Item
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setIsAdjustmentFormOpen(true)}
+          >
+            Adjust Quantity
+          </Button>
+          <Button onClick={() => setIsItemFormOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Item
+          </Button>
+        </div>
       </div>
 
       <InventoryItemForm
-        open={isFormOpen}
+        open={isItemFormOpen}
         onOpenChange={(open) => {
           if (!open) setEditingItem(null);
-          setIsFormOpen(open);
+          setIsItemFormOpen(open);
         }}
         onSuccess={fetchInventory}
         editingItem={editingItem}
+      />
+
+      <StockAdjustmentForm
+        open={isAdjustmentFormOpen}
+        onOpenChange={setIsAdjustmentFormOpen}
+        onSuccess={fetchInventory}
+        items={inventoryItems}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

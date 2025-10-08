@@ -36,28 +36,28 @@ export const Navbar: React.FC = () => {
           ...commonItems,
           { icon: BarChart3, label: "Reports", path: "/reports" },
           { icon: Package, label: "Inventory", path: "/inventory" },
-          { icon: Utensils, label: "Menu", path: "/menu" },
-          { icon: Users, label: "Users", path: "/users" },
           { icon: Truck, label: "Supplier", path: "/supplier" },
           {
             icon: ShoppingCart,
             label: "Purchase Order",
             path: "/purchase-order",
           },
+          { icon: Utensils, label: "Menu", path: "/menu" },
+          { icon: Users, label: "Users", path: "/users" },
         ];
       case "manager":
         return [
           ...commonItems,
-          { icon: BarChart3, label: "Tables", path: "/tables" },
           { icon: Package, label: "Inventory", path: "/inventory" },
-          { icon: Utensils, label: "Menu", path: "/menu" },
-          { icon: Users, label: "Users", path: "/users" },
           { icon: Truck, label: "Supplier", path: "/supplier" },
           {
             icon: ShoppingCart,
             label: "Purchase Order",
             path: "/purchase-order",
           },
+          { icon: BarChart3, label: "Tables", path: "/tables" },
+          { icon: Utensils, label: "Menu", path: "/menu" },
+          { icon: Users, label: "Users", path: "/users" },
         ];
       case "cashier":
         return [
