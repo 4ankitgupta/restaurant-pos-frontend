@@ -65,6 +65,22 @@ const App = () => (
                   }
                 />
                 <Route
+                  path="supplier"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <Suppliers />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="purchase-order"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <PurchaseOrders />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="tables"
                   element={
                     <ProtectedRoute

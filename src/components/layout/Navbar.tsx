@@ -38,6 +38,12 @@ export const Navbar: React.FC = () => {
           { icon: Package, label: "Inventory", path: "/inventory" },
           { icon: Utensils, label: "Menu", path: "/menu" },
           { icon: Users, label: "Users", path: "/users" },
+          { icon: Truck, label: "Supplier", path: "/supplier" },
+          {
+            icon: ShoppingCart,
+            label: "Purchase Order",
+            path: "/purchase-order",
+          },
         ];
       case "manager":
         return [
@@ -46,6 +52,12 @@ export const Navbar: React.FC = () => {
           { icon: Package, label: "Inventory", path: "/inventory" },
           { icon: Utensils, label: "Menu", path: "/menu" },
           { icon: Users, label: "Users", path: "/users" },
+          { icon: Truck, label: "Supplier", path: "/supplier" },
+          {
+            icon: ShoppingCart,
+            label: "Purchase Order",
+            path: "/purchase-order",
+          },
         ];
       case "cashier":
         return [
