@@ -359,6 +359,13 @@ class ApiService {
     });
   }
 
+  async getSalesReport(startDate: string, endDate: string) {
+    // The endpoint might be different depending on your backend routes
+    return this.request<any>(
+      `/reports/sales?startDate=${startDate}&endDate=${endDate}`
+    );
+  }
+
   // --- Inventory Management ---
   async getInventory() {
     return this.request<ApiResponse<InventoryItem[]>>("/inventory");

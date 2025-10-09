@@ -66,6 +66,10 @@ export interface APIOrder {
   updatedAt: string;
   restaurantId: string;
   tableId: string | null;
+  table?: {
+    id: string;
+    tableNumber: string;
+  } | null;
   userId: string | null;
   orderItems: Array<{
     id: string;
