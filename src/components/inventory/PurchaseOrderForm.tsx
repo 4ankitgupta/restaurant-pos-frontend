@@ -288,7 +288,7 @@ export const PurchaseOrderForm: React.FC<PurchaseOrderFormProps> = ({
           </ScrollArea>
           <DialogFooter className="pt-4 border-t mt-4">
             <div className="flex-1 text-lg font-bold">
-              Total: ${calculateTotal().toFixed(2)}
+              Total: ₹{calculateTotal().toFixed(2)}
             </div>
             <DialogClose asChild>
               <Button type="button" variant="outline">

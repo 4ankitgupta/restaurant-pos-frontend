@@ -156,14 +156,3 @@ export interface StockLog {
   createdAt: string;
   inventoryItem: InventoryItem;
 }
-
-// Ensure InventoryItem is exported if it's not already
-export interface InventoryItem {
-  id: string;
-  name: string;
-  unit: string;
-  currentStock: number;
-  reorderLevel: number;
-  lastUpdated: string;
-  restaurantId: string;
-}

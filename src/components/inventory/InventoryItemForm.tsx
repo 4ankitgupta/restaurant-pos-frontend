@@ -34,6 +34,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
   const [form, setForm] = useState({
     name: "",
     unit: "",
+    currentStock: "0",
     reorderLevel: "0",
   });
 
@@ -42,12 +43,14 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
       setForm({
         name: editingItem.name,
         unit: editingItem.unit,
+        currentStock: String(editingItem.currentStock),
         reorderLevel: String(editingItem.reorderLevel),
       });
     } else {
       setForm({
         name: "",
         unit: "",
+        currentStock: "0",
         reorderLevel: "0",
       });
     }
@@ -58,6 +61,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
     const itemData = {
       name: form.name,
       unit: form.unit,
+      currentStock: parseFloat(form.currentStock),
       reorderLevel: parseFloat(form.reorderLevel),
     };
 
@@ -72,7 +76,7 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
         });
       } else {
         await executeCreate(() =>
-          apiService.createInventoryItem({ ...itemData, currentStock: 0 })
+          apiService.createInventoryItem({ ...itemData })
         );
         toast({
           title: "Success",
@@ -125,12 +129,27 @@ export const InventoryItemForm: React.FC<InventoryItemFormProps> = ({
               required
             />
           </div>
+          {!editingItem && (
+            <div>
+              <Label htmlFor="item-stock">Current Stock</Label>
+              <Input
+                id="item-stock"
+                type="number"
+                step="0.1"
+                value={form.currentStock}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, currentStock: e.target.value }))
+                }
+                required
+              />
+            </div>
+          )}
           <div>
             <Label htmlFor="item-reorder">Re-order Level</Label>
             <Input
               id="item-reorder"
               type="number"
-              step="0.01"
+              step="0.1"
               value={form.reorderLevel}
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, reorderLevel: e.target.value }))
