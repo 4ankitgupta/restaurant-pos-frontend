@@ -65,6 +65,41 @@ class ApiService {
     }
   }
 
+  // --- Cashier Actions ---
+  getActiveAndUnpaidOrders = () => {
+    return this.request<ApiResponse<APIOrder[]>>("/cashier/orders");
+  };
+
+  getCompletedOrders = () => {
+    return this.request<ApiResponse<APIOrder[]>>("/cashier/orders/completed");
+  };
+
+  getCashierOrderDetails = (orderId: string) => {
+    return this.request<ApiResponse<APIOrder>>(`/cashier/orders/${orderId}`);
+  };
+
+  addItemsToCashierOrder = (
+    orderId: string,
+    items: Array<{ menuItemId: string; quantity: number }>
+  ) => {
+    return this.request<ApiResponse<APIOrder>>(
+      `/cashier/orders/${orderId}/items`,
+      {
+        method: "POST",
+        body: JSON.stringify({ items }),
+      }
+    );
+  };
+
+  createTakeawayOrder = (
+    items: Array<{ menuItemId: string; quantity: number }>
+  ) => {
+    return this.request<ApiResponse<APIOrder>>("/cashier/orders/takeaway", {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    });
+  };
+
   // --- Waiter Actions ---
   async createOrder(orderData: {
     tableId: string;
@@ -142,7 +177,6 @@ class ApiService {
     );
   }
 
-  // --- Other existing methods ---
   // ... (login, register, menu, payment, table, inventory, user, reports services remain the same)
   // Authentication
   async login(email: string, password: string) {
@@ -291,9 +325,15 @@ class ApiService {
         status: string;
         orderId: string;
       };
-    }>("/payments", {
+    }>("/cashier/payment", {
       method: "POST",
       body: JSON.stringify(paymentData),
+    });
+  }
+
+  async refundPayment(orderId: string) {
+    return this.request<ApiResponse<APIOrder>>(`/payments/${orderId}/refund`, {
+      method: "POST",
     });
   }
 

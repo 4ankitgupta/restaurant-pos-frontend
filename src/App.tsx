@@ -20,6 +20,7 @@ import Suppliers from "./pages/Suppliers";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
+import Cashier from "./pages/Cashier"; // <-- ADD THIS
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,15 @@ const App = () => (
                 }
               >
                 <Route path="dashboard" element={<Dashboard />} />
+                {/* ADD NEW CASHIER ROUTE */}
+                <Route
+                  path="cashier"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "cashier"]}>
+                      <Cashier />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="pos"
                   element={
