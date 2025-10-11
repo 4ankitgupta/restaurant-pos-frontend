@@ -119,9 +119,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     const token = localStorage.getItem("accessToken");
     if (!token) return;
 
-    // Create WebSocket connection - use wss:// for secure connections
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const websocket = new WebSocket(`${protocol}//192.168.29.213:8000?token=${token}`);
+    // Create WebSocket connection
+    const websocket = new WebSocket(`ws://192.168.29.213:8000?token=${token}`);
 
     websocket.onopen = async () => {
       console.log("WebSocket connected");
