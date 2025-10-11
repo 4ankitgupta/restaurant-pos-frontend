@@ -17,6 +17,7 @@ import {
   Printer,
   Package,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OrderDetailProps {
   order: APIOrder | null;
@@ -31,6 +32,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   onAddItems,
   onRefund,
 }) => {
+  const { user } = useAuth();
   if (!order) {
     return (
       <Card className="h-full flex items-center justify-center">
@@ -65,6 +67,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
     order.status === "COMPLETED" && order.paymentStatus === "PAID";
   const isPayable =
     order.paymentStatus === "UNPAID" || order.paymentStatus === "PARTIAL";
+  const canRefund = user?.role === "admin" || user?.role === "manager";
 
   return (
     <Card className="h-full flex flex-col">
@@ -136,7 +139,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
           </Button>
         )}
-        {isRefundable && (
+        {isRefundable && canRefund && (
           <Button size="lg" variant="destructive" onClick={onRefund}>
             <RefreshCw className="mr-2 h-4 w-4" /> Refund Order
           </Button>

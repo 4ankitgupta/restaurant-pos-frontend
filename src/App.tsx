@@ -49,7 +49,9 @@ const App = () => (
                 <Route
                   path="cashier"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "cashier"]}>
+                    <ProtectedRoute
+                      allowedRoles={["admin", "cashier", "manager"]}
+                    >
                       <Cashier />
                     </ProtectedRoute>
                   }
@@ -60,7 +62,7 @@ const App = () => (
                     <ProtectedRoute
                       allowedRoles={["admin", "cashier", "manager"]}
                     >
-                      <POSSystem />
+                      <Cashier />
                     </ProtectedRoute>
                   }
                 />

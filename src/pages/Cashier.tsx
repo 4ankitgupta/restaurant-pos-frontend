@@ -1,3 +1,4 @@
+// src/pages/Cashier.tsx
 import { useState, useEffect } from "react";
 import { APIOrder, APIMenuItem } from "@/types/restaurant";
 import { useApi } from "@/hooks/useApi";
@@ -22,12 +23,18 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface MenuCategory {
+  id: string;
+  name: string;
+}
+
 type TabValue = "active" | "completed";
 
 const Cashier = () => {
   const [activeOrders, setActiveOrders] = useState<APIOrder[]>([]);
   const [completedOrders, setCompletedOrders] = useState<APIOrder[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
+  const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]); // <-- ADD THIS
   const [selectedOrder, setSelectedOrder] = useState<APIOrder | null>(null);
   const [activeTab, setActiveTab] = useState<TabValue>("active");
 
@@ -37,13 +44,12 @@ const Cashier = () => {
   const [isRefundConfirmOpen, setRefundConfirmOpen] = useState(false);
 
   // API Hooks
-  const { loading: loadingActive, execute: fetchActive } = useApi<{
-    data: APIOrder[];
-  }>();
-  const { loading: loadingCompleted, execute: fetchCompleted } = useApi<{
-    data: APIOrder[];
-  }>();
-  const { execute: fetchMenu } = useApi<{ data: APIMenuItem[] }>();
+  const { loading: loadingActive, execute: fetchActive } =
+    useApi<ApiResponse<APIOrder[]>>();
+  const { loading: loadingCompleted, execute: fetchCompleted } =
+    useApi<ApiResponse<APIOrder[]>>();
+  const { execute: fetchMenu } = useApi<APIMenuItem[]>();
+  const { execute: fetchCategories } = useApi<{ data: MenuCategory[] }>();
   const { loading: paymentLoading, execute: executePayment } = useApi();
   const { loading: addItemsLoading, execute: executeAddItems } = useApi<{
     data: APIOrder;
@@ -53,15 +59,18 @@ const Cashier = () => {
 
   const fetchData = async () => {
     try {
-      const [activeRes, completedRes, menuRes] = await Promise.all([
-        fetchActive(() => apiService.getActiveAndUnpaidOrders()),
-        fetchCompleted(() => apiService.getCompletedOrders()),
-        fetchMenu(() => apiService.getMenuItems()),
-      ]);
+      const [activeRes, completedRes, menuRes, categoriesRes] =
+        await Promise.all([
+          fetchActive(() => apiService.getActiveAndUnpaidOrders()),
+          fetchCompleted(() => apiService.getCompletedOrders()),
+          fetchMenu(() => apiService.getMenuItems()),
+          fetchCategories(() => apiService.getMenuCategories()),
+        ]);
 
       if (activeRes) setActiveOrders(activeRes.data);
       if (completedRes) setCompletedOrders(completedRes.data);
-      if (menuRes) setMenuItems(menuRes.data);
+      if (menuRes) setMenuItems(menuRes); // <-- Access menuRes directly
+      if (categoriesRes) setMenuCategories(categoriesRes.data);
     } catch (error) {
       console.error("Failed to fetch cashier data:", error);
     }
@@ -83,7 +92,7 @@ const Cashier = () => {
       await executePayment(() =>
         apiService.createPayment({
           orderId: selectedOrder.id,
-          amount: selectedOrder.totalAmount,
+          amount: Number(selectedOrder.totalAmount),
           paymentMethod: method,
         })
       );
@@ -152,7 +161,7 @@ const Cashier = () => {
       </header>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
         {/* Left column for the order list */}
-        <div className="lg:col-span-1 flex flex-col overflow-scroll">
+        <div className="lg:col-span-1 flex flex-col overflow-y-auto">
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as TabValue)}
@@ -181,7 +190,7 @@ const Cashier = () => {
           </Tabs>
         </div>
         {/* Right column for order details */}
-        <div className="lg:col-span-2 overflow-scroll">
+        <div className="lg:col-span-2 overflow-y-auto">
           <OrderDetail
             order={selectedOrder}
             onPay={() => setPaymentOpen(true)}
@@ -205,6 +214,7 @@ const Cashier = () => {
           open={isAddItemsOpen}
           onOpenChange={setAddItemsOpen}
           menuItems={menuItems}
+          categories={menuCategories} // <-- PASS CATEGORIES
           onSubmit={handleAddItems}
           isLoading={addItemsLoading}
         />
@@ -213,6 +223,7 @@ const Cashier = () => {
         open={isTakeawayOpen}
         onOpenChange={setTakeawayOpen}
         menuItems={menuItems}
+        categories={menuCategories} // <-- PASS CATEGORIES
         onSubmit={handleCreateTakeaway}
         isLoading={takeawayLoading}
       />

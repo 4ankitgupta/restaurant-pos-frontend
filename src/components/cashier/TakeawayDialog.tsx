@@ -8,17 +8,24 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { APIMenuItem } from "@/types/restaurant";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { Card, CardContent } from "../ui/card";
+
+interface MenuCategory {
+  id: string;
+  name: string;
+}
 
 interface TakeawayDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   menuItems: APIMenuItem[];
+  categories: MenuCategory[];
   onSubmit: (items: { menuItemId: string; quantity: number }[]) => void;
   isLoading: boolean;
 }
@@ -27,11 +34,19 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
   open,
   onOpenChange,
   menuItems,
+  categories,
   onSubmit,
   isLoading,
 }) => {
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeCategory, setActiveCategory] = useState<string>("");
+
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
 
   const handleItemClick = (itemId: string, operation: "add" | "remove") => {
     const newCart = new Map(cart);
@@ -65,8 +80,10 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
   };
 
   const filteredItems = menuItems
-    ? menuItems.filter((item) =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ? menuItems.filter(
+        (item) =>
+          item.categoryId === activeCategory &&
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : [];
 
@@ -77,43 +94,52 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl">
         <DialogHeader>
           <DialogTitle>Create Take-away Order</DialogTitle>
           <DialogDescription>
             Select items to create a new take-away order.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {/* Menu List */}
-          <div className="flex flex-col border-r pr-4">
+          <div className="col-span-2 flex flex-col border-r pr-4">
             <Input
               placeholder="Search menu..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="mb-4"
             />
+            <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+              {categories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={
+                    activeCategory === category.id ? "default" : "outline"
+                  }
+                  onClick={() => setActiveCategory(category.id)}
+                  className="whitespace-nowrap"
+                  size="sm"
+                >
+                  {category.name}
+                </Button>
+              ))}
+            </div>
             <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
                 {filteredItems.map((item) => (
-                  <div
+                  <Card
                     key={item.id}
-                    className="flex items-center justify-between p-2 rounded-md hover:bg-muted"
+                    className="cursor-pointer"
+                    onClick={() => handleItemClick(item.id, "add")}
                   >
-                    <div>
+                    <CardContent className="p-3">
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-muted-foreground">
                         ₹{parseFloat(item.price).toFixed(2)}
                       </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleItemClick(item.id, "add")}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             </ScrollArea>

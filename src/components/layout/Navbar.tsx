@@ -87,12 +87,29 @@ export const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <Link to="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <Utensils className="h-5 w-5 text-primary-foreground" />
+              {/* <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
+    <Utensils className="h-5 w-5 text-primary-foreground" />
+  </div> */}
+
+              <div className="flex flex-col items-center justify-center">
+                <img
+                  src="/logo.png"
+                  alt="RestaurantPOS Logo"
+                  className="w-12 object-contain mx-auto"
+                />
               </div>
-              <span className="text-xl font-bold text-foreground">
-                RestaurantPOS
-              </span>
+
+              <div className="flex flex-col items-center justify-center">
+                <img
+                  src="/rasoi_trackLogo.png"
+                  alt="RestaurantPOS Logo"
+                  className="w-32 object-contain mx-auto"
+                />
+              </div>
+
+              {/* <span className="text-xl font-bold text-foreground">
+    RestaurantPOS
+  </span> */}
             </Link>
 
             <div className="hidden md:flex items-center space-x-4">
