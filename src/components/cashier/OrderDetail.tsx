@@ -78,7 +78,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
           <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0">
+      <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
         <ScrollArea className="h-full">
           <div className="p-6 space-y-4">
             {order.orderItems.map((item) => (

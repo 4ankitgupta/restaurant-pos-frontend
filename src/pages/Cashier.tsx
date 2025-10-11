@@ -151,7 +151,8 @@ const Cashier = () => {
         </Button>
       </header>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
-        <div className="lg:col-span-1 flex flex-col">
+        {/* Left column for the order list */}
+        <div className="lg:col-span-1 flex flex-col overflow-scroll">
           <Tabs
             value={activeTab}
             onValueChange={(v) => setActiveTab(v as TabValue)}
@@ -161,7 +162,7 @@ const Cashier = () => {
               <TabsTrigger value="active">Active & Unpaid</TabsTrigger>
               <TabsTrigger value="completed">Completed Today</TabsTrigger>
             </TabsList>
-            <TabsContent value="active" className="flex-1 overflow-hidden">
+            <TabsContent value="active" className="flex-1 min-h-0">
               <OrderList
                 orders={activeOrders}
                 title="Active & Unpaid Orders"
@@ -169,7 +170,7 @@ const Cashier = () => {
                 selectedOrderId={selectedOrder?.id}
               />
             </TabsContent>
-            <TabsContent value="completed" className="flex-1 overflow-hidden">
+            <TabsContent value="completed" className="flex-1 min-h-0">
               <OrderList
                 orders={completedOrders}
                 title="Completed Orders"
@@ -179,7 +180,8 @@ const Cashier = () => {
             </TabsContent>
           </Tabs>
         </div>
-        <div className="lg:col-span-2">
+        {/* Right column for order details */}
+        <div className="lg:col-span-2 overflow-scroll">
           <OrderDetail
             order={selectedOrder}
             onPay={() => setPaymentOpen(true)}
