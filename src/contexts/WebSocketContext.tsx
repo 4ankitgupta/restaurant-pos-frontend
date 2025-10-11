@@ -40,9 +40,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [ws, setWs] = useState<WebSocket | null>(null);
 
   const refreshOrders = useCallback(() => {
-    // Force a refresh by reconnecting WebSocket or fetching fresh data
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.close();
+    // Force a refresh by reconnecting WebSocket
+    if (ws) {
+      ws.close(1000, "User requested refresh"); // Use a standard close code
     }
   }, [ws]);
 
@@ -50,55 +50,38 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const message: WebSocketMessage = JSON.parse(event.data);
 
-      switch (message.type) {
-        case "NEW_ORDER":
-          setOrders((prev) => [...prev, message.payload]);
-          break;
+      setOrders((prevOrders) => {
+        switch (message.type) {
+          case "NEW_ORDER":
+            // Avoid adding duplicates
+            if (prevOrders.some((order) => order.id === message.payload.id)) {
+              return prevOrders;
+            }
+            return [...prevOrders, message.payload];
 
-        case "ORDER_STATUS_UPDATE":
-        case "ORDER_ITEMS_UPDATED":
-          setOrders((prev) =>
-            prev.map((order) =>
-              order.id === message.payload.id ||
-              order.id === message.payload.orderId
-                ? { ...order, ...message.payload }
-                : order
-            )
-          );
-          break;
+          case "ORDER_STATUS_UPDATE":
+          case "ORDER_ITEMS_UPDATED":
+          case "PAYMENT_STATUS_UPDATE":
+            return prevOrders.map((order) =>
+              order.id === message.payload.id ? message.payload : order
+            );
 
-        case "ORDER_ITEM_STATUS_UPDATE":
-          // Update a single item's status within an existing order
-          setOrders((prevOrders) =>
-            prevOrders.map((order) => {
+          case "ORDER_ITEM_STATUS_UPDATE":
+            return prevOrders.map((order) => {
               if (order.id === message.payload.orderId) {
-                return {
-                  ...order,
-                  orderItems: order.orderItems.map((item) =>
-                    item.id === message.payload.id
-                      ? { ...item, status: message.payload.status }
-                      : item
-                  ),
-                };
+                const updatedOrderItems = order.orderItems.map((item) =>
+                  item.id === message.payload.id ? message.payload : item
+                );
+                return { ...order, orderItems: updatedOrderItems };
               }
               return order;
-            })
-          );
-          break;
+            });
 
-        case "PAYMENT_STATUS_UPDATE":
-          setOrders((prev) =>
-            prev.map((order) =>
-              order.id === message.payload.orderId
-                ? { ...order, paymentStatus: message.payload.paymentStatus }
-                : order
-            )
-          );
-          break;
-
-        default:
-          console.log("Unknown WebSocket message type:", message.type);
-      }
+          default:
+            console.warn("Unknown WebSocket message type:", message.type);
+            return prevOrders;
+        }
+      });
     } catch (error) {
       console.error("Error parsing WebSocket message:", error);
     }
@@ -106,7 +89,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (!user) {
-      // Clean up connection if user is not authenticated
       if (ws) {
         ws.close();
         setWs(null);
@@ -119,49 +101,65 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     const token = localStorage.getItem("accessToken");
     if (!token) return;
 
-    // Create WebSocket connection
-    const websocket = new WebSocket(`ws://192.168.29.213:8000?token=${token}`);
+    // --- FIX: Dynamic WebSocket URL ---
+    // This will use wss:// on secure (https) connections and ws:// on insecure (http) connections.
+    const connect = () => {
+      const isSecure = window.location.protocol === "https:";
+      const wsProtocol = isSecure ? "wss:" : "ws:";
 
-    websocket.onopen = async () => {
-      console.log("WebSocket connected");
-      setIsConnected(true);
+      // Use the host of the current page, which will be your ngrok URL in production/tunneling
+      // Or localhost during local development
+      const wsHost = window.location.host;
 
-      // Initial data load - fetch all existing orders
-      try {
-        const { apiService } = await import("@/services/apiService");
-        const response = await apiService.getAllOrders();
-        setOrders(response.data);
-      } catch (error) {
-        console.error("Error fetching initial orders:", error);
-      }
+      // const websocketUrl = `${wsProtocol}//${wsHost}/?token=${token}`;
+      // console.log(`Connecting to WebSocket at: ${websocketUrl}`);
+      // const newWs = new WebSocket(websocketUrl);
+
+      const websocket = new WebSocket(`ws://127.0.0.1:8000?token=${token}`);
+      console.log(`Connecting to WebSocket at: ${websocket}`);
+      const newWs = websocket;
+
+      newWs.onopen = async () => {
+        console.log("WebSocket connected");
+        setIsConnected(true);
+        try {
+          const { apiService } = await import("@/services/apiService");
+          const response = await apiService.getAllOrders();
+          setOrders(response.data);
+        } catch (error) {
+          console.error("Error fetching initial orders:", error);
+        }
+      };
+
+      newWs.onmessage = handleWebSocketMessage;
+
+      newWs.onclose = (event) => {
+        console.log("WebSocket disconnected", event.code, event.reason);
+        setIsConnected(false);
+        // Only attempt to reconnect if the disconnection was unexpected
+        if (event.code !== 1000 && user) {
+          setTimeout(connect, 3000); // Re-run the connect function
+        }
+      };
+
+      newWs.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        newWs.close(); // Ensure connection is closed on error before reconnecting
+      };
+
+      setWs(newWs);
     };
 
-    websocket.onmessage = handleWebSocketMessage;
+    connect(); // Initial connection attempt
 
-    websocket.onclose = (event) => {
-      console.log("WebSocket disconnected", event.code, event.reason);
-      setIsConnected(false);
-
-      // Attempt to reconnect after 3 seconds if it wasn't a manual close
-      if (event.code !== 1000 && user) {
-        setTimeout(() => {
-          console.log("Attempting to reconnect WebSocket...");
-        }, 3000);
-      }
-    };
-
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setIsConnected(false);
-    };
-
-    setWs(websocket);
-
-    // Cleanup on unmount
+    // Cleanup on component unmount or when user changes
     return () => {
-      websocket.close();
+      if (ws) {
+        ws.close(1000, "Component unmounting");
+      }
     };
-  }, [user, handleWebSocketMessage]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, handleWebSocketMessage]); // Note: We don't include 'ws' in deps to avoid re-creating the connection on every ws state change.
 
   const contextValue: WebSocketContextType = {
     orders,
