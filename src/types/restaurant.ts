@@ -59,7 +59,7 @@ export interface APITable {
 // APIOrder now has a simplified status but individual items have a detailed status
 export interface APIOrder {
   id: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"; // Updated to reflect backend
+  status: "PENDING" | "ORDERED" | "PREPARING" | "PREPARED" | "SERVED" | "COMPLETED" | "CANCELLED"; // Updated to reflect backend statuses
   totalAmount: number;
   paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
   createdAt: string;
