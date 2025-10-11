@@ -120,21 +120,17 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) return;
 
     // Create WebSocket connection
-    const websocket = new WebSocket(`ws://127.0.0.1:8000?token=${token}`);
+    const websocket = new WebSocket(`ws://192.168.29.213:8000?token=${token}`);
 
     websocket.onopen = async () => {
       console.log("WebSocket connected");
       setIsConnected(true);
 
-      // Initial data load - fetch all existing orders and MERGE with any live updates
+      // Initial data load - fetch all existing orders
       try {
         const { apiService } = await import("@/services/apiService");
         const response = await apiService.getAllOrders();
-        setOrders((prev) => {
-          const map = new Map(prev.map((o) => [o.id, o]));
-          for (const o of response.data) map.set(o.id, o);
-          return Array.from(map.values());
-        });
+        setOrders(response.data);
       } catch (error) {
         console.error("Error fetching initial orders:", error);
       }

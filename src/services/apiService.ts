@@ -122,13 +122,6 @@ class ApiService {
     return this.request<ApiResponse<any>>(`/orders/${orderId}`);
   }
 
-  async updateOrderStatus(orderId: string, status: string) {
-    return this.request<{ data: APIOrder }>(`/orders/${orderId}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ status }),
-    });
-  }
-
   // --- Chef Actions ---
   async getPreparingOrders() {
     return this.request<{

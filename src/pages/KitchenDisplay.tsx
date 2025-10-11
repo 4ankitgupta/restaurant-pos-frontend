@@ -38,7 +38,7 @@ const KitchenDisplay: React.FC = () => {
     return orders
       .filter(
         (order) =>
-          (order.status === "ORDERED" || order.status === "PREPARING") &&
+          (order.status === "IN_PROGRESS" || order.status === "PENDING") &&
           order.orderItems.some(
             (item) => item.status === "ORDERED" || item.status === "PREPARING"
           )
