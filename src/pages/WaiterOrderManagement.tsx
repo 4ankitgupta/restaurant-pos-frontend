@@ -1,10 +1,11 @@
 // src/pages/WaiterOrderManagement.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Plus,
   Minus,
@@ -15,6 +16,8 @@ import {
   Save,
   ArrowLeft,
   Trash2,
+  Clock,
+  ChefHat,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
@@ -281,19 +284,64 @@ const WaiterOrderManagement: React.FC = () => {
       (item) => item.status === "SERVED" || item.status === "CANCELLED"
     );
 
+  const orderSummary = useMemo(() => {
+    const pending = cart.filter((item) => item.status === "PENDING").length;
+    const preparing = cart.filter(
+      (item) => item.status === "ORDERED" || item.status === "PREPARING"
+    ).length;
+    const ready = cart.filter((item) => item.status === "PREPARED").length;
+    const served = cart.filter((item) => item.status === "SERVED").length;
+
+    return { pending, preparing, ready, served };
+  }, [cart]);
+
+  const totalAmount = useMemo(() => {
+    return cart.reduce(
+      (sum, item) => sum + item.menuItem.price * item.quantity,
+      0
+    );
+  }, [cart]);
+
   return (
-    <div className="flex h-screen bg-background">
-      <div className="flex-1 p-6 overflow-hidden">
+    <div className="flex flex-col h-screen bg-background md:flex-row">
+      {/* Menu Section */}
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" onClick={() => navigate("/tables")}>
+        <div className="bg-card border-b p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/tables")}
+                className="md:hidden"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold">
+                  {currentOrder
+                    ? `Table ${currentOrder.table?.tableNumber || "N/A"}`
+                    : "New Order"}
+                </h1>
+                {currentOrder && (
+                  <p className="text-sm text-muted-foreground">
+                    Order #{currentOrder.id.slice(0, 8)}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="hidden md:flex"
+              onClick={() => navigate("/tables")}
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Tables
             </Button>
-            <h1 className="text-3xl font-bold">Waiter Order Management</h1>
           </div>
-          <div className="relative w-64">
+
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search menu items..."
@@ -304,123 +352,190 @@ const WaiterOrderManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Categories & Menu */}
-        <div className="flex space-x-2 mb-6 overflow-x-auto">
-          {categories.map((category) => (
-            <Button
-              key={category.id}
-              variant={activeCategory === category.id ? "pos-selected" : "pos"}
-              onClick={() => setActiveCategory(category.id)}
-              className="px-6 whitespace-nowrap"
-            >
-              {category.name}
-            </Button>
-          ))}
+        {/* Categories */}
+        <div className="bg-card border-b p-4 overflow-x-auto">
+          <div className="flex gap-2">
+            {categories.map((category) => (
+              <Button
+                key={category.id}
+                variant={activeCategory === category.id ? "default" : "outline"}
+                onClick={() => setActiveCategory(category.id)}
+                className="whitespace-nowrap"
+                size="sm"
+              >
+                {category.name}
+              </Button>
+            ))}
+          </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto h-[calc(100vh-250px)]">
-          {currentItems.map((item) => (
-            <Button
-              key={item.id}
-              variant="pos"
-              size="pos"
-              onClick={() => addToCart(item)}
-              className="h-32"
-              disabled={!item.isAvailable}
-            >
-              <div className="w-full">
-                <h3 className="font-semibold text-left line-clamp-2">
-                  {item.name}
-                </h3>
-                <p className="text-primary font-bold text-left mt-2">
-                  ${Number(item.price).toFixed(2)}
-                </p>
-                {!item.isAvailable && (
-                  <Badge variant="secondary" className="mt-1">
-                    Unavailable
-                  </Badge>
-                )}
-              </div>
-            </Button>
-          ))}
+
+        {/* Menu Items Grid */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {currentItems.map((item) => (
+              <Card
+                key={item.id}
+                className={`cursor-pointer transition-all hover:shadow-lg ${
+                  !item.isAvailable ? "opacity-50" : ""
+                }`}
+                onClick={() => item.isAvailable && addToCart(item)}
+              >
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-sm line-clamp-2 mb-2">
+                    {item.name}
+                  </h3>
+                  <p className="text-lg font-bold text-primary">
+                    ${Number(item.price).toFixed(2)}
+                  </p>
+                  {!item.isAvailable && (
+                    <Badge variant="secondary" className="mt-2 text-xs">
+                      Unavailable
+                    </Badge>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Cart Section */}
-      <div className="w-96 bg-card border-l border-border p-6 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Current Order</h2>
-          <Button variant="ghost" size="sm" onClick={() => setCart([])}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
+      {/* Order Summary Section */}
+      <div className="w-full md:w-96 bg-card border-l flex flex-col max-h-[50vh] md:max-h-screen">
+        {/* Order Header */}
+        <div className="p-4 border-b space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold">Current Order</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCart([])}
+              disabled={cart.length === 0}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Order Status Summary */}
+          {currentOrder && (
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div>
+                <div className="text-xs text-muted-foreground">Pending</div>
+                <div className="font-bold text-secondary">{orderSummary.pending}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Preparing</div>
+                <div className="font-bold text-warning">{orderSummary.preparing}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Ready</div>
+                <div className="font-bold text-success">{orderSummary.ready}</div>
+              </div>
+              <div>
+                <div className="text-xs text-muted-foreground">Served</div>
+                <div className="font-bold">{orderSummary.served}</div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto space-y-3 mb-6">
-          {cart.map((item) => (
-            <div key={item.id} className="p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <h4 className="font-medium text-sm">{item.menuItem.name}</h4>
-                  <p className="text-xs text-muted-foreground">
-                    ${item.menuItem.price.toFixed(2)} each
-                  </p>
-                  <Badge
-                    variant={getBadgeVariant(item.status)}
-                    className="mt-1"
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.status !== "PENDING"}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="w-8 text-center text-sm font-medium">
-                    {item.quantity}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    disabled={item.status !== "PENDING"}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              {item.status === "PREPARED" && (
-                <div className="flex gap-2 mt-2">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleUpdateItemStatus(item.id, "SERVED")}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" /> Serve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="flex-1"
-                    onClick={() => handleUpdateItemStatus(item.id, "CANCELLED")}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" /> Cancel
-                  </Button>
-                </div>
-              )}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+          {cart.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Receipt className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No items in order</p>
             </div>
-          ))}
+          ) : (
+            cart.map((item) => (
+              <Card key={item.id} className="p-3">
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-sm truncate">
+                        {item.menuItem.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        ${item.menuItem.price.toFixed(2)} each
+                      </p>
+                      <Badge
+                        variant={getBadgeVariant(item.status)}
+                        className="mt-1 text-xs"
+                      >
+                        {item.status === "ORDERED" && (
+                          <Clock className="h-3 w-3 mr-1" />
+                        )}
+                        {item.status === "PREPARING" && (
+                          <ChefHat className="h-3 w-3 mr-1" />
+                        )}
+                        {item.status}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        disabled={item.status !== "PENDING"}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <span className="w-8 text-center text-sm font-medium">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        disabled={item.status !== "PENDING"}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {item.status === "PREPARED" && (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-success text-success-foreground hover:bg-success/90"
+                        onClick={() => handleUpdateItemStatus(item.id, "SERVED")}
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Serve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() =>
+                          handleUpdateItemStatus(item.id, "CANCELLED")
+                        }
+                      >
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Cancel
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))
+          )}
         </div>
 
-        {/* Actions */}
-        <div className="space-y-4">
+        {/* Actions Footer */}
+        <div className="p-4 border-t space-y-3 bg-muted/20">
+          <div className="flex items-center justify-between text-lg font-bold">
+            <span>Total</span>
+            <span className="text-primary">${totalAmount.toFixed(2)}</span>
+          </div>
+
+          <Separator />
+
           <Button
             size="lg"
-            className="w-full bg-gradient-primary"
+            className="w-full"
             onClick={processOrder}
             disabled={
               cart.filter((item) => item.status === "PENDING").length === 0 ||
@@ -430,6 +545,7 @@ const WaiterOrderManagement: React.FC = () => {
             <Save className="mr-2 h-5 w-5" />
             {orderLoading ? "Processing..." : "Send to Kitchen"}
           </Button>
+
           {currentOrder && (
             <Button
               size="lg"

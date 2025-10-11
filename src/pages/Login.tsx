@@ -19,8 +19,16 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      navigate("/dashboard");
+      const userData = await login(email, password);
+      // Redirect based on role
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      if (user.role === "waiter") {
+        navigate("/tables");
+      } else if (user.role === "chef") {
+        navigate("/kitchen");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       // Error is displayed via toast in AuthContext
       console.error("Login failed:", error);

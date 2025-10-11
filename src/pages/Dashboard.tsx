@@ -20,10 +20,6 @@ const Dashboard: React.FC = () => {
       return <ManagerDashboard />;
     case "cashier":
       return <CashierDashboard />;
-    case "waiter":
-      return <WaiterDashboard />;
-    case "chef":
-      return <ChefDashboard />;
     default:
       return (
         <div className="p-6">
