@@ -88,12 +88,12 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                     {item.quantity}x {item.menuItem?.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    @ ₹{item.price.toFixed(2)}
+                    @ ₹{Number(item.price).toFixed(2)}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold">
-                    ₹{(item.quantity * item.price).toFixed(2)}
+                    ₹{(item.quantity * Number(item.price)).toFixed(2)}
                   </p>
                   <Badge
                     variant={getStatusVariant(item.status)}
@@ -111,12 +111,12 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
         <div className="space-y-2 text-lg">
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>₹{order.totalAmount.toFixed(2)}</span>
+            <span>₹{Number(order.totalAmount).toFixed(2)}</span>
           </div>
           <Separator />
           <div className="flex justify-between text-primary font-bold">
             <span>Amount Due</span>
-            <span>₹{order.totalAmount.toFixed(2)}</span>
+            <span>₹{Number(order.totalAmount).toFixed(2)}</span>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">

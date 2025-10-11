@@ -63,9 +63,11 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
     onSubmit(items);
   };
 
-  const filteredItems = menuItems.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = menuItems
+    ? menuItems.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   const totalItems = Array.from(cart.values()).reduce(
     (acc, qty) => acc + qty,

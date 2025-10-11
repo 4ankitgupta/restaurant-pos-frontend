@@ -67,7 +67,7 @@ export const OrderList: React.FC<OrderListProps> = ({
                     {format(new Date(order.createdAt), "p")}
                   </div>
                   <div className="font-bold text-lg">
-                    ₹{order.totalAmount.toFixed(2)}
+                    ₹{Number(order.totalAmount).toFixed(2)}
                   </div>
                 </div>
               </div>

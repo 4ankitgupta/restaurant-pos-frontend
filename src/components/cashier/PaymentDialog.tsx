@@ -36,7 +36,9 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         <div className="space-y-6">
           <div className="text-center">
             <p className="text-muted-foreground">Total Amount Due</p>
-            <p className="text-4xl font-bold">₹{totalAmount.toFixed(2)}</p>
+            <p className="text-4xl font-bold">
+              ₹{Number(totalAmount).toFixed(2)}
+            </p>
           </div>
 
           <div className="space-y-3">

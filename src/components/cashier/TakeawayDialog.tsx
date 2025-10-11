@@ -2,6 +2,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
@@ -63,9 +64,11 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
     onSubmit(items);
   };
 
-  const filteredItems = menuItems.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = menuItems
+    ? menuItems.filter((item) =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   const totalItems = Array.from(cart.values()).reduce(
     (acc, qty) => acc + qty,
@@ -77,6 +80,9 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create Take-away Order</DialogTitle>
+          <DialogDescription>
+            Select items to create a new take-away order.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-4">
           {/* Menu List */}
