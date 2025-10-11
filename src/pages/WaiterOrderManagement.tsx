@@ -420,15 +420,21 @@ const WaiterOrderManagement: React.FC = () => {
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
                 <div className="text-xs text-muted-foreground">Pending</div>
-                <div className="font-bold text-secondary">{orderSummary.pending}</div>
+                <div className="font-bold text-secondary">
+                  {orderSummary.pending}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Preparing</div>
-                <div className="font-bold text-warning">{orderSummary.preparing}</div>
+                <div className="font-bold text-warning">
+                  {orderSummary.preparing}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Ready</div>
-                <div className="font-bold text-success">{orderSummary.ready}</div>
+                <div className="font-bold text-success">
+                  {orderSummary.ready}
+                </div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Served</div>
@@ -475,7 +481,9 @@ const WaiterOrderManagement: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity - 1)
+                        }
                         disabled={item.status !== "PENDING"}
                       >
                         <Minus className="h-3 w-3" />
@@ -487,7 +495,9 @@ const WaiterOrderManagement: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity + 1)
+                        }
                         disabled={item.status !== "PENDING"}
                       >
                         <Plus className="h-3 w-3" />
@@ -500,7 +510,9 @@ const WaiterOrderManagement: React.FC = () => {
                       <Button
                         size="sm"
                         className="flex-1 bg-success text-success-foreground hover:bg-success/90"
-                        onClick={() => handleUpdateItemStatus(item.id, "SERVED")}
+                        onClick={() =>
+                          handleUpdateItemStatus(item.id, "SERVED")
+                        }
                       >
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Serve
