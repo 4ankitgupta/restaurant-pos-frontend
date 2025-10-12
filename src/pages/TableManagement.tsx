@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Users,
-  Clock,
   CheckCircle,
   XCircle,
+  Clock,
   AlertCircle,
   BookOpen,
-  DollarSign,
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { APITable, APIOrder } from "@/types/restaurant";
+import { TableSheet } from "@/components/table/TableSheet";
 
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -48,7 +46,7 @@ const TableManagement: React.FC = () => {
   }, []);
 
   const [selectedTable, setSelectedTable] = useState<APITable | null>(null);
-  const [partySize, setPartySize] = useState("");
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
@@ -101,21 +99,22 @@ const TableManagement: React.FC = () => {
       );
       loadTables();
       setSelectedTable(null);
+      setIsSheetOpen(false);
     } catch (error) {
       console.error("Failed to update table status:", error);
     }
   };
 
-  const handleSeatCustomers = async () => {
-    if (!selectedTable || !partySize) return;
+  const handleSeatCustomers = async (partySize: number) => {
+    if (!selectedTable) return;
 
     try {
       await executeTableAction(() =>
-        apiService.seatTable(selectedTable.id, parseInt(partySize))
+        apiService.seatTable(selectedTable.id, partySize)
       );
-      await loadTables(); // Refresh tables to show new status
-      setPartySize("");
-      setSelectedTable(null); // Deselect table
+      await loadTables();
+      setSelectedTable(null);
+      setIsSheetOpen(false);
     } catch (error) {
       console.error("Failed to seat customers:", error);
     }
@@ -236,7 +235,10 @@ const TableManagement: React.FC = () => {
               className={`cursor-pointer transition-all hover:shadow-lg ${
                 selectedTable?.id === table.id ? "ring-2 ring-primary" : ""
               }`}
-              onClick={() => setSelectedTable(table)}
+              onClick={() => {
+                setSelectedTable(table);
+                setIsSheetOpen(true);
+              }}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -305,120 +307,16 @@ const TableManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Selected Table Actions */}
-      {selectedTable && (
-        <Card className="mt-6">
-          {/* ... (Card Header is same as before) */}
-          <CardContent>
-            {/* ... (Current Status is same as before) */}
-
-            {/* --- MODIFIED: Quick Actions section --- */}
-            <div>
-              <h3 className="font-semibold mb-3">Quick Actions</h3>
-
-              {selectedTable.status === "Available" && (
-                <div className="space-y-3">
-                  <Input
-                    placeholder="Party size"
-                    type="number"
-                    value={partySize}
-                    onChange={(e) => setPartySize(e.target.value)}
-                  />
-                  <Button
-                    onClick={handleSeatCustomers}
-                    disabled={!partySize}
-                    className="w-full"
-                  >
-                    <Users className="mr-2 h-4 w-4" />
-                    Seat Customers
-                  </Button>
-                </div>
-              )}
-
-              {selectedTable.status === "Occupied" && (
-                <div className="space-y-3">
-                  <Button
-                    onClick={() => handleTakeOrder(selectedTable.id)}
-                    className="w-full bg-gradient-primary"
-                  >
-                    <BookOpen className="mr-2 h-4 w-4" />
-                    Take / View Order
-                  </Button>
-                </div>
-              )}
-
-              {selectedTable.status === "NeedCleaning" && (
-                <div className="space-y-3">
-                  <Button
-                    onClick={() =>
-                      handleUpdateStatus(selectedTable.id, "Available")
-                    }
-                    className="w-full bg-success text-success-foreground"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Mark as Clean & Available
-                  </Button>
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {selectedTable.status === "Occupied" && (
-                  <>
-                    <Button
-                      variant="destructive"
-                      onClick={() =>
-                        handleUpdateStatus(selectedTable.id, "NeedCleaning")
-                      }
-                      // --- ADD THIS LINE ---
-                      disabled={selectedTable.orderStatus === "IN_PROGRESS"}
-                    >
-                      <AlertCircle className="mr-2 h-4 w-4" />
-                      Mark for Cleaning
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        handleUpdateStatus(selectedTable.id, "Available")
-                      }
-                      // --- ADD THIS LINE ---
-                      disabled={selectedTable.orderStatus === "IN_PROGRESS"}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" />
-                      Clear Table
-                    </Button>
-                  </>
-                )}
-
-                {selectedTable.status === "Available" && (
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      handleUpdateStatus(selectedTable.id, "Reserved")
-                    }
-                    className="col-span-2"
-                  >
-                    <Clock className="mr-2 h-4 w-4" />
-                    Mark as Reserved
-                  </Button>
-                )}
-
-                {selectedTable.status === "Reserved" && (
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      handleUpdateStatus(selectedTable.id, "Available")
-                    }
-                    className="col-span-2"
-                  >
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    Cancel Reservation
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Table Sheet for Actions */}
+      <TableSheet
+        table={selectedTable}
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        onSeatCustomers={handleSeatCustomers}
+        onTakeOrder={handleTakeOrder}
+        onUpdateStatus={handleUpdateStatus}
+        orders={orders}
+      />
     </div>
   );
 };

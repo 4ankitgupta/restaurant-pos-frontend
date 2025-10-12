@@ -45,10 +45,10 @@ const Cashier = () => {
 
   // API Hooks
   const { loading: loadingActive, execute: fetchActive } =
-    useApi<ApiResponse<APIOrder[]>>();
+    useApi<{ data: APIOrder[] }>();
   const { loading: loadingCompleted, execute: fetchCompleted } =
-    useApi<ApiResponse<APIOrder[]>>();
-  const { execute: fetchMenu } = useApi<APIMenuItem[]>();
+    useApi<{ data: APIOrder[] }>();
+  const { execute: fetchMenu } = useApi<{ data: APIMenuItem[] }>();
   const { execute: fetchCategories } = useApi<{ data: MenuCategory[] }>();
   const { loading: paymentLoading, execute: executePayment } = useApi();
   const { loading: addItemsLoading, execute: executeAddItems } = useApi<{
@@ -69,7 +69,7 @@ const Cashier = () => {
 
       if (activeRes) setActiveOrders(activeRes.data);
       if (completedRes) setCompletedOrders(completedRes.data);
-      if (menuRes) setMenuItems(menuRes); // <-- Access menuRes directly
+      if (menuRes) setMenuItems(menuRes.data);
       if (categoriesRes) setMenuCategories(categoriesRes.data);
     } catch (error) {
       console.error("Failed to fetch cashier data:", error);
