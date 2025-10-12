@@ -18,6 +18,7 @@ import {
   Trash2,
   Clock,
   ChefHat,
+  PanelRightOpen,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
@@ -45,6 +46,10 @@ const WaiterOrderManagement: React.FC = () => {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [isSending, setIsSending] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [isOrderPanelOpen, setIsOrderPanelOpen] = useState(false);
 
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
