@@ -61,17 +61,17 @@ export const Navbar: React.FC = () => {
         ];
       case "cashier":
         return [
-          ...commonItems,
+          // ...commonItems,
           { icon: ShoppingCart, label: "POS", path: "/pos" },
         ];
       case "waiter":
         return [
-          ...commonItems,
+          // ...commonItems,
           { icon: Users, label: "Tables", path: "/tables" },
         ];
       case "chef":
         return [
-          ...commonItems,
+          // ...commonItems,
           { icon: ChefHat, label: "Kitchen", path: "/kitchen" },
         ];
       default:

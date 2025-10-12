@@ -44,7 +44,14 @@ const App = () => (
                   </ProtectedRoute>
                 }
               >
-                <Route path="dashboard" element={<Dashboard />} />
+                <Route
+                  path="dashboard"
+                  element={
+                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* ADD NEW CASHIER ROUTE */}
                 <Route
                   path="cashier"

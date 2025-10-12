@@ -54,6 +54,7 @@ export interface APITable {
   capacity: number;
   status: "Available" | "Occupied" | "Reserved" | "NeedCleaning";
   restaurantId: string;
+  orderStatus?: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | null;
 }
 
 // APIOrder now has a simplified status but individual items have a detailed status

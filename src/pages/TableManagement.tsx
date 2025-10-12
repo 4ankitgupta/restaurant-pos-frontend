@@ -65,6 +65,17 @@ const TableManagement: React.FC = () => {
     }
   };
 
+  const getOrderStatusColor = (status: APITable["orderStatus"]) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return "bg-primary text-primary-foreground"; // Blue for active orders
+      case "PENDING":
+        return "bg-secondary text-secondary-foreground"; // Gray for pending
+      default:
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
   const getStatusIcon = (status: APITable["status"]) => {
     switch (status) {
       case "Available":
@@ -119,7 +130,7 @@ const TableManagement: React.FC = () => {
         const response = await getActiveOrder(() =>
           apiService.getActiveOrderForTable(tableId)
         );
-        
+
         if (response && (response as any)?.data) {
           navigate("/pos", {
             state: { orderId: (response as any).data.id, tableId: tableId },
@@ -128,13 +139,16 @@ const TableManagement: React.FC = () => {
           const createOrderResponse = await executeTableAction(() =>
             apiService.createOrder({
               tableId: tableId,
-              items: []
+              items: [],
             })
           );
-          
+
           if (createOrderResponse && (createOrderResponse as any)?.data) {
             navigate("/pos", {
-              state: { orderId: (createOrderResponse as any).data.id, tableId: tableId },
+              state: {
+                orderId: (createOrderResponse as any).data.id,
+                tableId: tableId,
+              },
             });
           }
         }
@@ -143,7 +157,7 @@ const TableManagement: React.FC = () => {
         const response = await getActiveOrder(() =>
           apiService.getActiveOrderForTable(tableId)
         );
-        
+
         if (response && (response as any)?.data) {
           navigate("/waiter-order", {
             state: { orderId: (response as any).data.id, tableId: tableId },
@@ -157,7 +171,10 @@ const TableManagement: React.FC = () => {
     } catch (error) {
       console.error("Failed to handle order for table:", error);
       // Fallback navigation based on role
-      const fallbackRoute = (user?.role === "cashier" || user?.role === "admin") ? "/pos" : "/waiter-order";
+      const fallbackRoute =
+        user?.role === "cashier" || user?.role === "admin"
+          ? "/pos"
+          : "/waiter-order";
       navigate(fallbackRoute, {
         state: { tableId: tableId },
       });
@@ -247,23 +264,41 @@ const TableManagement: React.FC = () => {
                     ? "Needs cleaning"
                     : "Currently occupied"}
                 </div>
-                
+
+                {/* --- ADD THIS BLOCK to show order status --- */}
+                {table.status === "Occupied" && table.orderStatus && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <BookOpen className="h-4 w-4" />
+                    <Badge className={getOrderStatusColor(table.orderStatus)}>
+                      {table.orderStatus}
+                    </Badge>
+                  </div>
+                )}
+
                 {/* Show payment status for occupied tables */}
-                {table.status === "Occupied" && (() => {
-                  const tableOrder = orders.find(order => order.tableId === table.id);
-                  return tableOrder ? (
-                    <div className="flex items-center gap-2 mt-2">
-                      <DollarSign className="h-4 w-4" />
-                      <Badge className={
-                        tableOrder.paymentStatus === 'UNPAID' ? 'bg-destructive text-destructive-foreground' :
-                        tableOrder.paymentStatus === 'PARTIAL' ? 'bg-warning text-warning-foreground' :
-                        'bg-success text-success-foreground'
-                      }>
-                        {tableOrder.paymentStatus}
-                      </Badge>
-                    </div>
-                  ) : null;
-                })()}
+                {table.status === "Occupied" &&
+                  (() => {
+                    const tableOrder = orders.find(
+                      (order) => order.tableId === table.id
+                    );
+                    return tableOrder ? (
+                      <div className="flex items-center gap-2 mt-2">
+                        {/* <DollarSign className="h-4 w-4" /> */}
+                        <div className="text-xl font-semibold">₹</div>
+                        <Badge
+                          className={
+                            tableOrder.paymentStatus === "UNPAID"
+                              ? "bg-destructive text-destructive-foreground"
+                              : tableOrder.paymentStatus === "PARTIAL"
+                              ? "bg-warning text-warning-foreground"
+                              : "bg-success text-success-foreground"
+                          }
+                        >
+                          {tableOrder.paymentStatus}
+                        </Badge>
+                      </div>
+                    ) : null;
+                  })()}
               </CardContent>
             </Card>
           ))}
@@ -315,7 +350,9 @@ const TableManagement: React.FC = () => {
               {selectedTable.status === "NeedCleaning" && (
                 <div className="space-y-3">
                   <Button
-                    onClick={() => handleUpdateStatus(selectedTable.id, "Available")}
+                    onClick={() =>
+                      handleUpdateStatus(selectedTable.id, "Available")
+                    }
                     className="w-full bg-success text-success-foreground"
                   >
                     <CheckCircle className="mr-2 h-4 w-4" />
@@ -332,6 +369,8 @@ const TableManagement: React.FC = () => {
                       onClick={() =>
                         handleUpdateStatus(selectedTable.id, "NeedCleaning")
                       }
+                      // --- ADD THIS LINE ---
+                      disabled={selectedTable.orderStatus === "IN_PROGRESS"}
                     >
                       <AlertCircle className="mr-2 h-4 w-4" />
                       Mark for Cleaning
@@ -341,6 +380,8 @@ const TableManagement: React.FC = () => {
                       onClick={() =>
                         handleUpdateStatus(selectedTable.id, "Available")
                       }
+                      // --- ADD THIS LINE ---
+                      disabled={selectedTable.orderStatus === "IN_PROGRESS"}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" />
                       Clear Table

@@ -115,7 +115,9 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       // console.log(`Connecting to WebSocket at: ${websocketUrl}`);
       // const newWs = new WebSocket(websocketUrl);
 
-      const websocket = new WebSocket(`ws://127.0.0.1:8000?token=${token}`);
+      const websocket = new WebSocket(
+        `ws://192.168.29.213:8000?token=${token}`
+      );
       console.log(`Connecting to WebSocket at: ${websocket}`);
       const newWs = websocket;
 

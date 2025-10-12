@@ -385,7 +385,7 @@ const WaiterOrderManagement: React.FC = () => {
                     {item.name}
                   </h3>
                   <p className="text-lg font-bold text-primary">
-                    ${Number(item.price).toFixed(2)}
+                    ₹{Number(item.price).toFixed(2)}
                   </p>
                   {!item.isAvailable && (
                     <Badge variant="secondary" className="mt-2 text-xs">
@@ -461,7 +461,7 @@ const WaiterOrderManagement: React.FC = () => {
                         {item.menuItem.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        ${item.menuItem.price.toFixed(2)} each
+                        ₹{item.menuItem.price.toFixed(2)} each
                       </p>
                       <Badge
                         variant={getBadgeVariant(item.status)}
@@ -540,7 +540,7 @@ const WaiterOrderManagement: React.FC = () => {
         <div className="p-4 border-t space-y-3 bg-muted/20">
           <div className="flex items-center justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">${totalAmount.toFixed(2)}</span>
+            <span className="text-primary">₹{totalAmount.toFixed(2)}</span>
           </div>
 
           <Separator />
