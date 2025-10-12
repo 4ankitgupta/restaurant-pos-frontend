@@ -303,9 +303,9 @@ const WaiterOrderManagement: React.FC = () => {
   }, [cart]);
 
   return (
-    <div className="flex flex-col h-screen bg-background md:flex-row">
+    <div className="flex h-screen bg-background">
       {/* Menu Section */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Header */}
         <div className="bg-card border-b p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -314,7 +314,6 @@ const WaiterOrderManagement: React.FC = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/tables")}
-                className="md:hidden"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -371,7 +370,7 @@ const WaiterOrderManagement: React.FC = () => {
 
         {/* Menu Items Grid */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {currentItems.map((item) => (
               <Card
                 key={item.id}
@@ -400,7 +399,7 @@ const WaiterOrderManagement: React.FC = () => {
       </div>
 
       {/* Order Summary Section */}
-      <div className="w-full md:w-96 bg-card border-l flex flex-col max-h-[50vh] md:max-h-screen">
+      <div className="w-80 sm:w-96 bg-card border-l flex flex-col shrink-0">
         {/* Order Header */}
         <div className="p-4 border-b space-y-3">
           <div className="flex items-center justify-between">
