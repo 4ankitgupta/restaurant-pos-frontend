@@ -1,168 +1,260 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  DollarSign, 
-  ShoppingCart, 
-  Users, 
-  TrendingUp,
-  AlertTriangle,
-  Package,
-  BarChart3,
-  ChefHat
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiService, ApiError } from "@/services/apiService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IndianRupee, Users, AlertCircle } from "lucide-react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
-export const AdminDashboard: React.FC = () => {
-  // Mock data - replace with actual API calls
-  const salesData = {
-    totalSales: 12750,
-    ordersCount: 89,
-    averageOrderValue: 143.26,
-    topItems: [
-      { name: 'Margherita Pizza', sales: 34 },
-      { name: 'Caesar Salad', sales: 28 },
-      { name: 'Beef Burger', sales: 25 },
-    ]
+interface AdminDashboardData {
+  totalRevenue: number;
+  totalCustomers: number;
+  averageOrderValue: number;
+  salesTrend: Record<string, number>;
+  topSellingItems: { name: string; quantity: number }[];
+  paymentModes: Record<string, number>;
+}
+
+const AdminDashboard = () => {
+  const [data, setData] = useState<AdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiService.getAdminDashboard();
+        setData(response.data);
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(apiError.message || "Failed to fetch dashboard data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
   };
 
-  const alerts = [
-    { id: 1, message: 'Low stock: Tomatoes (5 kg left)', type: 'warning' },
-    { id: 2, message: 'New order #1247 waiting', type: 'info' },
-    { id: 3, message: 'Table 7 needs cleaning', type: 'warning' },
-  ];
+  const salesChartData = data
+    ? Object.entries(data.salesTrend)
+        .map(([date, total]) => ({
+          date: new Date(date).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+          }),
+          Total: total,
+        }))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    : [];
+
+  const paymentChartData = data
+    ? Object.entries(data.paymentModes).map(([name, value]) => ({
+        name,
+        value,
+      }))
+    : [];
+
+  if (isLoading) {
+    return <AdminSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Alert variant="destructive" className="w-1/2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
-        <div className="text-sm text-muted-foreground">
-          Today • {new Date().toLocaleDateString()}
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-card border-none shadow-card">
+      <h1 className="text-3xl font-bold">Admin Dashboard (Last 30 Days)</h1>
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${salesData.totalSales.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">+12% from yesterday</p>
+            <div className="text-2xl font-bold">
+              {formatCurrency(data.totalRevenue)}
+            </div>
           </CardContent>
         </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-success" />
+            <CardTitle className="text-sm font-medium">
+              Total Orders/Customers
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-success">{salesData.ordersCount}</div>
-            <p className="text-xs text-muted-foreground">+5% from yesterday</p>
+            <div className="text-2xl font-bold">{data.totalCustomers}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Order</CardTitle>
-            <TrendingUp className="h-4 w-4 text-secondary" />
+            <CardTitle className="text-sm font-medium">
+              Avg. Order Value
+            </CardTitle>
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-secondary">${salesData.averageOrderValue}</div>
-            <p className="text-xs text-muted-foreground">+8% from yesterday</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Tables</CardTitle>
-            <Users className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">12/16</div>
-            <p className="text-xs text-muted-foreground">75% occupied</p>
+            <div className="text-2xl font-bold">
+              {formatCurrency(data.averageOrderValue)}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Alerts */}
+      {/* Charts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Sales Trend (Last 7 Days)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={salesChartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#1f2937",
+                  border: "none",
+                  borderRadius: "0.5rem",
+                }}
+              />
+              <Legend />
+              <Bar dataKey="Total" fill="#ea580c" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Top Selling Items */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              Recent Alerts
-            </CardTitle>
+            <CardTitle>Top 5 Selling Items</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {alerts.map((alert) => (
-              <div key={alert.id} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50">
-                <div className={`w-2 h-2 rounded-full ${
-                  alert.type === 'warning' ? 'bg-warning' : 'bg-primary'
-                }`} />
-                <span className="text-sm">{alert.message}</span>
-              </div>
-            ))}
+          <CardContent>
+            <ul className="space-y-2">
+              {data.topSellingItems.map((item) => (
+                <li key={item.name} className="flex justify-between">
+                  <span>{item.name}</span>
+                  <span className="font-semibold">{item.quantity} sold</span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
 
-        {/* Top Items */}
+        {/* Sales by Payment Mode */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Top Selling Items
-            </CardTitle>
+            <CardTitle>Sales by Payment Mode</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {salesData.topItems.map((item, index) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                    {index + 1}
-                  </div>
-                  <span className="text-sm font-medium">{item.name}</span>
-                </div>
-                <span className="text-sm text-muted-foreground">{item.sales} sold</span>
-              </div>
-            ))}
+          <CardContent>
+            <ul className="space-y-2">
+              {paymentChartData.map((item) => (
+                <li key={item.name} className="flex justify-between">
+                  <span className="capitalize">{item.name.toLowerCase()}</span>
+                  <span className="font-semibold">
+                    {formatCurrency(item.value)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/pos">
-            <ShoppingCart className="h-6 w-6 mb-2" />
-            <span>Open POS</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/kitchen">
-            <ChefHat className="h-6 w-6 mb-2" />
-            <span>Kitchen Display</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/inventory">
-            <Package className="h-6 w-6 mb-2" />
-            <span>Inventory</span>
-          </Link>
-        </Button>
-        
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/reports">
-            <BarChart3 className="h-6 w-6 mb-2" />
-            <span>Reports</span>
-          </Link>
-        </Button>
       </div>
     </div>
   );
 };
+
+const AdminSkeleton = () => (
+  <div className="p-6 space-y-6">
+    <Skeleton className="h-8 w-1/3" />
+    <div className="grid gap-4 md:grid-cols-3">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+    </div>
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-1/4" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-[300px] w-full" />
+      </CardContent>
+    </Card>
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+export default AdminDashboard;

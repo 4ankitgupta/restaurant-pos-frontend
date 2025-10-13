@@ -503,6 +503,14 @@ class ApiService {
       body: JSON.stringify(logData),
     });
   }
+
+  getManagerDashboard = () => {
+    return this.request<ApiResponse<any>>("/dashboard/manager");
+  };
+
+  getAdminDashboard = () => {
+    return this.request<ApiResponse<any>>("/dashboard/admin");
+  };
 }
 
 export const apiService = new ApiService();

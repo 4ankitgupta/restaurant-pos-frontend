@@ -1,186 +1,262 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { apiService, ApiError } from "@/services/apiService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  DollarSign,
-  ShoppingCart,
-  Users,
-  TrendingUp,
-  AlertTriangle,
-  Package,
-  BarChart3,
-  ChefHat,
-} from "lucide-react";
-import { Link } from "react-router-dom";
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { IndianRupee, UtensilsCrossed, AlertCircle, Users } from "lucide-react";
 
-export const ManagerDashboard: React.FC = () => {
-  // Mock data - replace with actual API calls
-  const salesData = {
-    totalSales: 12750,
-    ordersCount: 89,
-    averageOrderValue: 143.26,
-    topItems: [
-      { name: "Margherita Pizza", sales: 34 },
-      { name: "Caesar Salad", sales: 28 },
-      { name: "Beef Burger", sales: 25 },
-    ],
+interface ManagerDashboardData {
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  tableStatus: {
+    occupied: number;
+    available: number;
+    needsCleaning: number;
+    total: number;
+  };
+  activeOrders: number;
+  lowStockItems: {
+    id: string;
+    name: string;
+    currentStock: number;
+    unit: string;
+  }[];
+}
+
+const ManagerDashboard = () => {
+  const [data, setData] = useState<ManagerDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiService.getManagerDashboard();
+        setData(response.data);
+      } catch (err) {
+        const apiError = err as ApiError;
+        setError(apiError.message || "Failed to fetch dashboard data.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+    }).format(amount);
   };
 
-  const alerts = [
-    { id: 1, message: "Low stock: Tomatoes (5 kg left)", type: "warning" },
-    { id: 2, message: "New order #1247 waiting", type: "info" },
-    { id: 3, message: "Table 7 needs cleaning", type: "warning" },
-  ];
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Alert variant="destructive" className="w-1/2">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return null;
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-foreground">
-          Manager Dashboard
-        </h1>
-        <div className="text-sm text-muted-foreground">
-          Today • {new Date().toLocaleDateString()}
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold">
+        Manager Dashboard (Today's Overview)
+      </h1>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-card border-none shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              ${salesData.totalSales.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">+12% from yesterday</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Orders Today</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-success">
-              {salesData.ordersCount}
-            </div>
-            <p className="text-xs text-muted-foreground">+5% from yesterday</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Order</CardTitle>
-            <TrendingUp className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-secondary">
-              ${salesData.averageOrderValue}
-            </div>
-            <p className="text-xs text-muted-foreground">+8% from yesterday</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-card border-none shadow-card">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Tables</CardTitle>
-            <Users className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">12/16</div>
-            <p className="text-xs text-muted-foreground">75% occupied</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Alerts */}
+      {/* KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              Recent Alerts
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50"
-              >
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    alert.type === "warning" ? "bg-warning" : "bg-primary"
-                  }`}
-                />
-                <span className="text-sm">{alert.message}</span>
-              </div>
-            ))}
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(data.totalRevenue)}
+            </div>
           </CardContent>
         </Card>
-
-        {/* Top Items */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
-              Top Selling Items
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent className="space-y-3">
-            {salesData.topItems.map((item, index) => (
-              <div
-                key={item.name}
-                className="flex items-center justify-between"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                    {index + 1}
-                  </div>
-                  <span className="text-sm font-medium">{item.name}</span>
-                </div>
-                <span className="text-sm text-muted-foreground">
-                  {item.sales} sold
-                </span>
-              </div>
-            ))}
+          <CardContent>
+            <div className="text-2xl font-bold">{data.totalOrders}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Avg. Order Value
+            </CardTitle>
+            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(data.averageOrderValue)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Active Orders (Kitchen)
+            </CardTitle>
+            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{data.activeOrders}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/pos">
-            <ShoppingCart className="h-6 w-6 mb-2" />
-            <span>Open POS</span>
-          </Link>
-        </Button>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Table Status */}
+        <Card className="lg:col-span-1">
+          <CardHeader>
+            <CardTitle>Live Table Status</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-lg">Occupied</span>
+              <span className="text-lg font-bold text-red-500">
+                {data.tableStatus.occupied} / {data.tableStatus.total}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-lg">Available</span>
+              <span className="text-lg font-bold text-green-500">
+                {data.tableStatus.available} / {data.tableStatus.total}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-lg">Needs Cleaning</span>
+              <span className="text-lg font-bold text-yellow-500">
+                {data.tableStatus.needsCleaning} / {data.tableStatus.total}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
 
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/kitchen">
-            <ChefHat className="h-6 w-6 mb-2" />
-            <span>Kitchen Display</span>
-          </Link>
-        </Button>
-
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/inventory">
-            <Package className="h-6 w-6 mb-2" />
-            <span>Inventory</span>
-          </Link>
-        </Button>
-
-        <Button asChild variant="outline" className="h-20 flex-col">
-          <Link to="/reports">
-            <BarChart3 className="h-6 w-6 mb-2" />
-            <span>Reports</span>
-          </Link>
-        </Button>
+        {/* Low Stock Items */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Low Stock Alerts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {data.lowStockItems.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item Name</TableHead>
+                    <TableHead className="text-right">Current Stock</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.lowStockItems.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell className="text-right font-medium text-red-500">
+                        {item.currentStock} {item.unit}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <p className="text-center text-muted-foreground mt-4">
+                No items are currently low on stock. Great job!
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 };
+
+const DashboardSkeleton = () => (
+  <div className="p-6 space-y-6">
+    <Skeleton className="h-8 w-1/3" />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-5 w-2/3" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-8 w-1/2" />
+        </CardContent>
+      </Card>
+    </div>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <Card className="lg:col-span-1">
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
+          <Skeleton className="h-6 w-full" />
+        </CardContent>
+      </Card>
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <Skeleton className="h-6 w-1/2" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24 w-full" />
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+);
+
+export default ManagerDashboard;

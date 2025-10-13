@@ -1,17 +1,19 @@
 // src/pages/Dashboard.tsx
-
-import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
-import { ManagerDashboard } from "@/components/dashboard/ManagerDashboard";
-// import { CashierDashboard } from "@/components/dashboard/CashierDashboard";
-// import { WaiterDashboard } from "@/components/dashboard/WaiterDashboard";
-// import { ChefDashboard } from "@/components/dashboard/ChefDashboard";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
+import ManagerDashboard from "@/components/dashboard/ManagerDashboard";
+import { Navigate } from "react-router-dom";
 
-const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+const Dashboard = () => {
+  const { user, isLoading } = useAuth();
 
-  if (!user) return null;
+  if (isLoading) {
+    return <div>Loading...</div>; // Or a spinner component
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   switch (user.role) {
     case "admin":
@@ -19,12 +21,7 @@ const Dashboard: React.FC = () => {
     case "manager":
       return <ManagerDashboard />;
     default:
-      return (
-        <div className="p-6">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p>Welcome to the Restaurant POS System</p>
-        </div>
-      );
+      return <Navigate to="/login" replace />;
   }
 };
 
