@@ -1,6 +1,6 @@
 // src/pages/KitchenDisplay.tsx
 
-import React, { useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,9 +11,40 @@ import { apiService } from "@/services/apiService";
 import { OrderItemStatus } from "@/types/restaurant";
 import { format, parseISO } from "date-fns";
 import { ChefHat, Clock, CheckCircle } from "lucide-react";
+import { useRefresh } from "@/contexts/RefreshContext";
+import { Order, APIOrder } from "@/types/restaurant";
 
 const KitchenDisplay: React.FC = () => {
-  const { orders, isConnected } = useWebSocket();
+  const { orders: initialOrders, isConnected } = useWebSocket();
+  const [orders, setOrders] = useState<APIOrder[]>(initialOrders);
+  const { refreshKey } = useRefresh();
+
+  useEffect(() => {
+    setOrders(initialOrders);
+  }, [initialOrders]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await apiService.getAllOrders();
+        setOrders(response.data);
+        toast({
+          title: "Success",
+          description: "Orders have been refreshed.",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not fetch latest orders.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (refreshKey > 0) {
+      fetchOrders();
+    }
+  }, [refreshKey]);
 
   const handleUpdateItemStatus = async (
     itemId: string,
@@ -47,7 +78,7 @@ const KitchenDisplay: React.FC = () => {
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
-  }, [orders]);
+  }, [orders, refreshKey]);
 
   const getStatusColor = (status: OrderItemStatus) => {
     switch (status) {

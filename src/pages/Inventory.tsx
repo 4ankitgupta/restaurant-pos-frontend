@@ -23,6 +23,7 @@ import { InventoryItem } from "@/types/restaurant";
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm";
 import { StockAdjustmentForm } from "@/components/inventory/StockAdjustmentForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 const Inventory: React.FC = () => {
   const { loading, execute: executeGet } =
@@ -35,6 +36,7 @@ const Inventory: React.FC = () => {
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [stockLevelFilter, setStockLevelFilter] = useState("all");
+  const { refreshKey } = useRefresh();
 
   const fetchInventory = async () => {
     try {
@@ -49,7 +51,7 @@ const Inventory: React.FC = () => {
 
   useEffect(() => {
     fetchInventory();
-  }, []);
+  }, [refreshKey]);
 
   const handleDeleteItem = async (itemId: string) => {
     try {

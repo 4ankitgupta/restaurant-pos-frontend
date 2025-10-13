@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRefresh } from "@/contexts/RefreshContext";
 import {
   Home,
   ShoppingCart,
@@ -12,15 +13,21 @@ import {
   LogOut,
   Utensils,
   Truck,
+  RefreshCw,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { triggerRefresh } = useRefresh();
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleRefresh = () => {
+    triggerRefresh();
   };
 
   const getNavItems = () => {
@@ -134,6 +141,9 @@ export const Navbar: React.FC = () => {
                   {user.role}
                 </div>
               </div>
+              <Button variant="ghost" size="icon" onClick={handleRefresh}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 <span className="hidden sm:inline">Logout</span>

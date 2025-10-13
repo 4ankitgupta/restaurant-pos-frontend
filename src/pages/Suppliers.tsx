@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 const Suppliers: React.FC = () => {
   const { loading, execute: fetchSuppliersApi } =
@@ -27,6 +28,7 @@ const Suppliers: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const { refreshKey } = useRefresh();
 
   const fetchSuppliers = () => {
     fetchSuppliersApi(() => apiService.getSuppliers())
@@ -47,7 +49,7 @@ const Suppliers: React.FC = () => {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [refreshKey]);
 
   const handleAddClick = () => {
     setEditingSupplier(null);

@@ -20,7 +20,8 @@ import Suppliers from "./pages/Suppliers";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
-import Cashier from "./pages/Cashier"; // <-- ADD THIS
+import Cashier from "./pages/Cashier";
+import { RefreshProvider } from "@/contexts/RefreshContext";
 
 const queryClient = new QueryClient();
 
@@ -28,133 +29,137 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <WebSocketProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route path="/login" element={<Login />} />
+        <RefreshProvider>
+          <WebSocketProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/login" element={<Login />} />
 
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <AppLayout />
-                  </ProtectedRoute>
-                }
-              >
                 <Route
-                  path="dashboard"
+                  path="/"
                   element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <Dashboard />
+                    <ProtectedRoute>
+                      <AppLayout />
                     </ProtectedRoute>
                   }
-                />
-                {/* ADD NEW CASHIER ROUTE */}
-                <Route
-                  path="cashier"
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["admin", "cashier", "manager"]}
-                    >
-                      <Cashier />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="pos"
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["admin", "cashier", "manager"]}
-                    >
-                      <Cashier />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="waiter-order"
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["admin", "waiter", "manager"]}
-                    >
-                      <WaiterOrderManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="supplier"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <Suppliers />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="purchase-order"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <PurchaseOrders />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="tables"
-                  element={
-                    <ProtectedRoute
-                      allowedRoles={["admin", "waiter", "manager"]}
-                    >
-                      <TableManagement />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="kitchen"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "chef", "manager"]}>
-                      <KitchenDisplay />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="inventory"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <Inventory />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="menu"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <Menu />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="users"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                      <Users />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="reports"
-                  element={
-                    <ProtectedRoute allowedRoles={["admin"]}>
-                      <Reports />
-                    </ProtectedRoute>
-                  }
-                />
-              </Route>
+                >
+                  <Route
+                    path="dashboard"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {/* ADD NEW CASHIER ROUTE */}
+                  <Route
+                    path="cashier"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["admin", "cashier", "manager"]}
+                      >
+                        <Cashier />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="pos"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["admin", "cashier", "manager"]}
+                      >
+                        <Cashier />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="waiter-order"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["admin", "waiter", "manager"]}
+                      >
+                        <WaiterOrderManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="supplier"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Suppliers />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="purchase-order"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <PurchaseOrders />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="tables"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["admin", "waiter", "manager"]}
+                      >
+                        <TableManagement />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="kitchen"
+                    element={
+                      <ProtectedRoute
+                        allowedRoles={["admin", "chef", "manager"]}
+                      >
+                        <KitchenDisplay />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="inventory"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Inventory />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="menu"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Menu />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="users"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Users />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="reports"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin"]}>
+                        <Reports />
+                      </ProtectedRoute>
+                    }
+                  />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </WebSocketProvider>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </WebSocketProvider>
+        </RefreshProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { APITable, APIOrder } from "@/types/restaurant";
 import { TableSheet } from "@/components/table/TableSheet";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ const TableManagement: React.FC = () => {
   } = useApi<{ data: APITable[] }>();
   const { execute: getActiveOrder } = useApi<{ data: APIOrder }>();
   const { execute: executeTableAction } = useApi();
+  const { refreshKey } = useRefresh();
 
   const loadTables = async () => {
     try {
@@ -43,7 +45,7 @@ const TableManagement: React.FC = () => {
 
   useEffect(() => {
     loadTables();
-  }, []);
+  }, [refreshKey]);
 
   const [selectedTable, setSelectedTable] = useState<APITable | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);

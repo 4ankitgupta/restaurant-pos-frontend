@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 const PurchaseOrders: React.FC = () => {
   const { loading: ordersLoading, execute: fetchOrdersApi } =
@@ -36,6 +37,7 @@ const PurchaseOrders: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const { refreshKey } = useRefresh();
 
   const fetchAllData = () => {
     fetchOrdersApi(() => apiService.getPurchaseOrders())
@@ -71,7 +73,7 @@ const PurchaseOrders: React.FC = () => {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [refreshKey]);
 
   const loading = ordersLoading || suppliersLoading || itemsLoading;
 

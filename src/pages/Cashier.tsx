@@ -23,6 +23,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+import { useRefresh } from "@/contexts/RefreshContext";
+
 interface MenuCategory {
   id: string;
   name: string;
@@ -44,10 +46,12 @@ const Cashier = () => {
   const [isRefundConfirmOpen, setRefundConfirmOpen] = useState(false);
 
   // API Hooks
-  const { loading: loadingActive, execute: fetchActive } =
-    useApi<{ data: APIOrder[] }>();
-  const { loading: loadingCompleted, execute: fetchCompleted } =
-    useApi<{ data: APIOrder[] }>();
+  const { loading: loadingActive, execute: fetchActive } = useApi<{
+    data: APIOrder[];
+  }>();
+  const { loading: loadingCompleted, execute: fetchCompleted } = useApi<{
+    data: APIOrder[];
+  }>();
   const { execute: fetchMenu } = useApi<{ data: APIMenuItem[] }>();
   const { execute: fetchCategories } = useApi<{ data: MenuCategory[] }>();
   const { loading: paymentLoading, execute: executePayment } = useApi();
@@ -56,6 +60,8 @@ const Cashier = () => {
   }>();
   const { loading: takeawayLoading, execute: executeTakeaway } = useApi();
   const { loading: refundLoading, execute: executeRefund } = useApi();
+
+  const { refreshKey } = useRefresh();
 
   const fetchData = async () => {
     try {
@@ -78,7 +84,7 @@ const Cashier = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   const handleSelectOrder = (order: APIOrder) => {
     setSelectedOrder(order);

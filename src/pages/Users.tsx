@@ -26,6 +26,7 @@ import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import { UserForm } from "@/components/user/UserForm";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 interface User {
   id: string;
@@ -44,10 +45,11 @@ const Users: React.FC = () => {
   const { loading: usersLoading, execute: executeGetUsers } = useApi<User[]>();
 
   const { loading: deleteLoading, execute: executeDelete } = useApi();
+  const { refreshKey } = useRefresh();
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [refreshKey]);
 
   const fetchUsers = async () => {
     try {

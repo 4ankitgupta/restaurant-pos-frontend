@@ -1,26 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  DollarSign, 
-  ShoppingCart, 
-  Calendar, 
+} from "@/components/ui/select";
+import {
+  BarChart3,
+  TrendingUp,
+  DollarSign,
+  ShoppingCart,
+  Calendar,
   Download,
-  Filter
-} from 'lucide-react';
-import { apiService } from '@/services/apiService';
-import { useApi } from '@/hooks/useApi';
+  Filter,
+} from "lucide-react";
+import { apiService } from "@/services/apiService";
+import { useApi } from "@/hooks/useApi";
+import { useRefresh } from "@/contexts/RefreshContext";
 
 interface SalesReport {
   totalRevenue: number;
@@ -41,33 +42,38 @@ interface SalesReport {
 const Reports: React.FC = () => {
   const [salesData, setSalesData] = useState<SalesReport | null>(null);
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
-    endDate: new Date().toISOString().split('T')[0] // Today
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0], // 30 days ago
+    endDate: new Date().toISOString().split("T")[0], // Today
   });
-  const [reportType, setReportType] = useState<'sales' | 'inventory' | 'staff'>('sales');
+  const [reportType, setReportType] = useState<"sales" | "inventory" | "staff">(
+    "sales"
+  );
 
   const { loading, execute } = useApi<SalesReport>();
+  const { refreshKey } = useRefresh();
 
   useEffect(() => {
     fetchSalesReport();
-  }, [dateRange]);
+  }, [dateRange, refreshKey]);
 
   const fetchSalesReport = async () => {
     try {
-      const response = await execute(() => 
+      const response = await execute(() =>
         apiService.getSalesReport(dateRange.startDate, dateRange.endDate)
       );
       if (response) {
         setSalesData(response);
       }
     } catch (error) {
-      console.error('Failed to fetch sales report:', error);
+      console.error("Failed to fetch sales report:", error);
     }
   };
 
   const exportReport = () => {
     // TODO: Implement export functionality
-    console.log('Exporting report...');
+    console.log("Exporting report...");
   };
 
   return (
@@ -92,7 +98,10 @@ const Reports: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label htmlFor="report-type">Report Type</Label>
-              <Select value={reportType} onValueChange={(value: any) => setReportType(value)}>
+              <Select
+                value={reportType}
+                onValueChange={(value: any) => setReportType(value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -109,7 +118,12 @@ const Reports: React.FC = () => {
                 id="start-date"
                 type="date"
                 value={dateRange.startDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
+                onChange={(e) =>
+                  setDateRange((prev) => ({
+                    ...prev,
+                    startDate: e.target.value,
+                  }))
+                }
               />
             </div>
             <div>
@@ -118,7 +132,9 @@ const Reports: React.FC = () => {
                 id="end-date"
                 type="date"
                 value={dateRange.endDate}
-                onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, endDate: e.target.value }))
+                }
               />
             </div>
             <div className="flex items-end">
@@ -131,60 +147,77 @@ const Reports: React.FC = () => {
       </Card>
 
       {/* Sales Overview */}
-      {reportType === 'sales' && salesData && (
+      {reportType === "sales" && salesData && (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Revenue
+                </CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${salesData.totalRevenue.toFixed(2)}</div>
+                <div className="text-2xl font-bold">
+                  ${salesData.totalRevenue.toFixed(2)}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   For selected period
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Orders
+                </CardTitle>
                 <ShoppingCart className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{salesData.totalOrders}</div>
+                <div className="text-2xl font-bold">
+                  {salesData.totalOrders}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Orders processed
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Average Order Value
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">${salesData.averageOrderValue.toFixed(2)}</div>
+                <div className="text-2xl font-bold">
+                  ${salesData.averageOrderValue.toFixed(2)}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Per order average
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Report Period</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Report Period
+                </CardTitle>
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-lg font-bold">
-                  {Math.ceil((new Date(dateRange.endDate).getTime() - new Date(dateRange.startDate).getTime()) / (1000 * 60 * 60 * 24))} days
+                  {Math.ceil(
+                    (new Date(dateRange.endDate).getTime() -
+                      new Date(dateRange.startDate).getTime()) /
+                      (1000 * 60 * 60 * 24)
+                  )}{" "}
+                  days
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Data range
-                </p>
+                <p className="text-xs text-muted-foreground">Data range</p>
               </CardContent>
             </Card>
           </div>
@@ -197,7 +230,10 @@ const Reports: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 {salesData.topSellingItems.map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
                     <div>
                       <h4 className="font-medium">{item.name}</h4>
                       <p className="text-sm text-muted-foreground">
@@ -205,8 +241,12 @@ const Reports: React.FC = () => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">${item.revenue.toFixed(2)}</div>
-                      <div className="text-sm text-muted-foreground">Revenue</div>
+                      <div className="font-bold">
+                        ${item.revenue.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Revenue
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -222,11 +262,18 @@ const Reports: React.FC = () => {
             <CardContent>
               <div className="space-y-2">
                 {salesData.dailySales.map((day, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border-b">
-                    <div className="text-sm">{new Date(day.date).toLocaleDateString()}</div>
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 border-b"
+                  >
+                    <div className="text-sm">
+                      {new Date(day.date).toLocaleDateString()}
+                    </div>
                     <div className="flex space-x-4">
                       <div className="text-sm">{day.orders} orders</div>
-                      <div className="font-medium">${day.revenue.toFixed(2)}</div>
+                      <div className="font-medium">
+                        ${day.revenue.toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -237,13 +284,14 @@ const Reports: React.FC = () => {
       )}
 
       {/* Placeholder for other report types */}
-      {reportType !== 'sales' && (
+      {reportType !== "sales" && (
         <Card>
           <CardContent className="text-center py-12">
             <BarChart3 className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">Report Coming Soon</h3>
             <p className="text-muted-foreground">
-              {reportType === 'inventory' ? 'Inventory' : 'Staff performance'} reports will be available in the next update.
+              {reportType === "inventory" ? "Inventory" : "Staff performance"}{" "}
+              reports will be available in the next update.
             </p>
           </CardContent>
         </Card>

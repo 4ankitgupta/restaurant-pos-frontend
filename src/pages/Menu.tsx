@@ -35,6 +35,8 @@ import { APIMenuItem } from "@/types/restaurant";
 import { MenuCategoryForm } from "../components/menu/MenuCategoryForm";
 import { MenuItemForm } from "../components/menu/MenuItemForm";
 
+import { useRefresh } from "@/contexts/RefreshContext";
+
 interface MenuCategory {
   id: string;
   name: string;
@@ -60,10 +62,11 @@ const Menu: React.FC = () => {
     data: APIMenuItem[];
   }>();
   const { loading: deleteLoading, execute: executeDelete } = useApi();
+  const { refreshKey } = useRefresh();
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [refreshKey]);
 
   const fetchData = async () => {
     try {
