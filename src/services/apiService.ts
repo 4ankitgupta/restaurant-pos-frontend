@@ -511,6 +511,17 @@ class ApiService {
   getAdminDashboard = () => {
     return this.request<ApiResponse<any>>("/dashboard/admin");
   };
+
+  getReport = (reportName: string, params: Record<string, string> = {}) => {
+    // Filter out empty params
+    const filteredParams = Object.fromEntries(
+      Object.entries(params).filter(
+        ([, value]) => value !== "" && value != null
+      )
+    );
+    const query = new URLSearchParams(filteredParams).toString();
+    return this.request<ApiResponse<any>>(`/reports/${reportName}?${query}`);
+  };
 }
 
 export const apiService = new ApiService();
