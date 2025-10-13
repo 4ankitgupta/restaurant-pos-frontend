@@ -13,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { ReportLayout } from "./ReportLayout";
 import {
   Select,
@@ -45,22 +46,6 @@ const SalesSummaryReport = () => {
     if (dateRange?.from)
       params.startDate = format(dateRange.from, "yyyy-MM-dd");
     if (dateRange?.to) params.endDate = format(dateRange.to, "yyyy-MM-dd");
-
-    if (isLoading) {
-      return <div>Loading report...</div>;
-    }
-
-    if (error) {
-      return <div className="text-red-500">Error: {error}</div>;
-    }
-
-    if (!reportData) {
-      return (
-        <div className="text-center">
-          Please select a date range and generate a report.
-        </div>
-      );
-    }
 
     try {
       const response = await apiService.getReport("sales-summary", params);
@@ -114,21 +99,31 @@ const SalesSummaryReport = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Sales</CardTitle>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-muted-foreground font-medium">Total Sales</CardTitle>
               </CardHeader>
-              <CardContent className="text-2xl font-bold">
-                {formatCurrency(reportData.summary.totalSales)}
+              <CardContent>
+                <div className="text-3xl font-bold text-primary">
+                  {formatCurrency(reportData.summary.totalSales)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {reportData.summary.orderCount} orders
+                </p>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Orders</CardTitle>
+            <Card className="bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base text-muted-foreground font-medium">Average Order Value</CardTitle>
               </CardHeader>
-              <CardContent className="text-2xl font-bold">
-                {reportData.summary.orderCount}
+              <CardContent>
+                <div className="text-3xl font-bold">
+                  {formatCurrency(reportData.summary.totalSales / reportData.summary.orderCount || 0)}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Per transaction
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -137,32 +132,36 @@ const SalesSummaryReport = () => {
               <CardTitle>Order Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {reportData.orders.map((order: any) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-mono text-xs">
-                        {order.id}
-                      </TableCell>
-                      <TableCell>{formatDate(order.createdAt)}</TableCell>
-                      <TableCell>
-                        {order.takeAway ? "Takeaway" : "Dine-In"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(order.totalAmount)}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.orders.map((order: any) => (
+                      <TableRow key={order.id} className="hover:bg-muted/50">
+                        <TableCell className="font-mono text-xs">
+                          {order.id.slice(0, 8)}
+                        </TableCell>
+                        <TableCell>{formatDate(order.createdAt)}</TableCell>
+                        <TableCell>
+                          <Badge variant={order.takeAway ? "secondary" : "outline"}>
+                            {order.takeAway ? "Takeaway" : "Dine-In"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(order.totalAmount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </div>

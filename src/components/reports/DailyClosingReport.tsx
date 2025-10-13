@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportLayout } from "./ReportLayout";
+import { IndianRupee, Receipt, CreditCard, Percent } from "lucide-react";
 
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
@@ -59,56 +60,99 @@ const DailyClosingReport = () => {
       error={error}
       reportData={reportData}
     >
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Sales Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="flex justify-between">
-              <span>Total Sales:</span>{" "}
-              <strong>{formatCurrency(reportData?.sales.totalSales)}</strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Net Sales:</span>{" "}
-              <strong>{formatCurrency(reportData?.sales.netSales)}</strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Discount:</span>{" "}
-              <strong>{formatCurrency(reportData?.sales.totalDiscount)}</strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Orders:</span>{" "}
-              <strong>{reportData?.sales.orderCount}</strong>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {reportData &&
-              reportData.payments &&
-              reportData.payments.paymentSummary &&
-              Object.entries(reportData.payments.paymentSummary).map(
-                ([key, value]) => (
-                  <div className="flex justify-between" key={key}>
-                    <span className="capitalize">{key.toLowerCase()}:</span>
-                    <strong>{formatCurrency(value as number)}</strong>
+      {!reportData ? (
+        <div className="text-center py-20">
+          <p className="text-muted-foreground">
+            Please select a date and click "Generate for Selected Date" to view report.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Key Metrics Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+                <IndianRupee className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-primary">
+                  {formatCurrency(reportData?.sales.totalSales || 0)}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium">Net Sales</CardTitle>
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(reportData?.sales.netSales || 0)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium">Total Discount</CardTitle>
+                <Percent className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-destructive">
+                  {formatCurrency(reportData?.sales.totalDiscount || 0)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-muted/20 to-muted/30 border-muted">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                <Receipt className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {reportData?.sales.orderCount || 0}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Payment Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {reportData &&
+                  reportData.payments &&
+                  reportData.payments.paymentSummary &&
+                  Object.entries(reportData.payments.paymentSummary).map(
+                    ([key, value]) => (
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30" key={key}>
+                        <span className="capitalize font-medium">{key.toLowerCase()}</span>
+                        <span className="text-lg font-bold">{formatCurrency(value as number)}</span>
+                      </div>
+                    )
+                  )}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-primary/5 border border-primary/20">
+                    <span className="text-lg font-bold">Total Collected</span>
+                    <span className="text-2xl font-bold text-primary">
+                      {formatCurrency(reportData?.payments.totalCollected || 0)}
+                    </span>
                   </div>
-                )
-              )}
-            <hr className="my-2" />
-            <div className="flex justify-between text-lg">
-              <strong>Total Collected:</strong>{" "}
-              <strong>
-                {formatCurrency(reportData?.payments.totalCollected)}
-              </strong>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </ReportLayout>
   );
 };

@@ -310,7 +310,7 @@ const WaiterOrderManagement: React.FC = () => {
   return (
     <div className="flex h-screen bg-background">
       {/* Menu Section */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         {/* Header */}
         <div className="bg-card border-b p-4 space-y-4">
           <div className="flex items-center justify-between">
@@ -401,10 +401,24 @@ const WaiterOrderManagement: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {/* Mobile FAB */}
+        <Button
+          className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-50"
+          size="icon"
+          onClick={() => setIsOrderPanelOpen(!isOrderPanelOpen)}
+        >
+          <Receipt className="h-6 w-6" />
+          {cart.length > 0 && (
+            <span className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
+              {cart.length}
+            </span>
+          )}
+        </Button>
       </div>
 
-      {/* Order Summary Section */}
-      <div className="w-80 sm:w-96 bg-card border-l flex flex-col shrink-0">
+      {/* Order Summary Section - Desktop */}
+      <div className="hidden md:flex w-80 lg:w-96 bg-card border-l flex-col shrink-0">
         {/* Order Header */}
         <div className="p-4 border-b space-y-3">
           <div className="flex items-center justify-between">
@@ -576,6 +590,202 @@ const WaiterOrderManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Mobile Order Summary Sheet */}
+      {isOrderPanelOpen && (
+        <div 
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsOrderPanelOpen(false)}
+        >
+          <div 
+            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-card border-l flex flex-col shadow-2xl animate-slide-in-right"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Order Header */}
+            <div className="p-4 border-b space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold">Current Order</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setCart([])}
+                    disabled={cart.length === 0}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsOrderPanelOpen(false)}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Order Status Summary */}
+              {currentOrder && (
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  <div>
+                    <div className="text-xs text-muted-foreground">Pending</div>
+                    <div className="font-bold text-secondary">
+                      {orderSummary.pending}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Preparing</div>
+                    <div className="font-bold text-warning">
+                      {orderSummary.preparing}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Ready</div>
+                    <div className="font-bold text-success">
+                      {orderSummary.ready}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Served</div>
+                    <div className="font-bold">{orderSummary.served}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cart Items */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              {cart.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Receipt className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No items in order</p>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <Card key={item.id} className="p-3">
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-sm truncate">
+                            {item.menuItem.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            ₹{item.menuItem.price.toFixed(2)} each
+                          </p>
+                          <Badge
+                            variant={getBadgeVariant(item.status)}
+                            className="mt-1 text-xs"
+                          >
+                            {item.status === "ORDERED" && (
+                              <Clock className="h-3 w-3 mr-1" />
+                            )}
+                            {item.status === "PREPARING" && (
+                              <ChefHat className="h-3 w-3 mr-1" />
+                            )}
+                            {item.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                            disabled={item.status !== "PENDING"}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 text-center text-sm font-medium">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                            disabled={item.status !== "PENDING"}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      {item.status === "PREPARED" && (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-success text-success-foreground hover:bg-success/90"
+                            onClick={() =>
+                              handleUpdateItemStatus(item.id, "SERVED")
+                            }
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Serve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={() =>
+                              handleUpdateItemStatus(item.id, "CANCELLED")
+                            }
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Cancel
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+
+            {/* Actions Footer */}
+            <div className="p-4 border-t space-y-3 bg-muted/20">
+              <div className="flex items-center justify-between text-lg font-bold">
+                <span>Total</span>
+                <span className="text-primary">₹{totalAmount.toFixed(2)}</span>
+              </div>
+
+              <Separator />
+
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  processOrder();
+                  setIsOrderPanelOpen(false);
+                }}
+                disabled={
+                  cart.filter((item) => item.status === "PENDING").length === 0 ||
+                  orderLoading
+                }
+              >
+                <Save className="mr-2 h-5 w-5" />
+                {orderLoading ? "Processing..." : "Send to Kitchen"}
+              </Button>
+
+              {currentOrder && (
+                <Button
+                  size="lg"
+                  className="w-full"
+                  variant="outline"
+                  onClick={handleCompleteOrder}
+                  disabled={!canCompleteOrder}
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Complete Order
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -92,67 +92,102 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Admin Dashboard (Last 30 Days)</h1>
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          Admin Dashboard
+        </h1>
+        <p className="text-sm text-muted-foreground">Last 30 Days Performance</p>
+      </div>
+
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl md:text-3xl font-bold text-primary">
               {formatCurrency(data.totalRevenue)}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              +20% from last month
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Orders/Customers
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Customers
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-secondary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-secondary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.totalCustomers}</div>
+            <div className="text-2xl md:text-3xl font-bold">{data.totalCustomers}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Total orders served
+            </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Avg. Order Value
             </CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-accent" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl md:text-3xl font-bold">
               {formatCurrency(data.averageOrderValue)}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Per transaction
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <Card>
+      {/* Sales Trend Chart */}
+      <Card className="hover:shadow-lg transition-shadow">
         <CardHeader>
-          <CardTitle>Sales Trend (Last 7 Days)</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            Sales Trend (Last 7 Days)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={salesChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis tickFormatter={(value) => `₹${value / 1000}k`} />
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="date" 
+                className="text-xs"
+              />
+              <YAxis 
+                tickFormatter={(value) => `₹${value / 1000}k`}
+                className="text-xs"
+              />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#1f2937",
-                  border: "none",
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
                   borderRadius: "0.5rem",
                 }}
+                formatter={(value: any) => [formatCurrency(value), "Sales"]}
               />
               <Legend />
-              <Bar dataKey="Total" fill="#ea580c" />
+              <Bar 
+                dataKey="Total" 
+                fill="hsl(var(--primary))"
+                radius={[8, 8, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -160,38 +195,55 @@ const AdminDashboard = () => {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* Top Selling Items */}
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Top 5 Selling Items</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-secondary animate-pulse" />
+              Top 5 Selling Items
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              {data.topSellingItems.map((item) => (
-                <li key={item.name} className="flex justify-between">
-                  <span>{item.name}</span>
-                  <span className="font-semibold">{item.quantity} sold</span>
-                </li>
+            <div className="space-y-3">
+              {data.topSellingItems.map((item, index) => (
+                <div 
+                  key={item.name} 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">
+                      {index + 1}
+                    </div>
+                    <span className="font-medium">{item.name}</span>
+                  </div>
+                  <span className="font-semibold text-primary">{item.quantity} sold</span>
+                </div>
               ))}
-            </ul>
+            </div>
           </CardContent>
         </Card>
 
         {/* Sales by Payment Mode */}
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Sales by Payment Mode</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+              Sales by Payment Mode
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
+            <div className="space-y-3">
               {paymentChartData.map((item) => (
-                <li key={item.name} className="flex justify-between">
-                  <span className="capitalize">{item.name.toLowerCase()}</span>
-                  <span className="font-semibold">
+                <div 
+                  key={item.name} 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <span className="capitalize font-medium">{item.name.toLowerCase()}</span>
+                  <span className="font-semibold text-primary">
                     {formatCurrency(item.value)}
                   </span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </CardContent>
         </Card>
       </div>

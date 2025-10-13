@@ -81,81 +81,99 @@ const ManagerDashboard = () => {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-3xl font-bold">
-        Manager Dashboard (Today's Overview)
-      </h1>
+    <div className="p-4 md:p-6 space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          Manager Dashboard
+        </h1>
+        <p className="text-sm text-muted-foreground">Today's Performance</p>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-primary" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-primary">
               {formatCurrency(data.totalRevenue)}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Today's sales</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Orders</CardTitle>
+            <div className="h-8 w-8 rounded-full bg-secondary/10 flex items-center justify-center">
+              <Users className="h-4 w-4 text-secondary" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{data.totalOrders}</div>
+            <p className="text-xs text-muted-foreground mt-1">Completed today</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-accent/5 to-accent/10 border-accent/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
               Avg. Order Value
             </CardTitle>
-            <IndianRupee className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-accent/10 flex items-center justify-center">
+              <IndianRupee className="h-4 w-4 text-accent" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
               {formatCurrency(data.averageOrderValue)}
             </div>
+            <p className="text-xs text-muted-foreground mt-1">Per transaction</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-500/5 to-orange-500/10 border-orange-500/20 hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Active Orders (Kitchen)
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active Orders
             </CardTitle>
-            <UtensilsCrossed className="h-4 w-4 text-muted-foreground" />
+            <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+              <UtensilsCrossed className="h-4 w-4 text-orange-500" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.activeOrders}</div>
+            <div className="text-2xl font-bold text-orange-500">{data.activeOrders}</div>
+            <p className="text-xs text-muted-foreground mt-1">In kitchen now</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Table Status */}
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Live Table Status</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              Live Table Status
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-lg">Occupied</span>
-              <span className="text-lg font-bold text-red-500">
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-red-500/10">
+              <span className="font-medium">Occupied</span>
+              <span className="text-xl font-bold text-red-500">
                 {data.tableStatus.occupied} / {data.tableStatus.total}
               </span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-lg">Available</span>
-              <span className="text-lg font-bold text-green-500">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/10">
+              <span className="font-medium">Available</span>
+              <span className="text-xl font-bold text-green-500">
                 {data.tableStatus.available} / {data.tableStatus.total}
               </span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-lg">Needs Cleaning</span>
-              <span className="text-lg font-bold text-yellow-500">
+            <div className="flex justify-between items-center p-3 rounded-lg bg-yellow-500/10">
+              <span className="font-medium">Needs Cleaning</span>
+              <span className="text-xl font-bold text-yellow-500">
                 {data.tableStatus.needsCleaning} / {data.tableStatus.total}
               </span>
             </div>
@@ -163,34 +181,43 @@ const ManagerDashboard = () => {
         </Card>
 
         {/* Low Stock Items */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle>Low Stock Alerts</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              Low Stock Alerts
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {data.lowStockItems.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Item Name</TableHead>
-                    <TableHead className="text-right">Current Stock</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.lowStockItems.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-medium text-red-500">
-                        {item.currentStock} {item.unit}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead className="text-right">Current Stock</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {data.lowStockItems.map((item) => (
+                      <TableRow key={item.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{item.name}</TableCell>
+                        <TableCell className="text-right">
+                          <span className="px-3 py-1 rounded-full bg-destructive/10 text-destructive font-bold">
+                            {item.currentStock} {item.unit}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
-              <p className="text-center text-muted-foreground mt-4">
-                No items are currently low on stock. Great job!
-              </p>
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">
+                  🎉 No items are currently low on stock. Great job!
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
