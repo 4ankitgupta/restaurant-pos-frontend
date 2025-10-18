@@ -40,7 +40,7 @@ interface MenuCategory {
 const WaiterOrderManagement: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { orders } = useWebSocket();
+  const { orders, isConnected } = useWebSocket();
   const [categories, setCategories] = useState<MenuCategory[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -323,10 +323,15 @@ const WaiterOrderManagement: React.FC = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold">
+                <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
                   {currentOrder
                     ? `Table ${currentOrder.table?.tableNumber || "N/A"}`
                     : "New Order"}
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
+                    }`}
+                  />
                 </h1>
                 {currentOrder && (
                   <p className="text-sm text-muted-foreground">
