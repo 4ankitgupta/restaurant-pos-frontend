@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiService, ApiError } from "@/services/apiService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useWebSocket } from "@/contexts/WebSocketContext";
 import {
   Table,
   TableBody,
@@ -34,7 +33,6 @@ interface ManagerDashboardData {
 }
 
 const ManagerDashboard = () => {
-  const { orders, isConnected } = useWebSocket();
   const [data, setData] = useState<ManagerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,16 +52,6 @@ const ManagerDashboard = () => {
     };
     fetchData();
   }, []);
-
-  // Update active orders count in real-time
-  useEffect(() => {
-    if (data) {
-      const activeCount = orders.filter(
-        (o) => o.status === "IN_PROGRESS" || o.status === "PENDING"
-      ).length;
-      setData((prev) => (prev ? { ...prev, activeOrders: activeCount } : null));
-    }
-  }, [orders]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -95,16 +83,9 @@ const ManagerDashboard = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Manager Dashboard
-          </h1>
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-green-500 animate-pulse" : "bg-red-500"
-            }`}
-          />
-        </div>
+        <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+          Manager Dashboard
+        </h1>
         <p className="text-sm text-muted-foreground">Today's Performance</p>
       </div>
 

@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { APIOrder, APIMenuItem } from "@/types/restaurant";
 import { useApi } from "@/hooks/useApi";
 import { apiService } from "@/services/apiService";
-import { useWebSocket } from "@/contexts/WebSocketContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -34,7 +33,6 @@ interface MenuCategory {
 type TabValue = "active" | "completed";
 
 const Cashier = () => {
-  const { orders: wsOrders, isConnected } = useWebSocket();
   const [activeOrders, setActiveOrders] = useState<APIOrder[]>([]);
   const [completedOrders, setCompletedOrders] = useState<APIOrder[]>([]);
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
@@ -64,18 +62,6 @@ const Cashier = () => {
   const { loading: refundLoading, execute: executeRefund } = useApi();
 
   const { refreshKey } = useRefresh();
-
-  // Update orders from WebSocket
-  useEffect(() => {
-    const active = wsOrders.filter(
-      (order) => order.status !== "COMPLETED" && order.paymentStatus !== "PAID"
-    );
-    const completed = wsOrders.filter(
-      (order) => order.status === "COMPLETED" || order.paymentStatus === "PAID"
-    );
-    setActiveOrders(active);
-    setCompletedOrders(completed);
-  }, [wsOrders]);
 
   const fetchData = async () => {
     try {
@@ -174,14 +160,7 @@ const Cashier = () => {
   return (
     <div className="h-screen flex flex-col p-4 gap-4 bg-muted/20">
       <header className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Cashier Station</h1>
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-green-500" : "bg-red-500"
-            }`}
-          />
-        </div>
+        <h1 className="text-2xl font-bold">Cashier Station</h1>
         <Button onClick={() => setTakeawayOpen(true)}>
           <Plus className="mr-2 h-4 w-4" /> New Take-away
         </Button>
