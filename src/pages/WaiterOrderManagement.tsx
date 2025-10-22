@@ -27,6 +27,7 @@ import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import {
   APIMenuItem,
+  APIOrder,
   MenuItem,
   OrderItem,
   OrderItemStatus,
@@ -36,6 +37,41 @@ interface MenuCategory {
   id: string;
   name: string;
 }
+
+
+const mapOrderItemsToCart = (
+  orderItems: APIOrder["orderItems"],
+  categories: MenuCategory[],
+  menuItems: APIMenuItem[]
+): OrderItem[] => {
+  return orderItems
+    .map((item) => {
+      const source =
+        item.menuItem ?? menuItems.find((mi) => mi.id === item.menuItemId);
+
+      if (!source) {
+        return null;
+      }
+
+      const categoryName =
+        categories.find((category) => category.id === source.categoryId)
+          ?.name || "Unknown";
+      return {
+        id: item.id,
+        menuItem: {
+          id: source.id,
+          name: source.name,
+          price: Number(source.price),
+          category: categoryName,
+          description: source.description ?? undefined,
+          available: source.isAvailable,
+        },
+        quantity: item.quantity,
+        status: item.status,
+      };
+    })
+    .filter((item): item is OrderItem => item !== null);
+};
 
 const WaiterOrderManagement: React.FC = () => {
   const location = useLocation();
@@ -87,30 +123,9 @@ const WaiterOrderManagement: React.FC = () => {
 
   useEffect(() => {
     if (currentOrder?.orderItems) {
-      const loadedCartItems: OrderItem[] = currentOrder.orderItems
-        .map((item: any) => {
-          const menuItemDetails =
-            item.menuItem || menuItems.find((mi) => mi.id === item.menuItemId);
-          if (!menuItemDetails) {
-            return null;
-          }
-          return {
-            id: item.id,
-            menuItem: {
-              id: menuItemDetails.id,
-              name: menuItemDetails.name,
-              price: Number(menuItemDetails.price),
-              category:
-                categories.find((c) => c.id === menuItemDetails.categoryId)
-                  ?.name || "Unknown",
-              available: menuItemDetails.isAvailable,
-            },
-            quantity: item.quantity,
-            status: item.status,
-          };
-        })
-        .filter((item): item is OrderItem => item !== null);
-      setCart(loadedCartItems);
+      setCart(
+        mapOrderItemsToCart(currentOrder.orderItems, categories, menuItems)
+      );
     }
   }, [currentOrder, categories, menuItems]);
 
@@ -240,6 +255,13 @@ const WaiterOrderManagement: React.FC = () => {
       }
 
       if (response) {
+        setCart(
+          mapOrderItemsToCart(
+            response.data.orderItems,
+            categories,
+            menuItems
+          )
+        );
         navigate("/waiter-order", {
           state: { orderId: response.data.id, tableId: response.data.tableId },
         });
