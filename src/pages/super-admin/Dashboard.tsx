@@ -1,8 +1,14 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { superAdminApi } from '@/services/superAdminApiService';
-import { Store, Package, CreditCard, TrendingUp } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { superAdminApi } from "@/services/superAdminApiService";
+import { Store, Package, CreditCard, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const SuperAdminDashboard: React.FC = () => {
   const [stats, setStats] = useState({
@@ -29,7 +35,7 @@ export const SuperAdminDashboard: React.FC = () => {
           activeRestaurants: restaurants.filter((r) => r.isActive).length,
         });
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        console.error("Failed to fetch stats:", error);
       } finally {
         setIsLoading(false);
       }
@@ -40,32 +46,32 @@ export const SuperAdminDashboard: React.FC = () => {
 
   const statCards = [
     {
-      title: 'Total Restaurants',
+      title: "Total Restaurants",
       value: stats.restaurants,
       description: `${stats.activeRestaurants} active`,
       icon: Store,
-      gradient: 'from-blue-500 to-cyan-500',
+      gradient: "from-blue-500 to-cyan-500",
     },
     {
-      title: 'Billing Plans',
+      title: "Billing Plans",
       value: stats.plans,
-      description: 'Available plans',
+      description: "Available plans",
       icon: Package,
-      gradient: 'from-violet-500 to-purple-500',
+      gradient: "from-violet-500 to-purple-500",
     },
     {
-      title: 'Active Subscriptions',
+      title: "Active Subscriptions",
       value: stats.subscriptions,
-      description: 'Total subscriptions',
+      description: "Total subscriptions",
       icon: CreditCard,
-      gradient: 'from-orange-500 to-red-500',
+      gradient: "from-orange-500 to-red-500",
     },
     {
-      title: 'Platform Growth',
-      value: '+12%',
-      description: 'This month',
+      title: "Platform Growth",
+      value: "+12%",
+      description: "This month",
       icon: TrendingUp,
-      gradient: 'from-green-500 to-emerald-500',
+      gradient: "from-green-500 to-emerald-500",
     },
   ];
 
@@ -73,9 +79,6 @@ export const SuperAdminDashboard: React.FC = () => {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Welcome to the Super Admin Portal. Manage your restaurant platform from here.
-        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -84,7 +87,9 @@ export const SuperAdminDashboard: React.FC = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardDescription>{stat.title}</CardDescription>
-                <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.gradient}`}>
+                <div
+                  className={`p-2 rounded-lg bg-gradient-to-br ${stat.gradient}`}
+                >
                   <stat.icon className="w-4 h-4 text-white" />
                 </div>
               </div>
@@ -135,15 +140,21 @@ export const SuperAdminDashboard: React.FC = () => {
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm">API Status</span>
-              <span className="text-sm font-medium text-green-600">Operational</span>
+              <span className="text-sm font-medium text-green-600">
+                Operational
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Database</span>
-              <span className="text-sm font-medium text-green-600">Healthy</span>
+              <span className="text-sm font-medium text-green-600">
+                Healthy
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Payment Gateway</span>
-              <span className="text-sm font-medium text-green-600">Connected</span>
+              <span className="text-sm font-medium text-green-600">
+                Connected
+              </span>
             </div>
           </CardContent>
         </Card>

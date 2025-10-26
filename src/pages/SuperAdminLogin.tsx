@@ -75,7 +75,7 @@ export default function SuperAdminLogin() {
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              {/* Form inputs... (no changes needed below) */}
+
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -88,6 +88,7 @@ export default function SuperAdminLogin() {
                   disabled={isLoading}
                 />
               </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -99,6 +100,20 @@ export default function SuperAdminLogin() {
                   disabled={isLoading}
                 />
               </div>
+
+              {/* 👇 New Demo Credentials Button */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setEmail("superadmin@rasoitrack.com");
+                  setPassword("superadmin123");
+                }}
+                disabled={isLoading}
+              >
+                Use Demo Credentials
+              </Button>
+
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

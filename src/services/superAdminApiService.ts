@@ -31,8 +31,8 @@ export interface Restaurant {
 export interface Plan {
   id: string;
   name: string;
-  price: number;
-  features: string[];
+  price: string; // Changed to string
+  features: { [key: string]: any }; // Changed to an object
   createdAt: string;
   updatedAt: string;
 }
@@ -151,7 +151,7 @@ class SuperAdminApiService {
   async createPlan(data: {
     name: string;
     price: number;
-    features: string[];
+    features: { [key: string]: any }; // <-- Corrected
   }): Promise<Plan> {
     return this.request("/plans", {
       method: "POST",
@@ -161,7 +161,7 @@ class SuperAdminApiService {
 
   async updatePlan(
     id: string,
-    data: { name?: string; price?: number; features?: string[] }
+    data: { name?: string; price?: number; features?: { [key: string]: any } } // <-- Corrected
   ): Promise<Plan> {
     return this.request(`/plans/${id}`, {
       method: "PATCH",

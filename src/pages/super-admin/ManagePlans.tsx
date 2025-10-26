@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { superAdminApi, Plan } from '@/services/superAdminApiService';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useEffect, useState } from "react";
+import { superAdminApi, Plan } from "@/services/superAdminApiService";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -11,7 +11,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +30,10 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { toast } from '@/hooks/use-toast';
-import { Plus, Package, Edit, Trash2, IndianRupee } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
+import { Plus, Package, Edit, Trash2, IndianRupee } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const ManagePlans: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -42,9 +42,9 @@ export const ManagePlans: React.FC = () => {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
-    price: '',
-    features: '',
+    name: "",
+    price: "",
+    features: "",
   });
 
   const fetchPlans = async () => {
@@ -53,9 +53,9 @@ export const ManagePlans: React.FC = () => {
       setPlans(data);
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to fetch plans',
-        variant: 'destructive',
+        title: "Error",
+        description: "Failed to fetch plans",
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -70,8 +70,10 @@ export const ManagePlans: React.FC = () => {
     setEditingPlan(plan);
     setFormData({
       name: plan.name,
-      price: plan.price.toString(),
-      features: plan.features.join('\n'),
+      price: plan.price,
+      features: Object.entries(plan.features)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n"),
     });
     setIsDialogOpen(true);
   };
@@ -79,45 +81,55 @@ export const ManagePlans: React.FC = () => {
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingPlan(null);
-    setFormData({ name: '', price: '', features: '' });
+    setFormData({ name: "", price: "", features: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const featuresArray = formData.features
-      .split('\n')
+    const featuresObject = formData.features
+      .split("\n")
       .map((f) => f.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .reduce((acc, line) => {
+        const parts = line.split(":");
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(":").trim();
+          // Attempt to parse value as number or keep as string
+          acc[key] = isNaN(Number(value)) ? value : Number(value);
+        }
+        return acc;
+      }, {} as { [key: string]: any });
 
     try {
       if (editingPlan) {
         await superAdminApi.updatePlan(editingPlan.id, {
           name: formData.name,
           price: parseFloat(formData.price),
-          features: featuresArray,
+          features: featuresObject, // Send the object
         });
         toast({
-          title: 'Success',
-          description: 'Plan updated successfully',
+          title: "Success",
+          description: "Plan updated successfully",
         });
       } else {
         await superAdminApi.createPlan({
           name: formData.name,
           price: parseFloat(formData.price),
-          features: featuresArray,
+          features: featuresObject, // Send the object
         });
         toast({
-          title: 'Success',
-          description: 'Plan created successfully',
+          title: "Success",
+          description: "Plan created successfully",
         });
       }
       closeDialog();
       fetchPlans();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Operation failed',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Operation failed",
+        variant: "destructive",
       });
     }
   };
@@ -126,16 +138,16 @@ export const ManagePlans: React.FC = () => {
     try {
       await superAdminApi.deletePlan(id);
       toast({
-        title: 'Success',
-        description: 'Plan deleted successfully',
+        title: "Success",
+        description: "Plan deleted successfully",
       });
       setDeletingPlanId(null);
       fetchPlans();
     } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete plan',
-        variant: 'destructive',
+        title: "Error",
+        description: error.message || "Failed to delete plan",
+        variant: "destructive",
       });
     }
   };
@@ -163,12 +175,12 @@ export const ManagePlans: React.FC = () => {
             <form onSubmit={handleSubmit}>
               <DialogHeader>
                 <DialogTitle>
-                  {editingPlan ? 'Edit Plan' : 'Create New Plan'}
+                  {editingPlan ? "Edit Plan" : "Create New Plan"}
                 </DialogTitle>
                 <DialogDescription>
                   {editingPlan
-                    ? 'Update the plan details'
-                    : 'Add a new billing plan'}
+                    ? "Update the plan details"
+                    : "Add a new billing plan"}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
@@ -217,7 +229,7 @@ export const ManagePlans: React.FC = () => {
                   Cancel
                 </Button>
                 <Button type="submit">
-                  {editingPlan ? 'Update Plan' : 'Create Plan'}
+                  {editingPlan ? "Update Plan" : "Create Plan"}
                 </Button>
               </DialogFooter>
             </form>
@@ -240,16 +252,29 @@ export const ManagePlans: React.FC = () => {
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-40" /></TableCell>
-                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
-                  <TableCell><Skeleton className="h-8 w-20 ml-auto" /></TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-20" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-40" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-4 w-24" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-20 ml-auto" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : plans.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   No plans found. Create your first plan to get started.
                 </TableCell>
               </TableRow>
@@ -260,13 +285,16 @@ export const ManagePlans: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <IndianRupee className="w-3 h-3 mr-1" />
-                      {plan.price.toFixed(2)}
+                      {/* Convert string to number before calling toFixed */}
+                      {parseFloat(plan.price).toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {plan.features.slice(0, 2).join(', ')}
-                      {plan.features.length > 2 && ` +${plan.features.length - 2} more`}
+                      {/* Get the keys (e.g., 'users', 'orders') and display them */}
+                      {Object.keys(plan.features).slice(0, 2).join(", ")}
+                      {Object.keys(plan.features).length > 2 &&
+                        ` +${Object.keys(plan.features).length - 2} more`}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -305,7 +333,8 @@ export const ManagePlans: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the plan.
+              This action cannot be undone. This will permanently delete the
+              plan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
