@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users,
@@ -9,19 +10,37 @@ import {
   Clock,
   AlertCircle,
   BookOpen,
+  Plus,
+  Edit,
+  Trash2,
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { APITable, APIOrder } from "@/types/restaurant";
 import { TableSheet } from "@/components/table/TableSheet";
 import { useRefresh } from "@/contexts/RefreshContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { TableForm, TableFormValues } from "@/components/table/TableForm";
+import { cn } from "@/lib/utils";
 
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { orders } = useWebSocket();
+  const canManageTables = user?.role === "manager" || user?.role === "admin";
   const [tables, setTables] = useState<APITable[]>([]);
   const {
     loading,
@@ -30,7 +49,11 @@ const TableManagement: React.FC = () => {
   } = useApi<{ data: APITable[] }>();
   const { execute: getActiveOrder } = useApi<{ data: APIOrder }>();
   const { execute: executeTableAction } = useApi();
+  const { execute: saveTableApi, loading: savingTable } = useApi();
+  const { execute: deleteTableApi, loading: deletingTable } = useApi();
   const { refreshKey } = useRefresh();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingTable, setEditingTable] = useState<APITable | null>(null);
 
   const loadTables = async () => {
     try {
@@ -49,6 +72,65 @@ const TableManagement: React.FC = () => {
 
   const [selectedTable, setSelectedTable] = useState<APITable | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const handleAddTable = () => {
+    setEditingTable(null);
+    setIsFormOpen(true);
+    setIsSheetOpen(false);
+  };
+
+  const handleEditTable = (table: APITable) => {
+    setEditingTable(table);
+    setIsFormOpen(true);
+    setIsSheetOpen(false);
+  };
+
+  const handleFormSubmit = async (values: TableFormValues) => {
+    try {
+      if (editingTable) {
+        await saveTableApi(() =>
+          apiService.updateTable(editingTable.id, values)
+        );
+        toast({
+          title: "Table updated",
+          description: `Table ${values.tableNumber} updated successfully.`,
+        });
+      } else {
+        await saveTableApi(() => apiService.createTable(values));
+        toast({
+          title: "Table created",
+          description: `Table ${values.tableNumber} created successfully.`,
+        });
+      }
+
+      await loadTables();
+      setSelectedTable(null);
+      setIsSheetOpen(false);
+      setIsFormOpen(false);
+      setEditingTable(null);
+    } catch (error) {
+      console.error("Failed to save table:", error);
+    }
+  };
+
+  const handleDeleteTable = async (table: APITable) => {
+    try {
+      await deleteTableApi(() => apiService.deleteTable(table.id));
+      toast({
+        title: "Table deleted",
+        description: `Table ${table.tableNumber} deleted successfully.`,
+      });
+
+      if (selectedTable?.id === table.id) {
+        setSelectedTable(null);
+        setIsSheetOpen(false);
+      }
+
+      await loadTables();
+    } catch (error) {
+      console.error("Failed to delete table:", error);
+    }
+  };
 
   const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
@@ -189,9 +271,17 @@ const TableManagement: React.FC = () => {
   ).length;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Table Management</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <h1 className="text-3xl font-bold">Table Management</h1>
+          {canManageTables && (
+            <Button onClick={handleAddTable} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Table
+            </Button>
+          )}
+        </div>
         <div className="flex space-x-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-success">
@@ -214,9 +304,18 @@ const TableManagement: React.FC = () => {
         </div>
       </div>
 
+      <TableForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onSubmit={handleFormSubmit}
+        loading={savingTable}
+        editingTable={editingTable}
+        setEditingTable={setEditingTable}
+      />
+
       {/* Table Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {[...Array(8)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader className="pb-3">
@@ -230,32 +329,85 @@ const TableManagement: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {tables.map((table) => (
             <Card
               key={table.id}
-              className={`cursor-pointer transition-all hover:shadow-lg ${
+              className={cn(
+                "flex h-full cursor-pointer flex-col transition-all hover:shadow-lg",
                 selectedTable?.id === table.id ? "ring-2 ring-primary" : ""
-              }`}
+              )}
               onClick={() => {
                 setSelectedTable(table);
                 setIsSheetOpen(true);
               }}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">
-                    Table {table.tableNumber}
-                  </CardTitle>
-                  <Badge className={getStatusColor(table.status)}>
-                    {getStatusIcon(table.status)}
-                    <span className="ml-1 capitalize">
-                      {table.status.toLowerCase()}
-                    </span>
-                  </Badge>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Capacity: {table.capacity} people
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <CardTitle className="text-lg sm:text-base md:text-lg">
+                      Table {table.tableNumber}
+                    </CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      Capacity: {table.capacity} people
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <Badge className={getStatusColor(table.status)}>
+                      {getStatusIcon(table.status)}
+                      <span className="ml-1 capitalize">
+                        {table.status.toLowerCase()}
+                      </span>
+                    </Badge>
+                    {canManageTables && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 sm:h-9 sm:w-9"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleEditTable(table);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive sm:h-9 sm:w-9"
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete Table {table.tableNumber}?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will
+                                permanently remove the table and its allocation
+                                settings.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteTable(table)}
+                                disabled={deletingTable}
+                              >
+                                {deletingTable ? "Deleting..." : "Delete"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>

@@ -361,6 +361,37 @@ class ApiService {
     );
   }
 
+  async createTable(tableData: {
+    tableNumber: string;
+    capacity: number;
+    status?: APITable["status"];
+  }) {
+    return this.request<ApiResponse<APITable>>("/tables", {
+      method: "POST",
+      body: JSON.stringify(tableData),
+    });
+  }
+
+  async updateTable(
+    tableId: string,
+    tableData: {
+      tableNumber?: string;
+      capacity?: number;
+      status?: APITable["status"];
+    }
+  ) {
+    return this.request<ApiResponse<APITable>>(`/tables/${tableId}`, {
+      method: "PATCH",
+      body: JSON.stringify(tableData),
+    });
+  }
+
+  async deleteTable(tableId: string) {
+    return this.request<ApiResponse<APITable>>(`/tables/${tableId}`, {
+      method: "DELETE",
+    });
+  }
+
   async getActiveOrderForTable(tableId: string) {
     return this.request<ApiResponse<any>>(`/tables/${tableId}/active-order`);
   }
