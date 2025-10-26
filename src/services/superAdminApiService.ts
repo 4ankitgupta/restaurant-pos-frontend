@@ -20,7 +20,9 @@ export interface SuperAdminApiResponse<T> {
 export interface Restaurant {
   id: string;
   name: string;
-  email: string;
+  email: string | null; // UPDATED: Based on schema
+  phone: string | null; // UPDATED: Based on schema
+  address: string | null; // UPDATED: Based on schema
   isActive: boolean;
   subscriptionId?: string;
   subscription?: Subscription;
@@ -28,15 +30,26 @@ export interface Restaurant {
   updatedAt: string;
 }
 
-export interface Plan {
+// NEW: Minimal User type for the restaurant users list
+export interface RestaurantUser {
   id: string;
   name: string;
-  price: string; // Changed to string
-  features: { [key: string]: any }; // Changed to an object
+  email: string;
+  role: string;
+  restaurantId: string;
+}
+
+export interface Plan {
+  // ... (your existing Plan interface)
+  id: string;
+  name: string;
+  price: any; // Keep the fix from our previous conversation
+  features: any; // Keep the fix from our previous conversation
   createdAt: string;
   updatedAt: string;
 }
 
+// ... (other interfaces: Subscription, Announcement, Setting) ...
 export interface Subscription {
   id: string;
   restaurantId: string;
@@ -66,6 +79,7 @@ export interface Setting {
   updatedAt: string;
 }
 
+
 class SuperAdminApiService {
   private baseURL = SUPER_ADMIN_API_BASE_URL;
 
@@ -89,6 +103,15 @@ class SuperAdminApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle backend's { message: "...", data: null, success: false, statusCode: 400 }
+        if (data && data.success === false) {
+           throw {
+             code: data.statusCode || response.status,
+             message: data.message || "Request failed",
+             errors: data.errors,
+           } as SuperAdminApiError;
+        }
+        // Handle simple error messages
         throw {
           code: response.status,
           message: data.message || "Request failed",
@@ -96,7 +119,14 @@ class SuperAdminApiService {
         } as SuperAdminApiError;
       }
 
+      // Handle successful responses that might have { success: true, data: ..., ... }
+      if (data && data.success === true) {
+         return data.data;
+      }
+      
+      // Handle simple data responses
       return data.data || data;
+
     } catch (error) {
       if ((error as SuperAdminApiError).code) {
         throw error;
@@ -110,10 +140,17 @@ class SuperAdminApiService {
 
   // Auth
   async login(email: string, password: string): Promise<any> {
-    // Changed type to 'any' to reflect reality
     return this.request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+  }
+
+  // NEW: Impersonate User
+  async impersonateUser(userId: string): Promise<{ accessToken: string }> {
+    return this.request("/auth/impersonate", {
+      method: "POST",
+      body: JSON.stringify({ userId }),
     });
   }
 
@@ -121,14 +158,40 @@ class SuperAdminApiService {
   async getRestaurants(): Promise<Restaurant[]> {
     return this.request("/restaurants");
   }
+  
+  // NEW: Get single restaurant
+  async getRestaurant(id: string): Promise<Restaurant> {
+    return this.request(`/restaurants/${id}`);
+  }
 
+  // UPDATED: Create Restaurant
   async createRestaurant(data: {
     name: string;
-    email: string;
-    password: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    adminName: string;
+    adminEmail: string;
+    adminPassword: string;
   }): Promise<Restaurant> {
     return this.request("/restaurants", {
       method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  // NEW: Update Restaurant
+  async updateRestaurant(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+    }
+  ): Promise<Restaurant> {
+    return this.request(`/restaurants/${id}`, {
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
@@ -143,7 +206,13 @@ class SuperAdminApiService {
     });
   }
 
+  // NEW: Get users for a restaurant
+  async getRestaurantUsers(restaurantId: string): Promise<RestaurantUser[]> {
+    return this.request(`/users?restaurantId=${restaurantId}`);
+  }
+
   // Plans
+  // ... (your existing plan methods: getPlans, createPlan, updatePlan, deletePlan)
   async getPlans(): Promise<Plan[]> {
     return this.request("/plans");
   }
@@ -151,7 +220,7 @@ class SuperAdminApiService {
   async createPlan(data: {
     name: string;
     price: number;
-    features: { [key: string]: any }; // <-- Corrected
+    features: { [key: string]: any };
   }): Promise<Plan> {
     return this.request("/plans", {
       method: "POST",
@@ -161,7 +230,7 @@ class SuperAdminApiService {
 
   async updatePlan(
     id: string,
-    data: { name?: string; price?: number; features?: { [key: string]: any } } // <-- Corrected
+    data: { name?: string; price?: number; features?: { [key: string]: any } }
   ): Promise<Plan> {
     return this.request(`/plans/${id}`, {
       method: "PATCH",
@@ -175,7 +244,9 @@ class SuperAdminApiService {
     });
   }
 
+
   // Subscriptions
+  // ... (your existing subscription methods)
   async getSubscriptions(): Promise<Subscription[]> {
     return this.request("/subscriptions");
   }
@@ -206,7 +277,9 @@ class SuperAdminApiService {
     });
   }
 
+
   // Announcements
+  // ... (your existing announcement methods)
   async getAnnouncements(): Promise<Announcement[]> {
     return this.request("/announcements");
   }
@@ -238,6 +311,7 @@ class SuperAdminApiService {
   }
 
   // Settings
+  // ... (your existing settings methods)
   async getSettings(): Promise<Setting[]> {
     return this.request("/settings");
   }

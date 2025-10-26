@@ -34,6 +34,7 @@ import { ManagePlans } from "./pages/super-admin/ManagePlans";
 import { ManageSubscriptions } from "./pages/super-admin/ManageSubscriptions";
 import { ManageAnnouncements } from "./pages/super-admin/ManageAnnouncements";
 import { ManageSettings } from "./pages/super-admin/ManageSettings";
+import { ManageRestaurantUsers } from "@/pages/super-admin/ManageRestaurantUsers";
 
 const queryClient = new QueryClient();
 
@@ -186,6 +187,10 @@ const App = () => (
                           <Route
                             path="restaurants"
                             element={<ManageRestaurants />}
+                          />
+                          <Route
+                            path="restaurants/:restaurantId/users"
+                            element={<ManageRestaurantUsers />}
                           />
                           <Route path="plans" element={<ManagePlans />} />
                           <Route
