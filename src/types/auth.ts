@@ -24,3 +24,14 @@ export interface AuthContext {
   isAuthenticated: boolean;
   isLoading: boolean;
 }
+
+export type AuthResponse = {
+  user: User;
+  accessToken: string;
+};
+
+export type SuperAdmin = {
+  id: string;
+  email: string;
+  name: string;
+};

@@ -1,88 +1,89 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { superAdminApi } from '@/services/superAdminApiService';
-import { toast } from '@/hooks/use-toast';
+// src/contexts/SuperAdminAuthContext.tsx
 
-interface SuperAdminUser {
-  id: string;
-  email: string;
-  name?: string;
-}
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { superAdminApi } from "@/services/superAdminApiService";
+import { SuperAdmin } from "@/types/auth"; // <-- IMPORT THE NEW TYPE
+import { AxiosError } from "axios"; // <-- Import AxiosError
 
-interface SuperAdminAuthContextType {
-  user: SuperAdminUser | null;
-  token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+type SuperAdminAuthContextType = {
+  admin: SuperAdmin | null; // <-- USE THE NEW TYPE
+  adminToken: string | null;
+  isAdminLoading: boolean;
+  login: (email: string, password: string) => Promise<void>; // <-- Make async
   logout: () => void;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-}
+};
 
-const SuperAdminAuthContext = createContext<SuperAdminAuthContextType | undefined>(undefined);
+const SuperAdminAuthContext = createContext<
+  SuperAdminAuthContextType | undefined
+>(undefined);
 
-export const SuperAdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<SuperAdminUser | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+type SuperAdminAuthProviderProps = {
+  children: ReactNode;
+};
+
+export const SuperAdminAuthProvider: React.FC<SuperAdminAuthProviderProps> = ({
+  children,
+}) => {
+  const [admin, setAdmin] = useState<SuperAdmin | null>(null); // <-- USE THE NEW TYPE
+  const [adminToken, setAdminToken] = useState<string | null>(null);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing token on mount
-    const storedToken = localStorage.getItem('superAdminToken');
-    const storedUser = localStorage.getItem('superAdminUser');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+    const token = localStorage.getItem("adminToken");
+    const adminData = localStorage.getItem("admin");
+
+    if (token && adminData !== "undefined") {
+      setAdminToken(token);
+      setAdmin(JSON.parse(adminData));
     }
-    
-    setIsLoading(false);
+    setIsAdminLoading(false);
   }, []);
 
+  // --- REPLACE THE LOGIN FUNCTION WITH THIS ---
   const login = async (email: string, password: string) => {
     try {
       const response = await superAdminApi.login(email, password);
-      
-      setToken(response.token);
-      setUser(response.user);
-      
-      localStorage.setItem('superAdminToken', response.token);
-      localStorage.setItem('superAdminUser', JSON.stringify(response.user));
-      
-      toast({
-        title: "Success",
-        description: "Logged in successfully",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Login Failed",
-        description: error.message || "Invalid credentials",
-        variant: "destructive",
-      });
-      throw error;
+
+      const {
+        accessToken,
+        admin: adminData,
+      }: { accessToken: string; admin: SuperAdmin } = response;
+
+      localStorage.setItem("adminToken", accessToken);
+      localStorage.setItem("admin", JSON.stringify(adminData));
+
+      setAdminToken(accessToken);
+      setAdmin(adminData);
+    } catch (err) {
+      const error = err as AxiosError;
+      console.error("Super admin login failed:", error);
+      // Re-throw the error so the login page can catch it
+      if (error.response?.data) {
+        throw new Error((error.response.data as { message: string }).message);
+      }
+      throw new Error("An unknown error occurred during login.");
     }
   };
+  // --- END OF REPLACEMENT ---
 
+  // --- UPDATE THE LOGOUT FUNCTION ---
   const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('superAdminToken');
-    localStorage.removeItem('superAdminUser');
-    
-    toast({
-      title: "Logged Out",
-      description: "You have been logged out successfully",
-    });
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("admin"); // <-- Also remove admin data
+    setAdminToken(null);
+    setAdmin(null); // <-- Also clear admin state
   };
+  // --- END OF UPDATE ---
 
   return (
     <SuperAdminAuthContext.Provider
-      value={{
-        user,
-        token,
-        login,
-        logout,
-        isAuthenticated: !!token,
-        isLoading,
-      }}
+      value={{ admin, adminToken, isAdminLoading, login, logout }}
     >
       {children}
     </SuperAdminAuthContext.Provider>
@@ -92,7 +93,9 @@ export const SuperAdminAuthProvider: React.FC<{ children: React.ReactNode }> = (
 export const useSuperAdminAuth = () => {
   const context = useContext(SuperAdminAuthContext);
   if (context === undefined) {
-    throw new Error('useSuperAdminAuth must be used within SuperAdminAuthProvider');
+    throw new Error(
+      "useSuperAdminAuth must be used within a SuperAdminAuthProvider"
+    );
   }
   return context;
 };

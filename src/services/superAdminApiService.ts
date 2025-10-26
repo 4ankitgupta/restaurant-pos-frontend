@@ -73,7 +73,7 @@ class SuperAdminApiService {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    const token = localStorage.getItem("superAdminToken");
+    const token = localStorage.getItem("adminToken");
 
     const config: RequestInit = {
       headers: {
@@ -109,7 +109,8 @@ class SuperAdminApiService {
   }
 
   // Auth
-  async login(email: string, password: string): Promise<{ token: string; user: any }> {
+  async login(email: string, password: string): Promise<any> {
+    // Changed type to 'any' to reflect reality
     return this.request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),

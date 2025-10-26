@@ -1,82 +1,106 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSuperAdminAuth } from '@/contexts/SuperAdminAuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield } from 'lucide-react';
+// src/pages/SuperAdminLogin.tsx
+
+import { useState } from "react";
+import { useSuperAdminAuth } from "@/contexts/SuperAdminAuthContext";
+import { Navigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // <-- Import Alert
+import { Loader2, Terminal } from "lucide-react"; // <-- Import Loader2
 
 export const SuperAdminLogin: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login, isAuthenticated } = useSuperAdminAuth();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null); // <-- State for errors
+  const [isLoading, setIsLoading] = useState(false); // <-- State for loading
+  const auth = useSuperAdminAuth();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/super-admin');
-    }
-  }, [isAuthenticated, navigate]);
-
+  // --- UPDATE THE ONSUBMIT FUNCTION ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
+    setError(null); // Clear previous errors
+    setIsLoading(true); // Start loading
+
     try {
-      await login(email, password);
-      navigate('/super-admin');
-    } catch (error) {
-      // Error is handled in the context
+      await auth.login(email, password);
+      // Navigate will be handled by the check below
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message); // Set error message from the context
+      } else {
+        setError("An unknown error occurred.");
+      }
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading
     }
   };
+  // --- END OF UPDATE ---
+
+  if (auth.adminToken && !auth.isAdminLoading) {
+    return <Navigate to="/super-admin" replace />;
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="space-y-4 text-center">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Shield className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <CardTitle className="text-2xl">Super Admin Portal</CardTitle>
-            <CardDescription>
-              Sign in to manage the platform
-            </CardDescription>
-          </div>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">Super Admin Login</CardTitle>
+          <CardDescription>
+            Enter your email below to login to your platform dashboard.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4">
+              {/* --- ADD ERROR ALERT --- */}
+              {error && (
+                <Alert variant="destructive">
+                  <Terminal className="h-4 w-4" />
+                  <AlertTitle>Login Failed</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {/* --- END OF ALERT --- */}
+
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading} // <-- Disable when loading
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading} // <-- Disable when loading
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {/* --- ADD LOADING SPINNER --- */}
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                {isLoading ? "Signing in..." : "Sign in"}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
           </form>
         </CardContent>
       </Card>
