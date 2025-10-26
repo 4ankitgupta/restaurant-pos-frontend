@@ -24,7 +24,7 @@ const navItems = [
 ];
 
 export const SuperAdminLayout: React.FC = () => {
-  const { logout, user } = useSuperAdminAuth();
+  const { logout, admin } = useSuperAdminAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -39,7 +39,7 @@ export const SuperAdminLayout: React.FC = () => {
               </div>
               <div>
                 <h1 className="font-semibold text-lg">Super Admin</h1>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+                <p className="text-xs text-muted-foreground">{admin?.email}</p>
               </div>
             </div>
           </div>
