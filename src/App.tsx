@@ -168,24 +168,31 @@ const App = () => (
                 </Route>
 
                 {/* --- SUPER ADMIN ROUTES --- */}
-                <Route path="/super-admin/login" element={<SuperAdminLogin />} />
                 <Route
-                  path="/super-admin"
+                  path="/super-admin/*"
                   element={
                     <SuperAdminAuthProvider>
-                      <SuperAdminProtectedRoute>
-                        <SuperAdminLayout />
-                      </SuperAdminProtectedRoute>
+                      <Routes>
+                        <Route path="login" element={<SuperAdminLogin />} />
+                        <Route
+                          path="/*"
+                          element={
+                            <SuperAdminProtectedRoute>
+                              <SuperAdminLayout />
+                            </SuperAdminProtectedRoute>
+                          }
+                        >
+                          <Route index element={<SuperAdminDashboard />} />
+                          <Route path="restaurants" element={<ManageRestaurants />} />
+                          <Route path="plans" element={<ManagePlans />} />
+                          <Route path="subscriptions" element={<ManageSubscriptions />} />
+                          <Route path="announcements" element={<ManageAnnouncements />} />
+                          <Route path="settings" element={<ManageSettings />} />
+                        </Route>
+                      </Routes>
                     </SuperAdminAuthProvider>
                   }
-                >
-                  <Route index element={<SuperAdminDashboard />} />
-                  <Route path="restaurants" element={<ManageRestaurants />} />
-                  <Route path="plans" element={<ManagePlans />} />
-                  <Route path="subscriptions" element={<ManageSubscriptions />} />
-                  <Route path="announcements" element={<ManageAnnouncements />} />
-                  <Route path="settings" element={<ManageSettings />} />
-                </Route>
+                />
                 {/* --- END SUPER ADMIN ROUTES --- */}
 
                 <Route path="*" element={<NotFound />} />
