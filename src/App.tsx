@@ -23,6 +23,18 @@ import NotFound from "./pages/NotFound";
 import Cashier from "./pages/Cashier";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 
+// Super Admin imports
+import { SuperAdminLogin } from "./pages/SuperAdminLogin";
+import { SuperAdminAuthProvider } from "@/contexts/SuperAdminAuthContext";
+import { SuperAdminProtectedRoute } from "@/components/auth/SuperAdminProtectedRoute";
+import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
+import { SuperAdminDashboard } from "./pages/super-admin/Dashboard";
+import { ManageRestaurants } from "./pages/super-admin/ManageRestaurants";
+import { ManagePlans } from "./pages/super-admin/ManagePlans";
+import { ManageSubscriptions } from "./pages/super-admin/ManageSubscriptions";
+import { ManageAnnouncements } from "./pages/super-admin/ManageAnnouncements";
+import { ManageSettings } from "./pages/super-admin/ManageSettings";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -154,6 +166,27 @@ const App = () => (
                     }
                   />
                 </Route>
+
+                {/* --- SUPER ADMIN ROUTES --- */}
+                <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+                <Route
+                  path="/super-admin"
+                  element={
+                    <SuperAdminAuthProvider>
+                      <SuperAdminProtectedRoute>
+                        <SuperAdminLayout />
+                      </SuperAdminProtectedRoute>
+                    </SuperAdminAuthProvider>
+                  }
+                >
+                  <Route index element={<SuperAdminDashboard />} />
+                  <Route path="restaurants" element={<ManageRestaurants />} />
+                  <Route path="plans" element={<ManagePlans />} />
+                  <Route path="subscriptions" element={<ManageSubscriptions />} />
+                  <Route path="announcements" element={<ManageAnnouncements />} />
+                  <Route path="settings" element={<ManageSettings />} />
+                </Route>
+                {/* --- END SUPER ADMIN ROUTES --- */}
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

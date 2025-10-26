@@ -70,7 +70,7 @@ const mapOrderItemsToCart = (
         status: item.status,
       };
     })
-    .filter((item): item is OrderItem => item !== null);
+    .filter((item): item is NonNullable<typeof item> => item !== null);
 };
 
 const WaiterOrderManagement: React.FC = () => {
