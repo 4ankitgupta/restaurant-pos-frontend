@@ -24,7 +24,7 @@ import Cashier from "./pages/Cashier";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 
 // Super Admin imports
-import { SuperAdminLogin } from "./pages/SuperAdminLogin";
+import SuperAdminLogin from "./pages/SuperAdminLogin";
 import { SuperAdminAuthProvider } from "@/contexts/SuperAdminAuthContext";
 import { SuperAdminProtectedRoute } from "@/components/auth/SuperAdminProtectedRoute";
 import { SuperAdminLayout } from "@/components/layout/SuperAdminLayout";
@@ -183,10 +183,19 @@ const App = () => (
                           }
                         >
                           <Route index element={<SuperAdminDashboard />} />
-                          <Route path="restaurants" element={<ManageRestaurants />} />
+                          <Route
+                            path="restaurants"
+                            element={<ManageRestaurants />}
+                          />
                           <Route path="plans" element={<ManagePlans />} />
-                          <Route path="subscriptions" element={<ManageSubscriptions />} />
-                          <Route path="announcements" element={<ManageAnnouncements />} />
+                          <Route
+                            path="subscriptions"
+                            element={<ManageSubscriptions />}
+                          />
+                          <Route
+                            path="announcements"
+                            element={<ManageAnnouncements />}
+                          />
                           <Route path="settings" element={<ManageSettings />} />
                         </Route>
                       </Routes>
