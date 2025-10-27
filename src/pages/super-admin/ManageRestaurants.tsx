@@ -16,7 +16,9 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Building, Edit, Users, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { RestaurantForm } from "./RestaurantForm"; // UPDATED: Import the new form
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RestaurantForm } from "./RestaurantForm";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManageRestaurants: React.FC = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -26,6 +28,7 @@ export const ManageRestaurants: React.FC = () => {
     null
   );
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const fetchRestaurants = async () => {
     setIsLoading(true);
@@ -91,6 +94,118 @@ export const ManageRestaurants: React.FC = () => {
     navigate(`/super-admin/restaurants/${restaurantId}/users`);
   };
 
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Building className="w-6 h-6" />
+              Restaurants
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage all restaurants
+            </p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Create
+              </Button>
+            </DialogTrigger>
+            <RestaurantForm
+              initialData={editingRestaurant}
+              onClose={closeDialog}
+              onSuccess={() => {
+                fetchRestaurants();
+              }}
+            />
+          </Dialog>
+        </div>
+
+        <div className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-24" />
+                </CardContent>
+              </Card>
+            ))
+          ) : restaurants.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No restaurants found. Create your first one to get started.
+              </CardContent>
+            </Card>
+          ) : (
+            restaurants.map((restaurant) => (
+              <Card key={restaurant.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{restaurant.name}</h3>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {restaurant.email || "No email"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {restaurant.phone || "No phone"}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={restaurant.isActive}
+                      onCheckedChange={(newStatus) =>
+                        handleStatusChange(restaurant.id, newStatus)
+                      }
+                      aria-label="Restaurant status"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge
+                      variant={
+                        restaurant.subscription?.status === "ACTIVE"
+                          ? "default"
+                          : "secondary"
+                      }
+                      className="text-xs"
+                    >
+                      {restaurant.subscription?.status || "N/A"}
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditDialog(restaurant)}
+                      className="flex-1"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => onViewUsers(restaurant.id)}
+                      className="flex-1"
+                    >
+                      <Users className="w-3 h-3 mr-1" />
+                      Users
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -110,7 +225,6 @@ export const ManageRestaurants: React.FC = () => {
               Create Restaurant
             </Button>
           </DialogTrigger>
-          {/* Use the new form component */}
           <RestaurantForm
             initialData={editingRestaurant}
             onClose={closeDialog}
@@ -121,7 +235,7 @@ export const ManageRestaurants: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -214,7 +328,6 @@ export const ManageRestaurants: React.FC = () => {
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
-                      {/* Add other actions like View Subscriptions if needed */}
                       <Button
                         size="sm"
                         variant="ghost"

@@ -34,6 +34,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Plus, Bell, Edit, Trash2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ManageAnnouncements: React.FC = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -45,6 +47,7 @@ export const ManageAnnouncements: React.FC = () => {
     title: '',
     content: '',
   });
+  const isMobile = useIsMobile();
 
   const fetchAnnouncements = async () => {
     try {
@@ -125,6 +128,159 @@ export const ManageAnnouncements: React.FC = () => {
     }
   };
 
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Bell className="w-6 h-6" />
+              Announcements
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Send announcements
+            </p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingAnnouncement(null)} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Create
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <form onSubmit={handleSubmit}>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingAnnouncement ? 'Edit Announcement' : 'Create New Announcement'}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingAnnouncement
+                      ? 'Update the announcement details'
+                      : 'Create a new announcement for all restaurants'}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) =>
+                        setFormData({ ...formData, title: e.target.value })
+                      }
+                      placeholder="Important Update"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Content</Label>
+                    <Textarea
+                      id="content"
+                      value={formData.content}
+                      onChange={(e) =>
+                        setFormData({ ...formData, content: e.target.value })
+                      }
+                      placeholder="Your announcement message..."
+                      rows={6}
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={closeDialog}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingAnnouncement ? 'Update' : 'Create'}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-full mb-1" />
+                  <Skeleton className="h-4 w-20" />
+                </CardContent>
+              </Card>
+            ))
+          ) : announcements.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No announcements found. Create your first announcement to get started.
+              </CardContent>
+            </Card>
+          ) : (
+            announcements.map((announcement) => (
+              <Card key={announcement.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h3 className="font-semibold">{announcement.title}</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                    {announcement.content}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(announcement.createdAt).toLocaleDateString()}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openEditDialog(announcement)}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDeletingAnnouncementId(announcement.id)}
+                      >
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <AlertDialog
+          open={!!deletingAnnouncementId}
+          onOpenChange={() => setDeletingAnnouncementId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the announcement.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deletingAnnouncementId && handleDelete(deletingAnnouncementId)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -196,7 +352,7 @@ export const ManageAnnouncements: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

@@ -1,8 +1,8 @@
 // src/pages/SuperAdminLogin.tsx
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useSuperAdminAuth } from "@/contexts/SuperAdminAuthContext";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, Terminal } from "lucide-react";
+import { Loader2, Terminal, Shield } from "lucide-react";
 
 export default function SuperAdminLogin() {
   const [email, setEmail] = useState("");
@@ -57,12 +57,15 @@ export default function SuperAdminLogin() {
 
   // Render the login form
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl">Super Admin Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your platform dashboard.
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-3">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <Shield className="w-7 h-7 text-primary" />
+          </div>
+          <CardTitle className="text-2xl text-center">Super Admin Portal</CardTitle>
+          <CardDescription className="text-center">
+            Enter your credentials to access the platform dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -81,7 +84,7 @@ export default function SuperAdminLogin() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="admin@example.com"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -101,7 +104,7 @@ export default function SuperAdminLogin() {
                 />
               </div>
 
-              {/* 👇 New Demo Credentials Button */}
+              {/* Demo Credentials Button */}
               <Button
                 type="button"
                 variant="outline"
@@ -110,15 +113,20 @@ export default function SuperAdminLogin() {
                   setPassword("superadmin123");
                 }}
                 disabled={isLoading}
+                className="w-full"
               >
                 Use Demo Credentials
               </Button>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                {isLoading ? "Signing in..." : "Sign in"}
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign in"
+                )}
               </Button>
             </div>
           </form>

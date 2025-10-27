@@ -76,17 +76,20 @@ export const SuperAdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
+          Platform overview and statistics
+        </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
           <Card key={stat.title} className="overflow-hidden">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription>{stat.title}</CardDescription>
+                <CardDescription className="text-xs md:text-sm">{stat.title}</CardDescription>
                 <div
                   className={`p-2 rounded-lg bg-gradient-to-br ${stat.gradient}`}
                 >
@@ -110,10 +113,10 @@ export const SuperAdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
             <CardDescription>Common administrative tasks</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -134,7 +137,7 @@ export const SuperAdminDashboard: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>System Status</CardTitle>
+            <CardTitle className="text-lg">System Status</CardTitle>
             <CardDescription>Platform health overview</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">

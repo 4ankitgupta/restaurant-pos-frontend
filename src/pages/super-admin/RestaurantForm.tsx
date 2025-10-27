@@ -110,18 +110,31 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
   const onSubmit = async (data: FormData) => {
     try {
       if (isEditMode) {
-        // Edit Mode
-        await superAdminApi.updateRestaurant(
-          initialData!.id,
-          data as EditFormData
-        );
+        // Edit Mode - data is EditFormData
+        const editData: EditFormData = {
+          name: data.name!,
+          email: data.email || "",
+          phone: data.phone,
+          address: data.address,
+        };
+        await superAdminApi.updateRestaurant(initialData!.id, editData);
         toast({
           title: "Success",
           description: "Restaurant updated successfully",
         });
       } else {
-        // Create Mode
-        await superAdminApi.createRestaurant(data as CreateFormData);
+        // Create Mode - data is CreateFormData
+        const createData = data as CreateFormData;
+        // Type assertion is safe here because zod validates all required fields
+        await superAdminApi.createRestaurant({
+          name: createData.name!,
+          email: createData.email || "",
+          phone: createData.phone,
+          address: createData.address,
+          adminName: createData.adminName!,
+          adminEmail: createData.adminEmail!,
+          adminPassword: createData.adminPassword!,
+        });
         toast({
           title: "Success",
           description: "Restaurant and admin user created successfully",

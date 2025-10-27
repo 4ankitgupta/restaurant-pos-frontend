@@ -34,6 +34,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Plus, Package, Edit, Trash2, IndianRupee } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManagePlans: React.FC = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -46,6 +48,7 @@ export const ManagePlans: React.FC = () => {
     price: "",
     features: "",
   });
+  const isMobile = useIsMobile();
 
   const fetchPlans = async () => {
     try {
@@ -95,7 +98,6 @@ export const ManagePlans: React.FC = () => {
         if (parts.length >= 2) {
           const key = parts[0].trim();
           const value = parts.slice(1).join(":").trim();
-          // Attempt to parse value as number or keep as string
           acc[key] = isNaN(Number(value)) ? value : Number(value);
         }
         return acc;
@@ -106,7 +108,7 @@ export const ManagePlans: React.FC = () => {
         await superAdminApi.updatePlan(editingPlan.id, {
           name: formData.name,
           price: parseFloat(formData.price),
-          features: featuresObject, // Send the object
+          features: featuresObject,
         });
         toast({
           title: "Success",
@@ -116,7 +118,7 @@ export const ManagePlans: React.FC = () => {
         await superAdminApi.createPlan({
           name: formData.name,
           price: parseFloat(formData.price),
-          features: featuresObject, // Send the object
+          features: featuresObject,
         });
         toast({
           title: "Success",
@@ -152,6 +154,185 @@ export const ManagePlans: React.FC = () => {
     }
   };
 
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Package className="w-6 h-6" />
+              Plans
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage billing plans
+            </p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingPlan(null)} size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Create
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <form onSubmit={handleSubmit}>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingPlan ? "Edit Plan" : "Create New Plan"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {editingPlan
+                      ? "Update the plan details"
+                      : "Add a new billing plan"}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Plan Name</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      placeholder="e.g., Basic, Pro, Enterprise"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (₹/month)</Label>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: e.target.value })
+                      }
+                      placeholder="0.00"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="features">Features (one per line)</Label>
+                    <Textarea
+                      id="features"
+                      value={formData.features}
+                      onChange={(e) =>
+                        setFormData({ ...formData, features: e.target.value })
+                      }
+                      placeholder="users: 5&#10;orders: unlimited&#10;support: email"
+                      rows={6}
+                      required
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={closeDialog}>
+                    Cancel
+                  </Button>
+                  <Button type="submit">
+                    {editingPlan ? "Update Plan" : "Create Plan"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-24 mb-2" />
+                  <Skeleton className="h-4 w-20 mb-2" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+              </Card>
+            ))
+          ) : plans.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No plans found. Create your first plan to get started.
+              </CardContent>
+            </Card>
+          ) : (
+            plans.map((plan) => (
+              <Card key={plan.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold">{plan.name}</h3>
+                      <div className="flex items-center text-lg font-bold text-primary mt-1">
+                        <IndianRupee className="w-4 h-4 mr-1" />
+                        {parseFloat(plan.price).toFixed(2)}
+                        <span className="text-xs text-muted-foreground ml-1">/month</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-muted-foreground mb-3">
+                    {Object.entries(plan.features).slice(0, 2).map(([key, value]) => (
+                      <div key={key}>• {key}: {String(value)}</div>
+                    ))}
+                    {Object.keys(plan.features).length > 2 && (
+                      <div className="text-xs">+{Object.keys(plan.features).length - 2} more</div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openEditDialog(plan)}
+                      className="flex-1"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setDeletingPlanId(plan.id)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1 text-destructive" />
+                      Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+
+        <AlertDialog
+          open={!!deletingPlanId}
+          onOpenChange={() => setDeletingPlanId(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                plan.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deletingPlanId && handleDelete(deletingPlanId)}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -218,7 +399,7 @@ export const ManagePlans: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, features: e.target.value })
                     }
-                    placeholder="Unlimited orders&#10;5 users&#10;Email support"
+                    placeholder="users: 5&#10;orders: unlimited&#10;support: email"
                     rows={6}
                     required
                   />
@@ -237,7 +418,7 @@ export const ManagePlans: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -285,13 +466,11 @@ export const ManagePlans: React.FC = () => {
                   <TableCell>
                     <div className="flex items-center">
                       <IndianRupee className="w-3 h-3 mr-1" />
-                      {/* Convert string to number before calling toFixed */}
                       {parseFloat(plan.price).toFixed(2)}
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-muted-foreground">
-                      {/* Get the keys (e.g., 'users', 'orders') and display them */}
                       {Object.keys(plan.features).slice(0, 2).join(", ")}
                       {Object.keys(plan.features).length > 2 &&
                         ` +${Object.keys(plan.features).length - 2} more`}

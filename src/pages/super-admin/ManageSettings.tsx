@@ -24,6 +24,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Plus, Settings as SettingsIcon } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export const ManageSettings: React.FC = () => {
   const [settings, setSettings] = useState<Setting[]>([]);
@@ -34,6 +36,7 @@ export const ManageSettings: React.FC = () => {
     value: '',
     description: '',
   });
+  const isMobile = useIsMobile();
 
   const fetchSettings = async () => {
     try {
@@ -78,6 +81,122 @@ export const ManageSettings: React.FC = () => {
     }
   };
 
+  // Mobile Card View
+  if (isMobile) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <SettingsIcon className="w-6 h-6" />
+              Settings
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Configure system settings
+            </p>
+          </div>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus className="w-4 h-4 mr-1" />
+                Add
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[90vh] overflow-y-auto">
+              <form onSubmit={handleSubmit}>
+                <DialogHeader>
+                  <DialogTitle>Add/Update Setting</DialogTitle>
+                  <DialogDescription>
+                    Create or update a platform setting
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="key">Key</Label>
+                    <Input
+                      id="key"
+                      value={formData.key}
+                      onChange={(e) =>
+                        setFormData({ ...formData, key: e.target.value })
+                      }
+                      placeholder="e.g., maintenance_mode"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="value">Value</Label>
+                    <Input
+                      id="value"
+                      value={formData.value}
+                      onChange={(e) =>
+                        setFormData({ ...formData, value: e.target.value })
+                      }
+                      placeholder="Setting value"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description (Optional)</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) =>
+                        setFormData({ ...formData, description: e.target.value })
+                      }
+                      placeholder="What does this setting do?"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Save Setting</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="space-y-3">
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <Skeleton className="h-6 w-32 mb-2" />
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <Skeleton className="h-4 w-full" />
+                </CardContent>
+              </Card>
+            ))
+          ) : settings.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No settings found. Add your first setting to get started.
+              </CardContent>
+            </Card>
+          ) : (
+            settings.map((setting) => (
+              <Card key={setting.id}>
+                <CardContent className="p-4">
+                  <div className="mb-2">
+                    <h3 className="font-mono font-semibold text-sm">{setting.key}</h3>
+                    <p className="font-mono text-primary mt-1">{setting.value}</p>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    {setting.description || 'No description'}
+                  </p>
+                  <div className="text-xs text-muted-foreground">
+                    Updated: {new Date(setting.updatedAt).toLocaleDateString()}
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Table View
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -151,7 +270,7 @@ export const ManageSettings: React.FC = () => {
         </Dialog>
       </div>
 
-      <div className="border rounded-lg">
+      <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
