@@ -38,7 +38,6 @@ interface MenuCategory {
   name: string;
 }
 
-
 const mapOrderItemsToCart = (
   orderItems: APIOrder["orderItems"],
   categories: MenuCategory[],
@@ -256,11 +255,7 @@ const WaiterOrderManagement: React.FC = () => {
 
       if (response) {
         setCart(
-          mapOrderItemsToCart(
-            response.data.orderItems,
-            categories,
-            menuItems
-          )
+          mapOrderItemsToCart(response.data.orderItems, categories, menuItems)
         );
         navigate("/waiter-order", {
           state: { orderId: response.data.id, tableId: response.data.tableId },
@@ -307,6 +302,7 @@ const WaiterOrderManagement: React.FC = () => {
 
   const canCompleteOrder =
     currentOrder &&
+    currentOrder.orderItems &&
     currentOrder.orderItems.every(
       (item) => item.status === "SERVED" || item.status === "CANCELLED"
     );
@@ -615,11 +611,11 @@ const WaiterOrderManagement: React.FC = () => {
 
       {/* Mobile Order Summary Sheet */}
       {isOrderPanelOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setIsOrderPanelOpen(false)}
         >
-          <div 
+          <div
             className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-card border-l flex flex-col shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
@@ -656,7 +652,9 @@ const WaiterOrderManagement: React.FC = () => {
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-muted-foreground">Preparing</div>
+                    <div className="text-xs text-muted-foreground">
+                      Preparing
+                    </div>
                     <div className="font-bold text-warning">
                       {orderSummary.preparing}
                     </div>
@@ -784,8 +782,8 @@ const WaiterOrderManagement: React.FC = () => {
                   setIsOrderPanelOpen(false);
                 }}
                 disabled={
-                  cart.filter((item) => item.status === "PENDING").length === 0 ||
-                  orderLoading
+                  cart.filter((item) => item.status === "PENDING").length ===
+                    0 || orderLoading
                 }
               >
                 <Save className="mr-2 h-5 w-5" />
