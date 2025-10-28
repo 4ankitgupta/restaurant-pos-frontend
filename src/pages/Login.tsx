@@ -23,6 +23,7 @@ const Login: React.FC = () => {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
       if (user.role === "waiter") navigate("/tables");
       else if (user.role === "chef") navigate("/kitchen");
+      else if (user.role === "cashier") navigate("/pos");
       else navigate("/dashboard");
     } catch (error) {
       console.error("Login failed:", error);

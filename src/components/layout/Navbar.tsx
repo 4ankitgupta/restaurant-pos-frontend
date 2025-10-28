@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRefresh } from "@/contexts/RefreshContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Home,
   ShoppingCart,
@@ -14,12 +16,15 @@ import {
   Utensils,
   Truck,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { triggerRefresh } = useRefresh();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -94,10 +99,6 @@ export const Navbar: React.FC = () => {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <Link to="/dashboard" className="flex items-center space-x-2">
-              {/* <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-    <Utensils className="h-5 w-5 text-primary-foreground" />
-  </div> */}
-
               <div className="flex flex-col items-center justify-center">
                 <img
                   src="/logo.png"
@@ -113,12 +114,9 @@ export const Navbar: React.FC = () => {
                   className="w-32 object-contain mx-auto"
                 />
               </div>
-
-              {/* <span className="text-xl font-bold text-foreground">
-    RestaurantPOS
-  </span> */}
             </Link>
 
+            {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4">
               {navItems.map((item) => (
                 <Link
@@ -134,20 +132,98 @@ export const Navbar: React.FC = () => {
           </div>
 
           {user && (
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
-                <div className="font-medium text-foreground">{user.name}</div>
-                <div className="text-xs text-muted-foreground capitalize">
-                  {user.role}
+            <div className="flex items-center space-x-2">
+              {/* Desktop User Info & Actions */}
+              <div className="hidden md:flex items-center space-x-4">
+                <div className="text-sm">
+                  <div className="font-medium text-foreground">{user.name}</div>
+                  <div className="text-xs text-muted-foreground capitalize">
+                    {user.role}
+                  </div>
                 </div>
+                <Button variant="ghost" size="icon" onClick={handleRefresh}>
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleRefresh}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
+
+              {/* Mobile Hamburger Menu */}
+              {isMobile && (
+                <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-64 p-0">
+                    <div className="flex flex-col h-full">
+                      {/* Mobile Header */}
+                      <div className="p-6 border-b">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src="/logo.png"
+                            alt="Logo"
+                            className="w-10 h-10 object-contain"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h2 className="font-semibold text-lg">RasoiTrack</h2>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {user.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground capitalize">
+                              {user.role}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Mobile Navigation */}
+                      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                        {navItems.map((item) => (
+                          <Link
+                            key={item.path}
+                            to={item.path}
+                            onClick={() => setMobileNavOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                          >
+                            <item.icon className="w-5 h-5 flex-shrink-0" />
+                            <span className="font-medium">{item.label}</span>
+                          </Link>
+                        ))}
+                      </nav>
+
+                      {/* Mobile Footer */}
+                      <div className="p-4 border-t space-y-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-3"
+                          onClick={() => {
+                            handleRefresh();
+                            setMobileNavOpen(false);
+                          }}
+                        >
+                          <RefreshCw className="w-5 h-5" />
+                          Refresh
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+                          onClick={() => {
+                            handleLogout();
+                            setMobileNavOpen(false);
+                          }}
+                        >
+                          <LogOut className="w-5 h-5" />
+                          Logout
+                        </Button>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              )}
             </div>
           )}
         </div>
