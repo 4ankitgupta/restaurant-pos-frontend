@@ -138,8 +138,14 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       newWs.onclose = (event) => {
         console.log("WebSocket disconnected", event.code, event.reason);
         setIsConnected(false);
+
+        // Check localStorage directly for the token.
+        // This is the source of truth for auth status, not the closure.
+        const currentToken = localStorage.getItem("accessToken");
+
         // Only attempt to reconnect if the disconnection was unexpected
-        if (event.code !== 1000 && user) {
+        // AND we still have an auth token.
+        if (event.code !== 1000 && currentToken) {
           setTimeout(connect, 3000); // Re-run the connect function
         }
       };
