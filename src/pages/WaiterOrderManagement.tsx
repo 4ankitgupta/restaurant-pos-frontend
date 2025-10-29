@@ -45,29 +45,36 @@ const mapOrderItemsToCart = (
 ): OrderItem[] => {
   return orderItems
     .map((item) => {
-      const source =
-        item.menuItem ?? menuItems.find((mi) => mi.id === item.menuItemId);
+      // New backend structure: item.menuItemVariant exists and contains menuItem
+      const variantSource = item.menuItemVariant;
+      if (!variantSource) return null;
 
-      if (!source) {
-        return null;
-      }
+      const parent = variantSource.menuItem;
+      if (!parent) return null;
 
       const categoryName =
-        categories.find((category) => category.id === source.categoryId)
+        categories.find((category) => category.id === parent.categoryId)
           ?.name || "Unknown";
+
       return {
         id: item.id,
-        menuItem: {
-          id: source.id,
-          name: source.name,
-          price: Number(source.price),
-          category: categoryName,
-          description: source.description ?? undefined,
-          available: source.isAvailable,
+        menuItemVariant: {
+          id: variantSource.id,
+          name: variantSource.name,
+          price: variantSource.price,
+          menuItem: {
+            id: parent.id,
+            name: parent.name,
+            description: parent.description ?? undefined,
+            category: categoryName,
+            available: parent.isAvailable,
+          },
         },
         quantity: item.quantity,
         status: item.status,
-      };
+        note: item.note,
+        price: item.price,
+      } as OrderItem;
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 };
@@ -129,36 +136,57 @@ const WaiterOrderManagement: React.FC = () => {
   }, [currentOrder, categories, menuItems]);
 
   const addToCart = (apiMenuItem: APIMenuItem) => {
-    const menuItem: MenuItem = {
-      id: apiMenuItem.id,
-      name: apiMenuItem.name,
-      price: Number(apiMenuItem.price),
-      category:
-        categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
-        "Unknown",
-      description: apiMenuItem.description || undefined,
-      available: apiMenuItem.isAvailable,
-    };
+    // If multiple variants, prompt user to select one (simple prompt for now)
+    let variant = apiMenuItem.variants[0];
+    if (apiMenuItem.variants.length > 1) {
+      const choices = apiMenuItem.variants
+        .map(
+          (v, i) => `${i + 1}. ${v.name} - ₹${parseFloat(v.price).toFixed(2)}`
+        )
+        .join("\n");
+      const sel = window.prompt(
+        `Select variant for ${apiMenuItem.name}:\n${choices}`
+      );
+      const idx = sel ? Number(sel) - 1 : -1;
+      if (isNaN(idx) || idx < 0 || idx >= apiMenuItem.variants.length) return;
+      variant = apiMenuItem.variants[idx];
+    }
 
+    // Build an OrderItem shaped object using new types
     const existingItem = cart.find(
-      (item) => item.menuItem.id === menuItem.id && item.status === "PENDING"
+      (item) =>
+        item.menuItemVariant?.id === variant.id && item.status === "PENDING"
     );
 
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.menuItem.id === menuItem.id && item.status === "PENDING"
+          item.menuItemVariant?.id === variant.id && item.status === "PENDING"
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       );
     } else {
-      const newOrderItem: OrderItem = {
-        id: `${Date.now()}-${menuItem.id}`,
-        menuItem,
+      const newOrderItem = {
+        id: `${Date.now()}-${apiMenuItem.id}-${variant.id}`,
+        menuItemVariant: {
+          id: variant.id,
+          name: variant.name,
+          price: Number(variant.price),
+          menuItem: {
+            id: apiMenuItem.id,
+            name: apiMenuItem.name,
+            description: apiMenuItem.description || undefined,
+            category:
+              categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
+              "Unknown",
+            available: apiMenuItem.isAvailable,
+          },
+        },
         quantity: 1,
-        status: "PENDING",
-      };
+        status: "PENDING" as OrderItemStatus,
+        price: Number(variant.price),
+      } as OrderItem;
       setCart([...cart, newOrderItem]);
     }
   };
@@ -217,8 +245,9 @@ const WaiterOrderManagement: React.FC = () => {
     const newItems = cart
       .filter((item) => item.status === "PENDING")
       .map((item) => ({
-        menuItemId: item.menuItem.id,
+        menuItemVariantId: item.menuItemVariant?.id,
         quantity: item.quantity,
+        note: (item as any).note,
       }));
 
     if (newItems.length === 0) {
@@ -320,7 +349,8 @@ const WaiterOrderManagement: React.FC = () => {
 
   const totalAmount = useMemo(() => {
     return cart.reduce(
-      (sum, item) => sum + item.menuItem.price * item.quantity,
+      (sum, item) =>
+        sum + (item.price ?? item.menuItemVariant?.price ?? 0) * item.quantity,
       0
     );
   }, [cart]);
@@ -407,7 +437,11 @@ const WaiterOrderManagement: React.FC = () => {
                     {item.name}
                   </h3>
                   <p className="text-lg font-bold text-primary">
-                    ₹{Number(item.price).toFixed(2)}
+                    {item.variants.length === 1
+                      ? `₹${parseFloat(item.variants[0].price).toFixed(2)}`
+                      : `From ₹${Math.min(
+                          ...item.variants.map((v) => parseFloat(v.price))
+                        ).toFixed(2)}`}
                   </p>
                   {!item.isAvailable && (
                     <Badge variant="secondary" className="mt-2 text-xs">
@@ -494,10 +528,16 @@ const WaiterOrderManagement: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">
-                        {item.menuItem.name}
+                        {item.menuItemVariant?.menuItem.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        ₹{item.menuItem.price.toFixed(2)} each
+                        ₹
+                        {(
+                          item.price ??
+                          item.menuItemVariant?.price ??
+                          0
+                        ).toFixed(2)}{" "}
+                        each
                       </p>
                       <Badge
                         variant={getBadgeVariant(item.status)}
@@ -687,10 +727,16 @@ const WaiterOrderManagement: React.FC = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">
-                            {item.menuItem.name}
+                            {item.menuItemVariant?.menuItem.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            ₹{item.menuItem.price.toFixed(2)} each
+                            ₹
+                            {(
+                              item.price ??
+                              item.menuItemVariant?.price ??
+                              0
+                            ).toFixed(2)}{" "}
+                            each
                           </p>
                           <Badge
                             variant={getBadgeVariant(item.status)}

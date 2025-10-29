@@ -98,8 +98,14 @@ export function OrderSummarySheet({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-semibold">
-                          {item.quantity}x {item.menuItem.name}
+                          {item.quantity}x {item.menuItemVariant?.menuItem.name}{" "}
+                          ({item.menuItemVariant?.name})
                         </div>
+                        {item.note && (
+                          <div className="text-sm text-muted-foreground italic">
+                            Note: {item.note}
+                          </div>
+                        )}
                         <div className="text-sm text-muted-foreground">
                           ₹{item.price.toFixed(2)} each
                         </div>

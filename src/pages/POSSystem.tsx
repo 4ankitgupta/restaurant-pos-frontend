@@ -109,15 +109,24 @@ const POSSystem: React.FC = () => {
             const loadedCartItems: OrderItem[] = response.data.orderItems.map(
               (item: any) => ({
                 id: item.id,
-                menuItem: {
-                  id: item.menuItem.id,
-                  name: item.menuItem.name,
-                  price: Number(item.menuItem.price),
-                  category: item.menuItem.category?.name || "Unknown",
-                  available: item.menuItem.isAvailable,
+                menuItemVariant: {
+                  id: item.menuItemVariant.id,
+                  name: item.menuItemVariant.name,
+                  price: item.menuItemVariant.price,
+                  menuItem: {
+                    id: item.menuItemVariant.menuItem.id,
+                    name: item.menuItemVariant.menuItem.name,
+                    description:
+                      item.menuItemVariant.menuItem.description || undefined,
+                    category:
+                      item.menuItemVariant.menuItem.category?.name || "Unknown",
+                    available: item.menuItemVariant.menuItem.isAvailable,
+                  },
                 },
                 quantity: item.quantity,
                 status: item.status,
+                note: item.note,
+                price: item.price,
               })
             );
             setCart(loadedCartItems);
@@ -140,21 +149,29 @@ const POSSystem: React.FC = () => {
   }, [categories, activeCategory]);
 
   const addToCart = (apiMenuItem: APIMenuItem) => {
-    const menuItem: MenuItem = {
-      id: apiMenuItem.id,
-      name: apiMenuItem.name,
-      price: Number(apiMenuItem.price),
-      category:
-        categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
-        "Unknown",
-      available: apiMenuItem.isAvailable,
-    };
+    // Simple variant selection via prompt if multiple variants
+    let variant = apiMenuItem.variants[0];
+    if (apiMenuItem.variants.length > 1) {
+      const choices = apiMenuItem.variants
+        .map(
+          (v, i) => `${i + 1}. ${v.name} - $${parseFloat(v.price).toFixed(2)}`
+        )
+        .join("\n");
+      const sel = window.prompt(
+        `Select variant for ${apiMenuItem.name}:\n${choices}`
+      );
+      const idx = sel ? Number(sel) - 1 : -1;
+      if (isNaN(idx) || idx < 0 || idx >= apiMenuItem.variants.length) return;
+      variant = apiMenuItem.variants[idx];
+    }
 
-    const existingItem = cart.find((item) => item.menuItem.id === menuItem.id);
+    const existingItem = cart.find(
+      (item) => item.menuItemVariant?.id === variant.id
+    );
     if (existingItem) {
       setCart(
         cart.map((item) =>
-          item.menuItem.id === menuItem.id
+          item.menuItemVariant?.id === variant.id
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
@@ -162,7 +179,26 @@ const POSSystem: React.FC = () => {
     } else {
       setCart([
         ...cart,
-        { id: Date.now().toString(), menuItem, quantity: 1, status: "ORDERED" },
+        {
+          id: Date.now().toString(),
+          menuItemVariant: {
+            id: variant.id,
+            name: variant.name,
+            price: Number(variant.price),
+            menuItem: {
+              id: apiMenuItem.id,
+              name: apiMenuItem.name,
+              description: apiMenuItem.description || undefined,
+              category:
+                categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
+                "Unknown",
+              available: apiMenuItem.isAvailable,
+            },
+          },
+          quantity: 1,
+          status: "ORDERED" as OrderItemStatus,
+          price: Number(variant.price),
+        },
       ]);
     }
   };
@@ -181,7 +217,9 @@ const POSSystem: React.FC = () => {
 
   const getTotal = () =>
     cart.reduce(
-      (total, item) => total + item.menuItem.price * item.quantity,
+      (total, item) =>
+        total +
+        (item.price ?? item.menuItemVariant?.price ?? 0) * item.quantity,
       0
     );
 
@@ -189,8 +227,9 @@ const POSSystem: React.FC = () => {
     const newItems = cart
       .filter((item) => !item.id.includes("-")) // Filter for backend-generated IDs
       .map((item) => ({
-        menuItemId: item.menuItem.id,
+        menuItemVariantId: item.menuItemVariant?.id,
         quantity: item.quantity,
+        note: (item as any).note,
       }));
 
     if (newItems.length === 0) {
@@ -301,7 +340,11 @@ const POSSystem: React.FC = () => {
                   {item.name}
                 </h3>
                 <p className="text-primary font-bold text-left mt-2">
-                  ${Number(item.price).toFixed(2)}
+                  {item.variants && item.variants.length === 1
+                    ? `$${parseFloat(item.variants[0].price).toFixed(2)}`
+                    : `From $${Math.min(
+                        ...item.variants.map((v) => parseFloat(v.price))
+                      ).toFixed(2)}`}
                 </p>
                 {!item.isAvailable && (
                   <Badge variant="secondary" className="mt-1">
@@ -357,9 +400,15 @@ const POSSystem: React.FC = () => {
                 className="flex items-center justify-between p-3 bg-muted/30 rounded-lg"
               >
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm">{item.menuItem.name}</h4>
+                  <h4 className="font-medium text-sm">
+                    {item.menuItemVariant?.menuItem?.name || "Item"}
+                  </h4>
                   <p className="text-xs text-muted-foreground">
-                    ${item.menuItem.price.toFixed(2)} each
+                    $
+                    {(item.price ?? item.menuItemVariant?.price ?? 0).toFixed(
+                      2
+                    )}{" "}
+                    each
                   </p>
                   <Badge
                     variant={getBadgeVariant(item.status)}

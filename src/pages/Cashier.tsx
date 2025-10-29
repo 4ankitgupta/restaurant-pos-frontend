@@ -112,7 +112,7 @@ const Cashier = () => {
   };
 
   const handleAddItems = async (
-    items: { menuItemId: string; quantity: number }[]
+    items: { menuItemVariantId: string; quantity: number; note?: string }[]
   ) => {
     if (!selectedOrder) return;
     try {
@@ -129,7 +129,7 @@ const Cashier = () => {
   };
 
   const handleCreateTakeaway = async (
-    items: { menuItemId: string; quantity: number }[]
+    items: { menuItemVariantId: string; quantity: number }[]
   ) => {
     try {
       await executeTakeaway(() => apiService.createTakeawayOrder(items));

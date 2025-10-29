@@ -26,7 +26,8 @@ interface TakeawayDialogProps {
   onOpenChange: (open: boolean) => void;
   menuItems: APIMenuItem[];
   categories: MenuCategory[];
-  onSubmit: (items: { menuItemId: string; quantity: number }[]) => void;
+  // Now submit variant-based items
+  onSubmit: (items: { menuItemVariantId: string; quantity: number }[]) => void;
   isLoading: boolean;
 }
 
@@ -38,6 +39,7 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  // cart maps menuItemVariantId -> qty
   const [cart, setCart] = useState<Map<string, number>>(new Map());
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
@@ -48,16 +50,37 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
     }
   }, [categories, activeCategory]);
 
-  const handleItemClick = (itemId: string, operation: "add" | "remove") => {
+  // When user clicks an APIMenuItem card, choose a variant (if multiple)
+  const handleItemClick = (apiItemId: string, operation: "add" | "remove") => {
+    const apiItem = menuItems.find((m) => m.id === apiItemId);
+    if (!apiItem) return;
+
+    // If multiple variants, prompt selection; otherwise pick first
+    let variant = apiItem.variants[0];
+    if (apiItem.variants.length > 1) {
+      const choices = apiItem.variants
+        .map(
+          (v, i) => `${i + 1}. ${v.name} - ₹${parseFloat(v.price).toFixed(2)}`
+        )
+        .join("\n");
+      const sel = window.prompt(
+        `Select variant for ${apiItem.name}:\n${choices}`
+      );
+      const idx = sel ? Number(sel) - 1 : -1;
+      if (isNaN(idx) || idx < 0 || idx >= apiItem.variants.length) return;
+      variant = apiItem.variants[idx];
+    }
+
+    const variantId = variant.id;
     const newCart = new Map(cart);
-    const currentQty = newCart.get(itemId) || 0;
+    const currentQty = newCart.get(variantId) || 0;
     if (operation === "add") {
-      newCart.set(itemId, currentQty + 1);
+      newCart.set(variantId, currentQty + 1);
     } else {
       if (currentQty > 1) {
-        newCart.set(itemId, currentQty - 1);
+        newCart.set(variantId, currentQty - 1);
       } else {
-        newCart.delete(itemId);
+        newCart.delete(variantId);
       }
     }
     setCart(newCart);
@@ -72,10 +95,12 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
       });
       return;
     }
-    const items = Array.from(cart.entries()).map(([menuItemId, quantity]) => ({
-      menuItemId,
-      quantity,
-    }));
+    const items = Array.from(cart.entries()).map(
+      ([menuItemVariantId, quantity]) => ({
+        menuItemVariantId,
+        quantity,
+      })
+    );
     onSubmit(items);
   };
 
@@ -136,7 +161,11 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                     <CardContent className="p-3">
                       <p className="font-medium">{item.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        ₹{parseFloat(item.price).toFixed(2)}
+                        {item.variants && item.variants.length === 1
+                          ? `₹${parseFloat(item.variants[0].price).toFixed(2)}`
+                          : `From ₹${Math.min(
+                              ...item.variants.map((v) => parseFloat(v.price))
+                            ).toFixed(2)}`}
                       </p>
                     </CardContent>
                   </Card>
@@ -155,18 +184,26 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {Array.from(cart.entries()).map(([itemId, quantity]) => {
-                    const item = menuItems.find((mi) => mi.id === itemId);
-                    if (!item) return null;
+                  {Array.from(cart.entries()).map(([variantId, quantity]) => {
+                    // Find the parent menu item and variant
+                    const parent = menuItems.find((mi) =>
+                      mi.variants.some((v) => v.id === variantId)
+                    );
+                    const variant = parent?.variants.find(
+                      (v) => v.id === variantId
+                    );
+                    if (!parent || !variant) return null;
                     return (
                       <div
-                        key={itemId}
+                        key={variantId}
                         className="flex items-center justify-between p-2 rounded-md bg-muted/50"
                       >
                         <div>
-                          <p className="font-medium">{item.name}</p>
+                          <p className="font-medium">
+                            {parent.name} ({variant.name})
+                          </p>
                           <p className="text-sm text-muted-foreground">
-                            ₹{parseFloat(item.price).toFixed(2)}
+                            ₹{parseFloat(variant.price).toFixed(2)}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -174,7 +211,7 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
-                            onClick={() => handleItemClick(item.id, "remove")}
+                            onClick={() => handleItemClick(parent.id, "remove")}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -183,7 +220,7 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6"
-                            onClick={() => handleItemClick(item.id, "add")}
+                            onClick={() => handleItemClick(parent.id, "add")}
                           >
                             <Plus className="h-4 w-4" />
                           </Button>

@@ -88,8 +88,14 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               <div key={item.id} className="flex items-start justify-between">
                 <div>
                   <p className="font-medium">
-                    {item.quantity}x {item.menuItem?.name}
+                    {item.quantity}x {item.menuItemVariant?.menuItem.name} (
+                    {item.menuItemVariant?.name})
                   </p>
+                  {item.note && (
+                    <p className="text-sm text-muted-foreground italic">
+                      Note: {item.note}
+                    </p>
+                  )}
                   <p className="text-sm text-muted-foreground">
                     @ ₹{Number(item.price).toFixed(2)}
                   </p>

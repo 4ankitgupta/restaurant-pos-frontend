@@ -150,8 +150,19 @@ const KitchenDisplay: React.FC = () => {
                         ></span>
                         <div className="flex flex-col">
                           <span className="font-semibold text-lg text-gray-800">
-                            {item.quantity}x {item.menuItem?.name || "..."}
+                            {item.quantity}x{" "}
+                            {item.menuItemVariant?.menuItem?.name || "..."}
                           </span>
+                          {item.menuItemVariant?.name && (
+                            <span className="text-sm text-muted-foreground">
+                              {item.menuItemVariant.name}
+                            </span>
+                          )}
+                          {item.note && (
+                            <span className="text-sm italic text-rose-600">
+                              Note: {item.note}
+                            </span>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">

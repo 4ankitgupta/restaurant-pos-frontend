@@ -80,7 +80,7 @@ class ApiService {
 
   addItemsToCashierOrder = (
     orderId: string,
-    items: Array<{ menuItemId: string; quantity: number }>
+    items: Array<{ menuItemVariantId: string; quantity: number; note?: string }>
   ) => {
     return this.request<ApiResponse<APIOrder>>(
       `/cashier/orders/${orderId}/items`,
@@ -92,7 +92,7 @@ class ApiService {
   };
 
   createTakeawayOrder = (
-    items: Array<{ menuItemId: string; quantity: number }>
+    items: Array<{ menuItemVariantId: string; quantity: number; note?: string }>
   ) => {
     return this.request<ApiResponse<APIOrder>>("/cashier/orders/takeaway", {
       method: "POST",
@@ -102,8 +102,14 @@ class ApiService {
 
   // --- Waiter Actions ---
   async createOrder(orderData: {
-    tableId: string;
-    items: Array<{ menuItemId: string; quantity: number }>;
+    tableId?: string;
+    takeAway?: boolean;
+    customerName?: string;
+    items: Array<{
+      menuItemVariantId: string;
+      quantity: number;
+      note?: string;
+    }>;
   }) {
     return this.request<ApiResponse<APIOrder>>("/waiter/orders", {
       method: "POST",
@@ -113,7 +119,7 @@ class ApiService {
 
   async addItemsToOrder(
     orderId: string,
-    items: Array<{ menuItemId: string; quantity: number }>
+    items: Array<{ menuItemVariantId: string; quantity: number; note?: string }>
   ) {
     return this.request<ApiResponse<APIOrder>>(
       `/waiter/orders/${orderId}/items`,
@@ -236,16 +242,16 @@ class ApiService {
 
   async createMenuItem(itemData: {
     name: string;
-    description: string;
-    price: number;
+    description?: string;
     categoryId: string;
+    variants: { name: string; price: number }[];
   }) {
     return this.request<
       ApiResponse<{
         id: string;
         name: string;
         description: string;
-        price: number;
+        // price removed (variants present)
         isAvailable: boolean;
         categoryId: string;
       }>
@@ -273,11 +279,11 @@ class ApiService {
   async updateMenuItem(
     itemId: string,
     itemData: {
-      name: string;
-      description: string;
-      price: number;
+      name?: string;
+      description?: string;
       categoryId?: string;
       isAvailable?: boolean;
+      variants?: { name: string; price: number }[];
     }
   ) {
     return this.request<ApiResponse<APIMenuItem>>(`/menu-items/${itemId}`, {

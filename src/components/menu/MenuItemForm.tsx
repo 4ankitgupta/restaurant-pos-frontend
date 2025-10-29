@@ -17,11 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
-import { APIMenuItem } from "@/types/restaurant";
+import { APIMenuItem, CreateMenuItemVariantDTO } from "@/types/restaurant";
 
 interface MenuItemFormProps {
   open: boolean;
@@ -43,9 +43,9 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const [itemForm, setItemForm] = useState({
     name: "",
     description: "",
-    price: "",
     categoryId: "",
     isAvailable: true,
+    variants: [{ name: "", price: "" }] as { name: string; price: string }[],
   });
   const { loading: createLoading, execute: executeCreate } = useApi();
   const { loading: updateLoading, execute: executeUpdate } = useApi();
@@ -55,20 +55,56 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
       setItemForm({
         name: editingItem.name,
         description: editingItem.description || "",
-        price: editingItem.price.toString(),
         categoryId: editingItem.categoryId || "",
         isAvailable: editingItem.isAvailable,
+        variants: editingItem.variants.map((v) => ({
+          name: v.name,
+          price: v.price,
+        })),
       });
     } else {
       setItemForm({
         name: "",
         description: "",
-        price: "",
         categoryId: "",
         isAvailable: true,
+        variants: [{ name: "", price: "" }],
       });
     }
   }, [editingItem]);
+
+  const handleVariantChange = (
+    index: number,
+    field: keyof CreateMenuItemVariantDTO,
+    value: string
+  ) => {
+    setItemForm((prev) => {
+      const newVariants = [...prev.variants];
+      newVariants[index] = {
+        ...newVariants[index],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        variants: newVariants,
+      };
+    });
+  };
+
+  const addVariant = () => {
+    setItemForm((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { name: "", price: "" }],
+    }));
+  };
+
+  const removeVariant = (index: number) => {
+    if (itemForm.variants.length <= 1) return; // Keep at least one variant
+    setItemForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }));
+  };
 
   const handleCreateItem = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +112,10 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
       await executeCreate(() =>
         apiService.createMenuItem({
           ...itemForm,
-          price: parseFloat(itemForm.price),
+          variants: itemForm.variants.map((v) => ({
+            name: v.name,
+            price: parseFloat(v.price),
+          })),
         })
       );
       toast({
@@ -98,7 +137,10 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
       await executeUpdate(() =>
         apiService.updateMenuItem(editingItem.id, {
           ...itemForm,
-          price: parseFloat(itemForm.price),
+          variants: itemForm.variants.map((v) => ({
+            name: v.name,
+            price: parseFloat(v.price),
+          })),
         })
       );
       toast({
@@ -116,9 +158,9 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
     setItemForm({
       name: "",
       description: "",
-      price: "",
       categoryId: "",
       isAvailable: true,
+      variants: [{ name: "", price: "" }],
     });
     setEditingItem(null);
     onOpenChange(false);
@@ -176,18 +218,44 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
               }
             />
           </div>
-          <div>
-            <Label htmlFor="item-price">Price</Label>
-            <Input
-              id="item-price"
-              type="number"
-              step="0.01"
-              value={itemForm.price}
-              onChange={(e) =>
-                setItemForm((prev) => ({ ...prev, price: e.target.value }))
-              }
-              required
-            />
+          <div className="space-y-2">
+            <Label>Variants</Label>
+            {itemForm.variants.map((variant, index) => (
+              <div key={index} className="flex gap-2 items-center">
+                <Input
+                  placeholder="Variant name (e.g., Full)"
+                  value={variant.name}
+                  onChange={(e) =>
+                    handleVariantChange(index, "name", e.target.value)
+                  }
+                  required
+                />
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder="Price"
+                  value={variant.price}
+                  onChange={(e) =>
+                    handleVariantChange(index, "price", e.target.value)
+                  }
+                  required
+                />
+                {itemForm.variants.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeVariant(index)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addVariant}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Variant
+            </Button>
           </div>
           <div>
             <Label htmlFor="item-category">Category</Label>
