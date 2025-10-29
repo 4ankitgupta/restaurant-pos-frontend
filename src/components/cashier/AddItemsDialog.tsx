@@ -278,6 +278,7 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                       const item = menuItems.find(
                         (mi) => mi.id === cartItem.menuItemId
                       );
+                      if (!item) return null;
                       const variant = item?.variants.find(
                         (v) => v.id === cartItem.variantId
                       );

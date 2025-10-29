@@ -73,10 +73,12 @@ const Cashier = () => {
           fetchCategories(() => apiService.getMenuCategories()),
         ]);
 
-      if (activeRes) setActiveOrders(activeRes.data);
-      if (completedRes) setCompletedOrders(completedRes.data);
-      if (menuRes) setMenuItems(menuRes.data);
-      if (categoriesRes) setMenuCategories(categoriesRes.data);
+      if (activeRes?.data) setActiveOrders(activeRes.data);
+      if (completedRes?.data) setCompletedOrders(completedRes.data);
+
+      // Use "|| []" to default to an empty array if data is null/undefined
+      setMenuItems(menuRes?.data || []);
+      setMenuCategories(categoriesRes?.data || []);
     } catch (error) {
       console.error("Failed to fetch cashier data:", error);
     }

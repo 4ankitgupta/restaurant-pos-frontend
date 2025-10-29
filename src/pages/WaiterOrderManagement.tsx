@@ -61,7 +61,7 @@ const mapOrderItemsToCart = (
         menuItemVariant: {
           id: variantSource.id,
           name: variantSource.name,
-          price: variantSource.price,
+          price: Number(variantSource.price), // <-- FIX: Convert to number
           menuItem: {
             id: parent.id,
             name: parent.name,
@@ -73,7 +73,7 @@ const mapOrderItemsToCart = (
         quantity: item.quantity,
         status: item.status,
         note: item.note,
-        price: item.price,
+        price: Number(item.price), // <-- FIX: Convert to number
       } as OrderItem;
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
