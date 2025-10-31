@@ -211,13 +211,13 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
           onOpenChange(isOpen);
         }}
       >
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add Items to Order</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Menu List */}
-            <div className="col-span-2 flex flex-col border-r pr-4">
+            <div className="lg:col-span-2 flex flex-col border-b lg:border-b-0 lg:border-r pb-4 lg:pb-0 pr-0 lg:pr-4">
               <Input
                 placeholder="Search menu..."
                 value={searchTerm}
@@ -239,34 +239,44 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                   </Button>
                 ))}
               </div>
-              <ScrollArea className="h-[400px]">
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredItems.map((item) => (
-                    <Card
-                      key={item.id}
-                      className="cursor-pointer hover:bg-accent/50"
-                      onClick={() => handleItemClick(item)}
-                    >
-                      <CardContent className="p-3">
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {getItemPriceRange(item)}
-                        </p>
-                        {item.variants.length > 1 && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {item.variants.length} variants available
+              <ScrollArea className="h-[300px] lg:h-[400px]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {filteredItems.length === 0 ? (
+                    <div className="col-span-2 text-center py-8 text-muted-foreground">
+                      {menuItems.length === 0 ? (
+                        <p>No menu items available</p>
+                      ) : (
+                        <p>No items found in this category</p>
+                      )}
+                    </div>
+                  ) : (
+                    filteredItems.map((item) => (
+                      <Card
+                        key={item.id}
+                        className="cursor-pointer hover:bg-accent/50"
+                        onClick={() => handleItemClick(item)}
+                      >
+                        <CardContent className="p-3">
+                          <p className="font-medium">{item.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {getItemPriceRange(item)}
                           </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+                          {item.variants.length > 1 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {item.variants.length} variants available
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </div>
             {/* Cart */}
             <div className="flex flex-col">
               <h3 className="font-semibold mb-4">New Items</h3>
-              <ScrollArea className="h-[400px]">
+              <ScrollArea className="h-[300px] lg:h-[400px]">
                 {cart.size === 0 ? (
                   <div className="text-center text-muted-foreground pt-16">
                     <ShoppingCart className="mx-auto h-12 w-12 opacity-50" />
@@ -351,9 +361,9 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
             </div>
           </div>
           <DialogFooter>
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2">
               <Badge variant="secondary">New Items: {totalItems}</Badge>
-              <Button onClick={handleSubmit} disabled={isLoading}>
+              <Button onClick={handleSubmit} disabled={isLoading} className="w-full sm:w-auto">
                 {isLoading ? "Adding..." : "Add to Order"}
               </Button>
             </div>

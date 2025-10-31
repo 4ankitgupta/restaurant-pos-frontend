@@ -135,13 +135,13 @@ const TableManagement: React.FC = () => {
   const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
       case "Available":
-        return "bg-success text-success-foreground";
+        return "bg-success/10 border-success text-success-foreground hover:bg-success/20";
       case "Occupied":
-        return "bg-warning text-warning-foreground";
+        return "bg-destructive/10 border-destructive text-destructive-foreground hover:bg-destructive/20";
       case "Reserved":
-        return "bg-secondary text-secondary-foreground";
+        return "bg-secondary/10 border-secondary text-secondary-foreground hover:bg-secondary/20";
       case "NeedCleaning":
-        return "bg-destructive text-destructive-foreground";
+        return "bg-warning/10 border-warning text-warning-foreground hover:bg-warning/20";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -315,26 +315,28 @@ const TableManagement: React.FC = () => {
 
       {/* Table Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {[...Array(12)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-3">
-                <div className="h-6 bg-muted rounded w-1/2"></div>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
+              <CardHeader className="p-3 pb-2">
+                <div className="h-4 bg-muted rounded w-1/2 mb-1"></div>
+                <div className="h-3 bg-muted rounded w-3/4"></div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-1">
+                <div className="h-5 bg-muted rounded mb-1"></div>
                 <div className="h-4 bg-muted rounded"></div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
           {tables.map((table) => (
             <Card
               key={table.id}
               className={cn(
-                "flex h-full cursor-pointer flex-col transition-all hover:shadow-lg",
+                "cursor-pointer transition-all hover:shadow-md border-2 relative",
+                getStatusColor(table.status),
                 selectedTable?.id === table.id ? "ring-2 ring-primary" : ""
               )}
               onClick={() => {
@@ -342,119 +344,108 @@ const TableManagement: React.FC = () => {
                 setIsSheetOpen(true);
               }}
             >
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle className="text-lg sm:text-base md:text-lg">
-                      Table {table.tableNumber}
+              <CardHeader className="p-3 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base font-bold truncate">
+                      T{table.tableNumber}
                     </CardTitle>
-                    <div className="text-sm text-muted-foreground">
-                      Capacity: {table.capacity} people
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                      <Users className="h-3 w-3 shrink-0" />
+                      <span>{table.capacity}</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    <Badge className={getStatusColor(table.status)}>
-                      {getStatusIcon(table.status)}
-                      <span className="ml-1 capitalize">
-                        {table.status.toLowerCase()}
-                      </span>
-                    </Badge>
-                    {canManageTables && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 sm:h-9 sm:w-9"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleEditTable(table);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive sm:h-9 sm:w-9"
-                              onClick={(event) => event.stopPropagation()}
+                  {canManageTables && (
+                    <div className="flex gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleEditTable(table);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Delete Table {table.tableNumber}?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will
+                              permanently remove the table and its allocation
+                              settings.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTable(table)}
+                              disabled={deletingTable}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete Table {table.tableNumber}?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently remove the table and its allocation
-                                settings.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTable(table)}
-                                disabled={deletingTable}
-                              >
-                                {deletingTable ? "Deleting..." : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
-                  </div>
+                              {deletingTable ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  {table.status === "Available"
-                    ? "Ready for guests"
-                    : table.status === "Reserved"
-                    ? "Reserved for later"
-                    : table.status === "NeedCleaning"
-                    ? "Needs cleaning"
-                    : "Currently occupied"}
-                </div>
-
-                {/* --- ADD THIS BLOCK to show order status --- */}
-                {table.status === "Occupied" && table.orderStatus && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <BookOpen className="h-4 w-4" />
-                    <Badge className={getOrderStatusColor(table.orderStatus)}>
-                      {table.orderStatus}
+              <CardContent className="p-3 pt-1">
+                <div className="space-y-1.5">
+                  <Badge 
+                    variant="secondary" 
+                    className={cn("w-full justify-center text-xs py-0.5", getStatusColor(table.status))}
+                  >
+                    {getStatusIcon(table.status)}
+                    <span className="ml-1 capitalize text-[10px]">
+                      {table.status === "NeedCleaning" ? "Cleaning" : table.status}
+                    </span>
+                  </Badge>
+                  
+                  {table.status === "Occupied" && table.orderStatus && (
+                    <Badge variant="outline" className="w-full justify-center text-[10px] py-0.5">
+                      <BookOpen className="h-2.5 w-2.5 mr-1" />
+                      {table.orderStatus.replace("_", " ")}
                     </Badge>
-                  </div>
-                )}
+                  )}
 
-                {/* Show payment status for occupied tables */}
-                {table.status === "Occupied" &&
-                  (() => {
-                    const tableOrder = orders.find(
-                      (order) => order.tableId === table.id
-                    );
-                    return tableOrder ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        {/* <DollarSign className="h-4 w-4" /> */}
-                        <div className="text-xl font-semibold">₹</div>
+                  {table.status === "Occupied" &&
+                    (() => {
+                      const tableOrder = orders.find(
+                        (order) => order.tableId === table.id
+                      );
+                      return tableOrder ? (
                         <Badge
-                          className={
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-center text-[10px] py-0.5",
                             tableOrder.paymentStatus === "UNPAID"
-                              ? "bg-destructive text-destructive-foreground"
+                              ? "bg-destructive/10 border-destructive/20 text-destructive"
                               : tableOrder.paymentStatus === "PARTIAL"
-                              ? "bg-warning text-warning-foreground"
-                              : "bg-success text-success-foreground"
-                          }
+                              ? "bg-warning/10 border-warning/20 text-warning-foreground"
+                              : "bg-success/10 border-success/20 text-success"
+                          )}
                         >
-                          {tableOrder.paymentStatus}
+                          ₹ {tableOrder.paymentStatus}
                         </Badge>
-                      </div>
-                    ) : null;
-                  })()}
+                      ) : null;
+                    })()}
+                </div>
               </CardContent>
             </Card>
           ))}
