@@ -48,13 +48,15 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
             <p className="text-sm text-muted-foreground">{item.description}</p>
           )}
         </DialogHeader>
-        
+
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-6 pr-4">
             {/* Variants Selection */}
             {item && (
               <div className="space-y-3">
-                <Label className="text-base font-semibold">Choose Size/Variant</Label>
+                <Label className="text-base font-semibold">
+                  Choose Size/Variant
+                </Label>
                 <RadioGroup
                   value={selectedVariantId}
                   onValueChange={setSelectedVariantId}
@@ -73,7 +75,11 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
                       )}
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <RadioGroupItem value={variant.id} id={variant.id} className="shrink-0" />
+                        <RadioGroupItem
+                          value={variant.id}
+                          id={variant.id}
+                          className="shrink-0"
+                        />
                         <div className="flex-1">
                           <div className="font-medium">{variant.name}</div>
                         </div>
@@ -93,7 +99,7 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
             )}
 
             {/* Special Instructions */}
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <Label htmlFor="note" className="text-base font-semibold flex items-center gap-2">
                 <MessageSquarePlus className="h-4 w-4" />
                 Special Instructions (Optional)
@@ -105,20 +111,20 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
                 onChange={(e) => setNote(e.target.value)}
                 className="min-h-[80px] resize-none"
               />
-            </div>
+            </div> */}
           </div>
         </ScrollArea>
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => onOpenChange(false)}
             className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleSubmit} 
+          <Button
+            onClick={handleSubmit}
             disabled={!selectedVariantId}
             className="w-full sm:w-auto"
           >

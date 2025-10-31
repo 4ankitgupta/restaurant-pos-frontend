@@ -75,6 +75,7 @@ const mapOrderItemsToCart = (
         },
         quantity: item.quantity,
         status: item.status,
+        variantName: item.menuItemVariant.name,
         note: item.note,
         price: Number(item.price), // <-- FIX: Convert to number
       } as OrderItem;
@@ -577,6 +578,14 @@ const WaiterOrderManagement: React.FC = () => {
                         ).toFixed(2)}{" "}
                         each
                       </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.menuItemVariant?.name}
+                      </p>
+                      {item.note && (
+                        <p className="text-xs text-muted-foreground">
+                          Note: {item.note}
+                        </p>
+                      )}
                       <Badge
                         variant={getBadgeVariant(item.status)}
                         className="mt-1 text-xs"
