@@ -1,0 +1,97 @@
+/* src/components/cashier/BillReceipt.css */
+
+/* This style is for the component we see in the app (hidden) */
+.bill-container-hidden {
+  display: none;
+}
+
+/* These styles apply ONLY during printing */
+@media print {
+  /* Hide the rest of the app */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Show only the bill and its children */
+  .bill-receipt,
+  .bill-receipt * {
+    visibility: visible;
+  }
+
+  /* Position the bill at the top of the print page */
+  .bill-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+/* General styling for the bill component */
+.bill-receipt {
+  width: 300px; /* Typical thermal receipt width */
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  color: #000;
+  background: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.bill-header,
+.bill-footer {
+  text-align: center;
+}
+
+.restaurant-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.bill-header p {
+  margin: 2px 0;
+}
+
+.bill-separator {
+  text-align: center;
+  overflow: hidden;
+  margin: 10px 0;
+  border: none;
+}
+
+.bill-items table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bill-items th,
+.bill-items td {
+  padding: 4px 2px;
+  text-align: left;
+}
+
+.bill-items th:nth-child(2),
+.bill-items td:nth-child(2) {
+  text-align: center;
+}
+
+.bill-items th:nth-child(3),
+.bill-items td:nth-child(3),
+.bill-items th:nth-child(4),
+.bill-items td:nth-child(4) {
+  text-align: right;
+}
+
+.bill-summary .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+  font-weight: bold;
+}
+
+.bill-summary .total-due {
+  font-size: 14px;
+  border-top: 1px dashed #000;
+  padding-top: 4px;
+}

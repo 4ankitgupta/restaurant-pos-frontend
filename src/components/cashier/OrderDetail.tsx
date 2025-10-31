@@ -1,4 +1,7 @@
+import React, { useRef } from "react";
+import { useReactToPrint } from "react-to-print";
 import { APIOrder, OrderItemStatus } from "@/types/restaurant";
+import { BillReceipt } from "./BillReceipt";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -33,6 +36,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   onRefund,
 }) => {
   const { user } = useAuth();
+  const billReceiptRef = useRef<HTMLDivElement>(null);
+
+  const handlePrint = useReactToPrint({
+    documentTitle: `Order-${order?.id?.substring(0, 8) || ""}`,
+    contentRef: billReceiptRef,
+  });
+
   if (!order) {
     return (
       <Card className="h-full flex items-center justify-center">
@@ -70,87 +80,98 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const canRefund = user?.role === "admin" || user?.role === "manager";
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex justify-between items-center">
-          <span>
-            {order.takeAway
-              ? "Take-away"
-              : `Table ${order.table?.tableNumber || ""}`}
-          </span>
-          <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
-        <ScrollArea className="h-full">
-          <div className="p-6 space-y-4">
-            {order.orderItems.map((item) => (
-              <div key={item.id} className="flex items-start justify-between">
-                <div>
-                  <p className="font-medium">
-                    {item.quantity}x {item.menuItemVariant?.menuItem.name} (
-                    {item.menuItemVariant?.name})
-                  </p>
-                  {item.note && (
-                    <p className="text-sm text-muted-foreground italic">
-                      Note: {item.note}
+    <>
+      <Card className="h-full flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex justify-between items-center">
+            <span>
+              {order.takeAway
+                ? "Take-away"
+                : `Table ${order.table?.tableNumber || ""}`}
+            </span>
+            <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-4">
+              {order.orderItems.map((item) => (
+                <div key={item.id} className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium">
+                      {item.quantity}x {item.menuItemVariant?.menuItem.name} (
+                      {item.menuItemVariant?.name})
                     </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    @ ₹{Number(item.price).toFixed(2)}
-                  </p>
+                    {item.note && (
+                      <p className="text-sm text-muted-foreground italic">
+                        Note: {item.note}
+                      </p>
+                    )}
+                    <p className="text-sm text-muted-foreground">
+                      @ ₹{Number(item.price).toFixed(2)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold">
+                      ₹{(item.quantity * Number(item.price)).toFixed(2)}
+                    </p>
+                    <Badge
+                      variant={getStatusVariant(item.status)}
+                      className="mt-1"
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">
-                    ₹{(item.quantity * Number(item.price)).toFixed(2)}
-                  </p>
-                  <Badge
-                    variant={getStatusVariant(item.status)}
-                    className="mt-1"
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+        <CardFooter className="flex-col items-stretch space-y-4 p-4 border-t">
+          <div className="space-y-2 text-lg">
+            <div className="flex justify-between font-semibold">
+              <span>Total</span>
+              <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+            </div>
+            <Separator />
+            <div className="flex justify-between text-primary font-bold">
+              <span>Amount Due</span>
+              <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+            </div>
           </div>
-        </ScrollArea>
-      </CardContent>
-      <CardFooter className="flex-col items-stretch space-y-4 p-4 border-t">
-        <div className="space-y-2 text-lg">
-          <div className="flex justify-between font-semibold">
-            <span>Total</span>
-            <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              onClick={onAddItems}
+              disabled={
+                order.status === "COMPLETED" && order.paymentStatus === "PAID"
+              }
+            >
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Items
+            </Button>
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" /> Print Bill
+            </Button>
           </div>
-          <Separator />
-          <div className="flex justify-between text-primary font-bold">
-            <span>Amount Due</span>
-            <span>₹{Number(order.totalAmount).toFixed(2)}</span>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            onClick={onAddItems}
-            disabled={isRefundable}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" /> Add Items
-          </Button>
-          <Button variant="outline">
-            <Printer className="mr-2 h-4 w-4" /> Print Bill
-          </Button>
-        </div>
-        {isPayable && (
-          <Button size="lg" onClick={onPay}>
-            <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
-          </Button>
-        )}
-        {isRefundable && canRefund && (
-          <Button size="lg" variant="destructive" onClick={onRefund}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Refund Order
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
+          {(order.paymentStatus === "UNPAID" ||
+            order.paymentStatus === "PARTIAL") && (
+            <Button size="lg" onClick={onPay}>
+              <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
+            </Button>
+          )}
+          {order.status === "COMPLETED" &&
+            order.paymentStatus === "PAID" &&
+            (user?.role === "admin" || user?.role === "manager") && (
+              <Button size="lg" variant="destructive" onClick={onRefund}>
+                <RefreshCw className="mr-2 h-4 w-4" /> Refund Order
+              </Button>
+            )}
+        </CardFooter>
+      </Card>
+      {/* Hidden receipt container for printing */}
+      <div style={{ display: "none" }}>
+        <BillReceipt order={order} ref={billReceiptRef} />
+      </div>
+    </>
   );
 };
