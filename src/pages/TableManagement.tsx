@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,16 @@ import {
   Plus,
   Edit,
   Trash2,
+  Search, // Added icon
 } from "lucide-react";
+import { Input } from "@/components/ui/input"; // Added import
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Added imports
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
@@ -36,6 +45,15 @@ import {
 import { TableForm, TableFormValues } from "@/components/table/TableForm";
 import { cn } from "@/lib/utils";
 
+// --- NEW: Constant for filter options ---
+const STATUS_OPTIONS: (APITable["status"] | "all")[] = [
+  "all",
+  "Available",
+  "Occupied",
+  "Reserved",
+  "NeedCleaning",
+];
+
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -54,6 +72,12 @@ const TableManagement: React.FC = () => {
   const { refreshKey } = useRefresh();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<APITable | null>(null);
+
+  // --- NEW: State for Search and Filter ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<APITable["status"] | "all">(
+    "all"
+  );
 
   const loadTables = async () => {
     try {
@@ -135,18 +159,22 @@ const TableManagement: React.FC = () => {
   const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
       case "Available":
-        return "bg-success/10 border-success text-success-foreground hover:bg-success/20";
+        // Light green background, dark green text
+        return "bg-green-50 border-green-300 text-green-800 hover:bg-green-100";
       case "Occupied":
-        return "bg-destructive/10 border-destructive text-destructive-foreground hover:bg-destructive/20";
+        // Light red background, dark red text
+        return "bg-red-50 border-red-300 text-red-800 hover:bg-red-100";
       case "Reserved":
-        return "bg-secondary/10 border-secondary text-secondary-foreground hover:bg-secondary/20";
+        // Light blue background, dark blue text
+        return "bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100";
       case "NeedCleaning":
-        return "bg-warning/10 border-warning text-warning-foreground hover:bg-warning/20";
+        // Light yellow background, dark yellow text
+        return "bg-yellow-50 border-yellow-300 text-yellow-800 hover:bg-yellow-100";
       default:
-        return "bg-muted text-muted-foreground";
+        // A neutral default
+        return "bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100";
     }
   };
-
   const getOrderStatusColor = (status: APITable["orderStatus"]) => {
     switch (status) {
       case "IN_PROGRESS":
@@ -270,6 +298,32 @@ const TableManagement: React.FC = () => {
     (table) => table.status === "Occupied"
   ).length;
 
+  // --- NEW: Memoized array for sorting and filtering ---
+  const filteredAndSortedTables = useMemo(() => {
+    return tables
+      .filter((table) => {
+        // Status Filter
+        if (statusFilter !== "all" && table.status !== statusFilter) {
+          return false;
+        }
+        // Search Filter (by table number)
+        if (
+          searchTerm &&
+          !table.tableNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Natural sort for strings like "T1", "T2", "T10"
+        return a.tableNumber.localeCompare(b.tableNumber, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+  }, [tables, statusFilter, searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -304,6 +358,44 @@ const TableManagement: React.FC = () => {
         </div>
       </div>
 
+      {/* --- NEW: Search and Filter UI --- */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        {/* Search Bar */}
+        <div className="relative flex-1 md:max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search by table number..."
+            className="w-full pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Status Filter */}
+        <Select
+          value={statusFilter}
+          onValueChange={(value) =>
+            setStatusFilter(value as APITable["status"] | "all")
+          }
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((status) => (
+              <SelectItem key={status} value={status} className="capitalize">
+                {status === "all"
+                  ? "All Statuses"
+                  : status === "NeedCleaning"
+                  ? "Cleaning"
+                  : status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <TableForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -330,8 +422,9 @@ const TableManagement: React.FC = () => {
           ))}
         </div>
       ) : (
+        // --- MODIFIED: Map over filteredAndSortedTables ---
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {tables.map((table) => (
+          {filteredAndSortedTables.map((table) => (
             <Card
               key={table.id}
               className={cn(
@@ -407,18 +500,26 @@ const TableManagement: React.FC = () => {
               </CardHeader>
               <CardContent className="p-3 pt-1">
                 <div className="space-y-1.5">
-                  <Badge 
-                    variant="secondary" 
-                    className={cn("w-full justify-center text-xs py-0.5", getStatusColor(table.status))}
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "w-full justify-center text-xs py-0.5",
+                      getStatusColor(table.status)
+                    )}
                   >
                     {getStatusIcon(table.status)}
                     <span className="ml-1 capitalize text-[10px]">
-                      {table.status === "NeedCleaning" ? "Cleaning" : table.status}
+                      {table.status === "NeedCleaning"
+                        ? "Cleaning"
+                        : table.status}
                     </span>
                   </Badge>
-                  
+
                   {table.status === "Occupied" && table.orderStatus && (
-                    <Badge variant="outline" className="w-full justify-center text-[10px] py-0.5">
+                    <Badge
+                      variant="outline"
+                      className="w-full justify-center text-[10px] py-0.5"
+                    >
                       <BookOpen className="h-2.5 w-2.5 mr-1" />
                       {table.orderStatus.replace("_", " ")}
                     </Badge>

@@ -65,17 +65,21 @@ const Cashier = () => {
 
   const fetchData = async () => {
     try {
-      const [activeRes, completedRes, menuRes, categoriesRes] = await Promise.all([
-        fetchActive(() => apiService.getActiveAndUnpaidOrders()),
-        fetchCompleted(() => apiService.getCompletedOrders()),
-        fetchMenu(() => apiService.getMenuItems()),
-        fetchCategories(() => apiService.getMenuCategories()),
-      ]);
+      const [activeRes, completedRes, menuRes, categoriesRes] =
+        await Promise.all([
+          fetchActive(() => apiService.getActiveAndUnpaidOrders()),
+          fetchCompleted(() => apiService.getCompletedOrders()),
+          fetchMenu(() => apiService.getMenuItems()),
+          fetchCategories(() => apiService.getMenuCategories()),
+        ]);
 
       if (activeRes?.data) setActiveOrders(activeRes.data);
       if (completedRes?.data) setCompletedOrders(completedRes.data);
       if (menuRes?.data) setMenuItems(menuRes.data);
+      else if (Array.isArray(menuRes)) setMenuItems(menuRes);
+
       if (categoriesRes?.data) setMenuCategories(categoriesRes.data);
+      else if (Array.isArray(categoriesRes)) setMenuCategories(categoriesRes);
     } catch (error) {
       console.error("Failed to fetch cashier data:", error);
     }

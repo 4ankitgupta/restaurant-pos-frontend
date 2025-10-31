@@ -19,7 +19,10 @@ import {
   Clock,
   ChefHat,
   PanelRightOpen,
+  MessageSquare,
 } from "lucide-react";
+import { VariantSelectionDialog } from "@/components/cashier/VariantSelectionDialog";
+import { EditNoteDialog } from "@/components/cashier/EditNoteDialog";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { apiService, ApiError } from "@/services/apiService";
@@ -93,6 +96,17 @@ const WaiterOrderManagement: React.FC = () => {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isOrderPanelOpen, setIsOrderPanelOpen] = useState(false);
 
+  // Variant selection dialog state
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+
+  // Note editing dialog state
+  const [editingNote, setEditingNote] = useState<{
+    itemId: string;
+    initialNote?: string;
+    itemName: string;
+  } | null>(null);
+
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
 
@@ -135,60 +149,84 @@ const WaiterOrderManagement: React.FC = () => {
     }
   }, [currentOrder, categories, menuItems]);
 
-  const addToCart = (apiMenuItem: APIMenuItem) => {
-    // If multiple variants, prompt user to select one (simple prompt for now)
-    let variant = apiMenuItem.variants[0];
-    if (apiMenuItem.variants.length > 1) {
-      const choices = apiMenuItem.variants
-        .map(
-          (v, i) => `${i + 1}. ${v.name} - ₹${parseFloat(v.price).toFixed(2)}`
-        )
-        .join("\n");
-      const sel = window.prompt(
-        `Select variant for ${apiMenuItem.name}:\n${choices}`
-      );
-      const idx = sel ? Number(sel) - 1 : -1;
-      if (isNaN(idx) || idx < 0 || idx >= apiMenuItem.variants.length) return;
-      variant = apiMenuItem.variants[idx];
+  const addToCart = (menuItem: APIMenuItem) => {
+    // If single variant, add directly. If multiple, open VariantSelectionDialog.
+    if (menuItem.variants.length === 1) {
+      handleVariantSelect(menuItem.variants[0].id, menuItem.id);
+    } else {
+      setSelectedItemId(menuItem.id);
+      setVariantDialogOpen(true);
     }
+  };
 
-    // Build an OrderItem shaped object using new types
-    const existingItem = cart.find(
-      (item) =>
-        item.menuItemVariant?.id === variant.id && item.status === "PENDING"
+  const handleVariantSelect = (
+    variantId: string,
+    originatingItemId?: string
+  ) => {
+    const itemId = originatingItemId ?? selectedItemId;
+    const menuItem = menuItems.find((item) => item.id === itemId);
+    if (!menuItem) return;
+
+    const variant = menuItem.variants.find((v) => v.id === variantId);
+    if (!variant) return;
+
+    const existing = cart.find(
+      (i) => i.menuItemVariant?.id === variantId && i.status === "PENDING"
     );
 
-    if (existingItem) {
+    if (existing) {
       setCart(
-        cart.map((item) =>
-          item.menuItemVariant?.id === variant.id && item.status === "PENDING"
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+        cart.map((i) =>
+          i.menuItemVariant?.id === variantId && i.status === "PENDING"
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         )
       );
     } else {
-      const newOrderItem = {
-        id: `${Date.now()}-${apiMenuItem.id}-${variant.id}`,
+      const newItem: OrderItem = {
+        id: `${Date.now()}-${menuItem.id}-${variant.id}`,
         menuItemVariant: {
           id: variant.id,
           name: variant.name,
           price: Number(variant.price),
           menuItem: {
-            id: apiMenuItem.id,
-            name: apiMenuItem.name,
-            description: apiMenuItem.description || undefined,
+            id: menuItem.id,
+            name: menuItem.name,
+            description: menuItem.description || undefined,
             category:
-              categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
+              categories.find((c) => c.id === menuItem.categoryId)?.name ||
               "Unknown",
-            available: apiMenuItem.isAvailable,
+            available: menuItem.isAvailable,
           },
         },
         quantity: 1,
-        status: "PENDING" as OrderItemStatus,
+        status: "PENDING",
+        note: "",
         price: Number(variant.price),
-      } as OrderItem;
-      setCart([...cart, newOrderItem]);
+      };
+      setCart([...cart, newItem]);
     }
+
+    setVariantDialogOpen(false);
+    setSelectedItemId(null);
+  };
+
+  const handleNoteEdit = (
+    itemId: string,
+    initialNote: string | undefined,
+    itemName: string
+  ) => {
+    setEditingNote({ itemId, initialNote, itemName });
+  };
+
+  const handleNoteSave = (note: string) => {
+    if (!editingNote) return;
+    setCart(
+      cart.map((item) =>
+        item.id === editingNote.itemId ? { ...item, note } : item
+      )
+    );
+    setEditingNote(null);
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
@@ -554,6 +592,22 @@ const WaiterOrderManagement: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 mr-1"
+                        onClick={() =>
+                          handleNoteEdit(
+                            item.id,
+                            (item as any).note,
+                            item.menuItemVariant?.menuItem.name || "Item"
+                          )
+                        }
+                        title="Add/Edit Note"
+                        disabled={item.status !== "PENDING"}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                      <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"
@@ -753,6 +807,22 @@ const WaiterOrderManagement: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 mr-1"
+                            onClick={() =>
+                              handleNoteEdit(
+                                item.id,
+                                (item as any).note,
+                                item.menuItemVariant?.menuItem.name || "Item"
+                              )
+                            }
+                            title="Add/Edit Note"
+                            disabled={item.status !== "PENDING"}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
+                          <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7"
@@ -852,6 +922,21 @@ const WaiterOrderManagement: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Dialogs */}
+      <VariantSelectionDialog
+        item={menuItems.find((item) => item.id === selectedItemId)}
+        open={variantDialogOpen}
+        onOpenChange={setVariantDialogOpen}
+        onSelect={(variantId: string) => handleVariantSelect(variantId)}
+      />
+
+      <EditNoteDialog
+        open={!!editingNote}
+        onOpenChange={(isOpen) => !isOpen && setEditingNote(null)}
+        initialNote={editingNote?.initialNote}
+        onSave={handleNoteSave}
+        itemName={editingNote?.itemName || ""}
+      />
     </div>
   );
 };
