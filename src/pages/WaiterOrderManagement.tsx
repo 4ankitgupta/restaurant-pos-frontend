@@ -19,7 +19,10 @@ import {
   Clock,
   ChefHat,
   PanelRightOpen,
+  MessageSquare,
 } from "lucide-react";
+import { VariantSelectionDialog } from "@/components/cashier/VariantSelectionDialog";
+import { EditNoteDialog } from "@/components/cashier/EditNoteDialog";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { apiService, ApiError } from "@/services/apiService";
@@ -45,29 +48,37 @@ const mapOrderItemsToCart = (
 ): OrderItem[] => {
   return orderItems
     .map((item) => {
-      const source =
-        item.menuItem ?? menuItems.find((mi) => mi.id === item.menuItemId);
+      // New backend structure: item.menuItemVariant exists and contains menuItem
+      const variantSource = item.menuItemVariant;
+      if (!variantSource) return null;
 
-      if (!source) {
-        return null;
-      }
+      const parent = variantSource.menuItem;
+      if (!parent) return null;
 
       const categoryName =
-        categories.find((category) => category.id === source.categoryId)
+        categories.find((category) => category.id === parent.categoryId)
           ?.name || "Unknown";
+
       return {
         id: item.id,
-        menuItem: {
-          id: source.id,
-          name: source.name,
-          price: Number(source.price),
-          category: categoryName,
-          description: source.description ?? undefined,
-          available: source.isAvailable,
+        menuItemVariant: {
+          id: variantSource.id,
+          name: variantSource.name,
+          price: Number(variantSource.price), // <-- FIX: Convert to number
+          menuItem: {
+            id: parent.id,
+            name: parent.name,
+            description: parent.description ?? undefined,
+            category: categoryName,
+            available: parent.isAvailable,
+          },
         },
         quantity: item.quantity,
         status: item.status,
-      };
+        variantName: item.menuItemVariant.name,
+        note: item.note,
+        price: Number(item.price), // <-- FIX: Convert to number
+      } as OrderItem;
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
 };
@@ -85,6 +96,17 @@ const WaiterOrderManagement: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isOrderPanelOpen, setIsOrderPanelOpen] = useState(false);
+
+  // Variant selection dialog state
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+
+  // Note editing dialog state
+  const [editingNote, setEditingNote] = useState<{
+    itemId: string;
+    initialNote?: string;
+    itemName: string;
+  } | null>(null);
 
   const { orderId: incomingOrderId, tableId: incomingTableId } =
     location.state || {};
@@ -128,39 +150,84 @@ const WaiterOrderManagement: React.FC = () => {
     }
   }, [currentOrder, categories, menuItems]);
 
-  const addToCart = (apiMenuItem: APIMenuItem) => {
-    const menuItem: MenuItem = {
-      id: apiMenuItem.id,
-      name: apiMenuItem.name,
-      price: Number(apiMenuItem.price),
-      category:
-        categories.find((c) => c.id === apiMenuItem.categoryId)?.name ||
-        "Unknown",
-      description: apiMenuItem.description || undefined,
-      available: apiMenuItem.isAvailable,
-    };
+  const addToCart = (menuItem: APIMenuItem) => {
+    // If single variant, add directly. If multiple, open VariantSelectionDialog.
+    if (menuItem.variants.length === 1) {
+      handleVariantSelect(menuItem.variants[0].id, menuItem.id);
+    } else {
+      setSelectedItemId(menuItem.id);
+      setVariantDialogOpen(true);
+    }
+  };
 
-    const existingItem = cart.find(
-      (item) => item.menuItem.id === menuItem.id && item.status === "PENDING"
+  const handleVariantSelect = (
+    variantId: string,
+    originatingItemId?: string
+  ) => {
+    const itemId = originatingItemId ?? selectedItemId;
+    const menuItem = menuItems.find((item) => item.id === itemId);
+    if (!menuItem) return;
+
+    const variant = menuItem.variants.find((v) => v.id === variantId);
+    if (!variant) return;
+
+    const existing = cart.find(
+      (i) => i.menuItemVariant?.id === variantId && i.status === "PENDING"
     );
 
-    if (existingItem) {
+    if (existing) {
       setCart(
-        cart.map((item) =>
-          item.menuItem.id === menuItem.id && item.status === "PENDING"
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+        cart.map((i) =>
+          i.menuItemVariant?.id === variantId && i.status === "PENDING"
+            ? { ...i, quantity: i.quantity + 1 }
+            : i
         )
       );
     } else {
-      const newOrderItem: OrderItem = {
-        id: `${Date.now()}-${menuItem.id}`,
-        menuItem,
+      const newItem: OrderItem = {
+        id: `${Date.now()}-${menuItem.id}-${variant.id}`,
+        menuItemVariant: {
+          id: variant.id,
+          name: variant.name,
+          price: Number(variant.price),
+          menuItem: {
+            id: menuItem.id,
+            name: menuItem.name,
+            description: menuItem.description || undefined,
+            category:
+              categories.find((c) => c.id === menuItem.categoryId)?.name ||
+              "Unknown",
+            available: menuItem.isAvailable,
+          },
+        },
         quantity: 1,
         status: "PENDING",
+        note: "",
+        price: Number(variant.price),
       };
-      setCart([...cart, newOrderItem]);
+      setCart([...cart, newItem]);
     }
+
+    setVariantDialogOpen(false);
+    setSelectedItemId(null);
+  };
+
+  const handleNoteEdit = (
+    itemId: string,
+    initialNote: string | undefined,
+    itemName: string
+  ) => {
+    setEditingNote({ itemId, initialNote, itemName });
+  };
+
+  const handleNoteSave = (note: string) => {
+    if (!editingNote) return;
+    setCart(
+      cart.map((item) =>
+        item.id === editingNote.itemId ? { ...item, note } : item
+      )
+    );
+    setEditingNote(null);
   };
 
   const updateQuantity = (itemId: string, newQuantity: number) => {
@@ -217,8 +284,9 @@ const WaiterOrderManagement: React.FC = () => {
     const newItems = cart
       .filter((item) => item.status === "PENDING")
       .map((item) => ({
-        menuItemId: item.menuItem.id,
+        menuItemVariantId: item.menuItemVariant?.id,
         quantity: item.quantity,
+        note: (item as any).note,
       }));
 
     if (newItems.length === 0) {
@@ -320,7 +388,8 @@ const WaiterOrderManagement: React.FC = () => {
 
   const totalAmount = useMemo(() => {
     return cart.reduce(
-      (sum, item) => sum + item.menuItem.price * item.quantity,
+      (sum, item) =>
+        sum + (item.price ?? item.menuItemVariant?.price ?? 0) * item.quantity,
       0
     );
   }, [cart]);
@@ -407,7 +476,11 @@ const WaiterOrderManagement: React.FC = () => {
                     {item.name}
                   </h3>
                   <p className="text-lg font-bold text-primary">
-                    ₹{Number(item.price).toFixed(2)}
+                    {item.variants.length === 1
+                      ? `₹${parseFloat(item.variants[0].price).toFixed(2)}`
+                      : `From ₹${Math.min(
+                          ...item.variants.map((v) => parseFloat(v.price))
+                        ).toFixed(2)}`}
                   </p>
                   {!item.isAvailable && (
                     <Badge variant="secondary" className="mt-2 text-xs">
@@ -494,11 +567,25 @@ const WaiterOrderManagement: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">
-                        {item.menuItem.name}
+                        {item.menuItemVariant?.menuItem.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        ₹{item.menuItem.price.toFixed(2)} each
+                        ₹
+                        {(
+                          item.price ??
+                          item.menuItemVariant?.price ??
+                          0
+                        ).toFixed(2)}{" "}
+                        each
                       </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.menuItemVariant?.name}
+                      </p>
+                      {item.note && (
+                        <p className="text-xs text-muted-foreground">
+                          Note: {item.note}
+                        </p>
+                      )}
                       <Badge
                         variant={getBadgeVariant(item.status)}
                         className="mt-1 text-xs"
@@ -513,6 +600,22 @@ const WaiterOrderManagement: React.FC = () => {
                       </Badge>
                     </div>
                     <div className="flex items-center gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 mr-1"
+                        onClick={() =>
+                          handleNoteEdit(
+                            item.id,
+                            (item as any).note,
+                            item.menuItemVariant?.menuItem.name || "Item"
+                          )
+                        }
+                        title="Add/Edit Note"
+                        disabled={item.status !== "PENDING"}
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -687,10 +790,16 @@ const WaiterOrderManagement: React.FC = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">
-                            {item.menuItem.name}
+                            {item.menuItemVariant?.menuItem.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            ₹{item.menuItem.price.toFixed(2)} each
+                            ₹
+                            {(
+                              item.price ??
+                              item.menuItemVariant?.price ??
+                              0
+                            ).toFixed(2)}{" "}
+                            each
                           </p>
                           <Badge
                             variant={getBadgeVariant(item.status)}
@@ -706,6 +815,22 @@ const WaiterOrderManagement: React.FC = () => {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 mr-1"
+                            onClick={() =>
+                              handleNoteEdit(
+                                item.id,
+                                (item as any).note,
+                                item.menuItemVariant?.menuItem.name || "Item"
+                              )
+                            }
+                            title="Add/Edit Note"
+                            disabled={item.status !== "PENDING"}
+                          >
+                            <MessageSquare className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -806,6 +931,21 @@ const WaiterOrderManagement: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Dialogs */}
+      <VariantSelectionDialog
+        item={menuItems.find((item) => item.id === selectedItemId)}
+        open={variantDialogOpen}
+        onOpenChange={setVariantDialogOpen}
+        onSelect={(variantId: string) => handleVariantSelect(variantId)}
+      />
+
+      <EditNoteDialog
+        open={!!editingNote}
+        onOpenChange={(isOpen) => !isOpen && setEditingNote(null)}
+        initialNote={editingNote?.initialNote}
+        onSave={handleNoteSave}
+        itemName={editingNote?.itemName || ""}
+      />
     </div>
   );
 };

@@ -73,10 +73,13 @@ const Cashier = () => {
           fetchCategories(() => apiService.getMenuCategories()),
         ]);
 
-      if (activeRes) setActiveOrders(activeRes.data);
-      if (completedRes) setCompletedOrders(completedRes.data);
-      if (menuRes) setMenuItems(menuRes.data);
-      if (categoriesRes) setMenuCategories(categoriesRes.data);
+      if (activeRes?.data) setActiveOrders(activeRes.data);
+      if (completedRes?.data) setCompletedOrders(completedRes.data);
+      if (menuRes?.data) setMenuItems(menuRes.data);
+      else if (Array.isArray(menuRes)) setMenuItems(menuRes);
+
+      if (categoriesRes?.data) setMenuCategories(categoriesRes.data);
+      else if (Array.isArray(categoriesRes)) setMenuCategories(categoriesRes);
     } catch (error) {
       console.error("Failed to fetch cashier data:", error);
     }
@@ -112,7 +115,7 @@ const Cashier = () => {
   };
 
   const handleAddItems = async (
-    items: { menuItemId: string; quantity: number }[]
+    items: { menuItemVariantId: string; quantity: number; note?: string }[]
   ) => {
     if (!selectedOrder) return;
     try {
@@ -129,7 +132,7 @@ const Cashier = () => {
   };
 
   const handleCreateTakeaway = async (
-    items: { menuItemId: string; quantity: number }[]
+    items: { menuItemVariantId: string; quantity: number }[]
   ) => {
     try {
       await executeTakeaway(() => apiService.createTakeawayOrder(items));

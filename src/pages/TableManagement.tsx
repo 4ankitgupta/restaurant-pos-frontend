@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,16 @@ import {
   Plus,
   Edit,
   Trash2,
+  Search, // Added icon
 } from "lucide-react";
+import { Input } from "@/components/ui/input"; // Added import
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Added imports
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
@@ -36,6 +45,15 @@ import {
 import { TableForm, TableFormValues } from "@/components/table/TableForm";
 import { cn } from "@/lib/utils";
 
+// --- NEW: Constant for filter options ---
+const STATUS_OPTIONS: (APITable["status"] | "all")[] = [
+  "all",
+  "Available",
+  "Occupied",
+  "Reserved",
+  "NeedCleaning",
+];
+
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -54,6 +72,12 @@ const TableManagement: React.FC = () => {
   const { refreshKey } = useRefresh();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<APITable | null>(null);
+
+  // --- NEW: State for Search and Filter ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<APITable["status"] | "all">(
+    "all"
+  );
 
   const loadTables = async () => {
     try {
@@ -135,18 +159,22 @@ const TableManagement: React.FC = () => {
   const getStatusColor = (status: APITable["status"]) => {
     switch (status) {
       case "Available":
-        return "bg-success text-success-foreground";
+        // Light green background, dark green text
+        return "bg-green-50 border-green-300 text-green-800 hover:bg-green-100";
       case "Occupied":
-        return "bg-warning text-warning-foreground";
+        // Light red background, dark red text
+        return "bg-red-50 border-red-300 text-red-800 hover:bg-red-100";
       case "Reserved":
-        return "bg-secondary text-secondary-foreground";
+        // Light blue background, dark blue text
+        return "bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100";
       case "NeedCleaning":
-        return "bg-destructive text-destructive-foreground";
+        // Light yellow background, dark yellow text
+        return "bg-yellow-50 border-yellow-300 text-yellow-800 hover:bg-yellow-100";
       default:
-        return "bg-muted text-muted-foreground";
+        // A neutral default
+        return "bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100";
     }
   };
-
   const getOrderStatusColor = (status: APITable["orderStatus"]) => {
     switch (status) {
       case "IN_PROGRESS":
@@ -270,6 +298,32 @@ const TableManagement: React.FC = () => {
     (table) => table.status === "Occupied"
   ).length;
 
+  // --- NEW: Memoized array for sorting and filtering ---
+  const filteredAndSortedTables = useMemo(() => {
+    return tables
+      .filter((table) => {
+        // Status Filter
+        if (statusFilter !== "all" && table.status !== statusFilter) {
+          return false;
+        }
+        // Search Filter (by table number)
+        if (
+          searchTerm &&
+          !table.tableNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        ) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        // Natural sort for strings like "T1", "T2", "T10"
+        return a.tableNumber.localeCompare(b.tableNumber, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
+  }, [tables, statusFilter, searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -304,6 +358,44 @@ const TableManagement: React.FC = () => {
         </div>
       </div>
 
+      {/* --- NEW: Search and Filter UI --- */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+        {/* Search Bar */}
+        <div className="relative flex-1 md:max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search by table number..."
+            className="w-full pl-8"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        {/* Status Filter */}
+        <Select
+          value={statusFilter}
+          onValueChange={(value) =>
+            setStatusFilter(value as APITable["status"] | "all")
+          }
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((status) => (
+              <SelectItem key={status} value={status} className="capitalize">
+                {status === "all"
+                  ? "All Statuses"
+                  : status === "NeedCleaning"
+                  ? "Cleaning"
+                  : status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <TableForm
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
@@ -315,26 +407,29 @@ const TableManagement: React.FC = () => {
 
       {/* Table Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(8)].map((_, i) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {[...Array(12)].map((_, i) => (
             <Card key={i} className="animate-pulse">
-              <CardHeader className="pb-3">
-                <div className="h-6 bg-muted rounded w-1/2"></div>
-                <div className="h-4 bg-muted rounded w-3/4"></div>
+              <CardHeader className="p-3 pb-2">
+                <div className="h-4 bg-muted rounded w-1/2 mb-1"></div>
+                <div className="h-3 bg-muted rounded w-3/4"></div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-3 pt-1">
+                <div className="h-5 bg-muted rounded mb-1"></div>
                 <div className="h-4 bg-muted rounded"></div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {tables.map((table) => (
+        // --- MODIFIED: Map over filteredAndSortedTables ---
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+          {filteredAndSortedTables.map((table) => (
             <Card
               key={table.id}
               className={cn(
-                "flex h-full cursor-pointer flex-col transition-all hover:shadow-lg",
+                "cursor-pointer transition-all hover:shadow-md border-2 relative",
+                getStatusColor(table.status),
                 selectedTable?.id === table.id ? "ring-2 ring-primary" : ""
               )}
               onClick={() => {
@@ -342,119 +437,116 @@ const TableManagement: React.FC = () => {
                 setIsSheetOpen(true);
               }}
             >
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle className="text-lg sm:text-base md:text-lg">
-                      Table {table.tableNumber}
+              <CardHeader className="p-3 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <CardTitle className="text-base font-bold truncate">
+                      T{table.tableNumber}
                     </CardTitle>
-                    <div className="text-sm text-muted-foreground">
-                      Capacity: {table.capacity} people
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-0.5">
+                      <Users className="h-3 w-3 shrink-0" />
+                      <span>{table.capacity}</span>
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                    <Badge className={getStatusColor(table.status)}>
-                      {getStatusIcon(table.status)}
-                      <span className="ml-1 capitalize">
-                        {table.status.toLowerCase()}
-                      </span>
-                    </Badge>
-                    {canManageTables && (
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 sm:h-9 sm:w-9"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleEditTable(table);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive sm:h-9 sm:w-9"
-                              onClick={(event) => event.stopPropagation()}
+                  {canManageTables && (
+                    <div className="flex gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleEditTable(table);
+                        }}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-destructive hover:text-destructive"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Delete Table {table.tableNumber}?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This action cannot be undone. This will
+                              permanently remove the table and its allocation
+                              settings.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteTable(table)}
+                              disabled={deletingTable}
                             >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Delete Table {table.tableNumber}?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will
-                                permanently remove the table and its allocation
-                                settings.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteTable(table)}
-                                disabled={deletingTable}
-                              >
-                                {deletingTable ? "Deleting..." : "Delete"}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
-                  </div>
+                              {deletingTable ? "Deleting..." : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  {table.status === "Available"
-                    ? "Ready for guests"
-                    : table.status === "Reserved"
-                    ? "Reserved for later"
-                    : table.status === "NeedCleaning"
-                    ? "Needs cleaning"
-                    : "Currently occupied"}
-                </div>
+              <CardContent className="p-3 pt-1">
+                <div className="space-y-1.5">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "w-full justify-center text-xs py-0.5",
+                      getStatusColor(table.status)
+                    )}
+                  >
+                    {getStatusIcon(table.status)}
+                    <span className="ml-1 capitalize text-[10px]">
+                      {table.status === "NeedCleaning"
+                        ? "Cleaning"
+                        : table.status}
+                    </span>
+                  </Badge>
 
-                {/* --- ADD THIS BLOCK to show order status --- */}
-                {table.status === "Occupied" && table.orderStatus && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <BookOpen className="h-4 w-4" />
-                    <Badge className={getOrderStatusColor(table.orderStatus)}>
-                      {table.orderStatus}
+                  {table.status === "Occupied" && table.orderStatus && (
+                    <Badge
+                      variant="outline"
+                      className="w-full justify-center text-[10px] py-0.5"
+                    >
+                      <BookOpen className="h-2.5 w-2.5 mr-1" />
+                      {table.orderStatus.replace("_", " ")}
                     </Badge>
-                  </div>
-                )}
+                  )}
 
-                {/* Show payment status for occupied tables */}
-                {table.status === "Occupied" &&
-                  (() => {
-                    const tableOrder = orders.find(
-                      (order) => order.tableId === table.id
-                    );
-                    return tableOrder ? (
-                      <div className="flex items-center gap-2 mt-2">
-                        {/* <DollarSign className="h-4 w-4" /> */}
-                        <div className="text-xl font-semibold">₹</div>
+                  {table.status === "Occupied" &&
+                    (() => {
+                      const tableOrder = orders.find(
+                        (order) => order.tableId === table.id
+                      );
+                      return tableOrder ? (
                         <Badge
-                          className={
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-center text-[10px] py-0.5",
                             tableOrder.paymentStatus === "UNPAID"
-                              ? "bg-destructive text-destructive-foreground"
+                              ? "bg-destructive/10 border-destructive/20 text-destructive"
                               : tableOrder.paymentStatus === "PARTIAL"
-                              ? "bg-warning text-warning-foreground"
-                              : "bg-success text-success-foreground"
-                          }
+                              ? "bg-warning/10 border-warning/20 text-warning-foreground"
+                              : "bg-success/10 border-success/20 text-success"
+                          )}
                         >
-                          {tableOrder.paymentStatus}
+                          ₹ {tableOrder.paymentStatus}
                         </Badge>
-                      </div>
-                    ) : null;
-                  })()}
+                      ) : null;
+                    })()}
+                </div>
               </CardContent>
             </Card>
           ))}

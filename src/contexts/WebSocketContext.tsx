@@ -46,36 +46,86 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [ws]);
 
+  // Helper to normalize orders received from backend / websocket
+  const normalizeOrder = (raw: any) => {
+    if (!raw) return raw;
+    const order = { ...raw } as any;
+    if (Array.isArray(order.orderItems)) {
+      order.orderItems = order.orderItems.map((oi: any) => {
+        const cloned = { ...oi };
+        // Ensure price is a number
+        cloned.price = Number(cloned.price ?? 0);
+
+        if (cloned.menuItemVariant) {
+          cloned.menuItemVariant = { ...cloned.menuItemVariant };
+          cloned.menuItemVariant.price = Number(
+            cloned.menuItemVariant.price ?? 0
+          );
+
+          // Normalize nested menuItem (some backends may omit fields)
+          cloned.menuItemVariant.menuItem = {
+            ...(cloned.menuItemVariant.menuItem || {}),
+          };
+        }
+
+        return cloned;
+      });
+    }
+    return order as APIOrder;
+  };
+
   const handleWebSocketMessage = useCallback((event: MessageEvent) => {
     try {
       const message: WebSocketMessage = JSON.parse(event.data);
+      // incoming message parsed into `message` - we use normalizeOrder helper above
 
       setOrders((prevOrders) => {
         switch (message.type) {
-          case "NEW_ORDER":
+          case "NEW_ORDER": {
+            const normalized = normalizeOrder(message.payload);
             // Avoid adding duplicates
-            if (prevOrders.some((order) => order.id === message.payload.id)) {
+            if (prevOrders.some((order) => order.id === normalized.id)) {
               return prevOrders;
             }
-            return [...prevOrders, message.payload];
+            return [...prevOrders, normalized];
+          }
 
           case "ORDER_STATUS_UPDATE":
           case "ORDER_ITEMS_UPDATED":
-          case "PAYMENT_STATUS_UPDATE":
+          case "PAYMENT_STATUS_UPDATE": {
+            const normalized = normalizeOrder(message.payload);
             return prevOrders.map((order) =>
-              order.id === message.payload.id ? message.payload : order
+              order.id === normalized.id ? normalized : order
             );
+          }
 
-          case "ORDER_ITEM_STATUS_UPDATE":
+          case "ORDER_ITEM_STATUS_UPDATE": {
+            // Payload may be the updated order item or contain orderId + item id
+            const payload = message.payload;
             return prevOrders.map((order) => {
-              if (order.id === message.payload.orderId) {
+              if (
+                order.id === payload.orderId ||
+                order.id === payload.order?.id
+              ) {
+                const updatedItem = { ...payload };
+                updatedItem.price = Number(updatedItem.price ?? 0);
+                if (updatedItem.menuItemVariant) {
+                  updatedItem.menuItemVariant = {
+                    ...updatedItem.menuItemVariant,
+                    price: Number(updatedItem.menuItemVariant.price ?? 0),
+                  };
+                  updatedItem.menuItemVariant.menuItem = {
+                    ...(updatedItem.menuItemVariant.menuItem || {}),
+                  };
+                }
                 const updatedOrderItems = order.orderItems.map((item) =>
-                  item.id === message.payload.id ? message.payload : item
+                  item.id === updatedItem.id ? updatedItem : item
                 );
                 return { ...order, orderItems: updatedOrderItems };
               }
               return order;
             });
+          }
 
           default:
             console.warn("Unknown WebSocket message type:", message.type);
@@ -127,7 +177,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         try {
           const { apiService } = await import("@/services/apiService");
           const response = await apiService.getAllOrders();
-          setOrders(response.data);
+          setOrders(response.data.map((o: any) => normalizeOrder(o)));
         } catch (error) {
           console.error("Error fetching initial orders:", error);
         }

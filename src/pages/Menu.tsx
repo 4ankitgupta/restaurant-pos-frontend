@@ -314,10 +314,23 @@ const Menu: React.FC = () => {
                   </p>
                 )}
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="text-lg font-bold text-primary">
-                      ₹{parseFloat(item.price).toFixed(2)}
-                    </span>
+                  <div className="flex items-center flex-col">
+                    {item.variants.length === 1 ? (
+                      <span className="text-lg font-bold text-primary">
+                        ₹{parseFloat(item.variants[0].price).toFixed(2)}
+                      </span>
+                    ) : (
+                      <div className="text-sm">
+                        {item.variants.map((v) => (
+                          <div key={v.id} className="">
+                            <span className="font-medium">{v.name}:</span>{" "}
+                            <span className="font-bold">
+                              ₹{parseFloat(v.price).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

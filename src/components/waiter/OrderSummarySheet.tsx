@@ -15,6 +15,8 @@ import { Trash2, Send } from "lucide-react";
 interface CartItem {
   menuItemId: string;
   name: string;
+  variantName?: string; // ✅ NEW
+  note?: string; // ✅ NEW
   price: number;
   quantity: number;
 }
@@ -98,8 +100,19 @@ export function OrderSummarySheet({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-semibold">
-                          {item.quantity}x {item.menuItem.name}
+                          {item.quantity}x {item.menuItemVariant?.menuItem.name}{" "}
+                          <span className="text-sm text-muted-foreground">
+                            ({item.menuItemVariant?.name})
+                          </span>
                         </div>
+
+                        {/* ✅ Show special instructions */}
+                        {item.note && (
+                          <div className="text-sm text-muted-foreground italic mt-1">
+                            Note: {item.note}
+                          </div>
+                        )}
+
                         <div className="text-sm text-muted-foreground">
                           ₹{item.price.toFixed(2)} each
                         </div>
@@ -129,7 +142,7 @@ export function OrderSummarySheet({
               </div>
             )}
 
-            {/* Cart Items */}
+            {/* ✅ New Cart Items */}
             {cart.length > 0 && (
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground mb-2">
@@ -143,8 +156,21 @@ export function OrderSummarySheet({
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <div className="font-semibold">
-                          {item.quantity}x {item.name}
+                          {item.quantity}x {item.name}{" "}
+                          {item.variantName && (
+                            <span className="text-sm text-muted-foreground">
+                              ({item.variantName})
+                            </span>
+                          )}
                         </div>
+
+                        {/* ✅ Show note */}
+                        {item.note && (
+                          <div className="text-sm text-muted-foreground italic mt-1">
+                            Note: {item.note}
+                          </div>
+                        )}
+
                         <div className="text-sm text-muted-foreground">
                           ₹{item.price.toFixed(2)} each
                         </div>
@@ -176,7 +202,7 @@ export function OrderSummarySheet({
           </div>
         </ScrollArea>
 
-        {/* Footer with totals and actions */}
+        {/* Footer */}
         <div className="border-t pt-4 space-y-3">
           <div className="flex justify-between text-lg font-bold">
             <span>Total</span>

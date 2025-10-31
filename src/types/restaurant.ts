@@ -1,22 +1,32 @@
 // src/types/restaurant.ts
 
+export interface MenuItemVariant {
+  id: string;
+  name: string;
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
   description?: string;
-  price: number;
   category: string;
   available: boolean;
+  variants: MenuItemVariant[];
 }
 
 export interface APIMenuItem {
   id: string;
   name: string;
   description: string | null;
-  price: string;
   isAvailable: boolean;
   restaurantId: string;
   categoryId: string | null;
+  variants: Array<{
+    id: string;
+    name: string;
+    price: string;
+  }>;
 }
 
 // New status enum reflecting backend changes for a single item
@@ -30,10 +40,22 @@ export type OrderItemStatus =
 
 export interface OrderItem {
   id: string;
-  menuItem: MenuItem;
+  menuItemVariant: {
+    id: string;
+    name: string;
+    price: number;
+    menuItem: {
+      id: string;
+      name: string;
+      description?: string;
+      category: string;
+      available: boolean;
+    };
+  };
   quantity: number;
-  notes?: string;
-  status: OrderItemStatus; // Updated type
+  note?: string;
+  status: OrderItemStatus;
+  price: number; // Price at the time of order
 }
 
 export interface Order {
@@ -57,10 +79,10 @@ export interface APITable {
   orderStatus?: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | null;
 }
 
-// APIOrder now has a simplified status but individual items have a detailed status
+// APIOrder now has updated structure with variants
 export interface APIOrder {
   id: string;
-  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED"; // Updated to reflect backend
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   totalAmount: number;
   paymentStatus: "UNPAID" | "PAID" | "PARTIAL" | "REFUNDED";
   createdAt: string;
@@ -77,16 +99,21 @@ export interface APIOrder {
     id: string;
     quantity: number;
     price: number;
-    status: OrderItemStatus; // Added new status field for each item
-    menuItemId: string;
-    menuItem: {
+    note?: string;
+    status: OrderItemStatus;
+    menuItemVariantId: string;
+    menuItemVariant: {
       id: string;
       name: string;
-      description: string | null;
       price: number;
-      isAvailable: boolean;
-      restaurantId: string;
-      categoryId: string | null;
+      menuItem: {
+        id: string;
+        name: string;
+        description: string | null;
+        isAvailable: boolean;
+        restaurantId: string;
+        categoryId: string | null;
+      };
     };
   }>;
 }
@@ -157,4 +184,38 @@ export interface StockLog {
   remarks?: string | null;
   createdAt: string;
   inventoryItem: InventoryItem;
+}
+
+// --- NEW: Types for menu item variant creation/update ---
+export interface CreateMenuItemVariantDTO {
+  name: string;
+  price: number;
+}
+
+export interface CreateMenuItemDTO {
+  name: string;
+  description?: string;
+  categoryId: string;
+  variants: CreateMenuItemVariantDTO[];
+}
+
+export interface UpdateMenuItemDTO {
+  name?: string;
+  description?: string;
+  categoryId?: string;
+  variants?: CreateMenuItemVariantDTO[];
+}
+
+// --- NEW: Types for order item creation ---
+export interface CreateOrderItemDTO {
+  menuItemVariantId: string;
+  quantity: number;
+  note?: string;
+}
+
+export interface CreateOrderDTO {
+  tableId?: string;
+  takeAway?: boolean;
+  customerName?: string;
+  items: CreateOrderItemDTO[];
 }
