@@ -129,7 +129,55 @@ const KitchenDisplay: React.FC = () => {
                     {format(parseISO(order.createdAt), "p")}
                   </span>
                 </CardTitle>
+
+                {/* --- Bulk Action Buttons --- */}
+                <div className="mt-3 flex gap-2">
+                  {order.orderItems.some(
+                    (item) => item.status === "ORDERED"
+                  ) && (
+                    <Button
+                      size="sm"
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
+                      onClick={async () => {
+                        for (const item of order.orderItems) {
+                          if (item.status === "ORDERED") {
+                            await handleUpdateItemStatus(item.id, "PREPARING");
+                          }
+                        }
+                        toast({
+                          title: "Success",
+                          description: "All items marked as preparing.",
+                        });
+                      }}
+                    >
+                      <Clock className="h-4 w-4 mr-2" /> Mark All Preparing
+                    </Button>
+                  )}
+
+                  {order.orderItems.every(
+                    (item) => item.status === "PREPARING"
+                  ) && (
+                    <Button
+                      size="sm"
+                      className="bg-green-500 hover:bg-green-600 text-white font-semibold"
+                      onClick={async () => {
+                        for (const item of order.orderItems) {
+                          if (item.status === "PREPARING") {
+                            await handleUpdateItemStatus(item.id, "PREPARED");
+                          }
+                        }
+                        toast({
+                          title: "Success",
+                          description: "All items marked as ready.",
+                        });
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" /> Mark All Ready
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
+
               <Separator className="border-gray-200" />
               <CardContent className="p-4 flex-grow space-y-4">
                 {order.orderItems
