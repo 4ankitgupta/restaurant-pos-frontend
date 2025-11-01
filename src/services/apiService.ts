@@ -65,6 +65,30 @@ class ApiService {
     }
   }
 
+  // --- AI Chat Agent Actions ---
+  getAIConversations = () => {
+    return this.request<ApiResponse<Array<{ id: string; title: string }>>>(
+      "/agent/conversations"
+    );
+  };
+
+  getAIConversation = (conversationId: string) => {
+    return this.request<
+      ApiResponse<Array<{ role: "USER" | "AI"; content: string }>>
+    >(`/agent/conversations/${conversationId}`);
+  };
+
+  sendAIMessage = (message: string, conversationId: string | null) => {
+    return this.request<
+      ApiResponse<{ response: string; conversationId: string }>
+    >("/agent", {
+      method: "POST",
+      body: JSON.stringify(
+        conversationId ? { message, conversationId } : { message }
+      ),
+    });
+  };
+
   // --- Cashier Actions ---
   getActiveAndUnpaidOrders = () => {
     return this.request<ApiResponse<APIOrder[]>>("/cashier/orders");

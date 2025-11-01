@@ -133,4 +133,47 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Markdown styles for AI chat */
+  .prose {
+    @apply text-foreground;
+  }
+  
+  .prose p {
+    @apply my-2;
+  }
+  
+  .prose ul,
+  .prose ol {
+    @apply my-2 pl-4;
+  }
+  
+  .prose li {
+    @apply my-1;
+  }
+  
+  .prose code {
+    @apply bg-muted px-1.5 py-0.5 rounded text-sm;
+  }
+  
+  .prose pre {
+    @apply bg-muted p-3 rounded-lg my-2 overflow-x-auto;
+  }
+  
+  .prose pre code {
+    @apply bg-transparent p-0;
+  }
+  
+  .prose strong {
+    @apply font-semibold;
+  }
+  
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply font-semibold mt-4 mb-2;
+  }
 }
