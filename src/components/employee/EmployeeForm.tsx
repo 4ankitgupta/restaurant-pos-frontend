@@ -231,7 +231,6 @@ export function EmployeeForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No linked user</SelectItem>
                       {users.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.name} ({user.email})
