@@ -9,6 +9,8 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Users,
+  UserCheck,
+  Clock,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,6 +69,18 @@ export function Sidebar() {
       roles: ["admin", "manager"],
     },
     { name: "Users", href: "/users", icon: <Users />, roles: ["admin"] },
+    {
+      name: "Employees",
+      href: "/employees",
+      icon: <UserCheck />,
+      roles: ["admin", "manager"],
+    },
+    {
+      name: "Attendance",
+      href: "/attendance",
+      icon: <Clock />,
+      roles: ["admin", "manager"],
+    },
     {
       name: "Reports",
       href: "/reports",

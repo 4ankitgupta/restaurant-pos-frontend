@@ -583,6 +583,68 @@ class ApiService {
     const query = new URLSearchParams(filteredParams).toString();
     return this.request<ApiResponse<any>>(`/reports/${reportName}?${query}`);
   };
+
+  // --- Employee Management ---
+  async getEmployees() {
+    return this.request<ApiResponse<any[]>>("/employees");
+  }
+
+  async createEmployee(employeeData: {
+    name: string;
+    employeeCode: string;
+    designation?: string;
+    biometricId?: string;
+    userId?: string;
+  }) {
+    return this.request<ApiResponse<any>>("/employees", {
+      method: "POST",
+      body: JSON.stringify(employeeData),
+    });
+  }
+
+  async updateEmployee(
+    employeeId: string,
+    employeeData: {
+      name?: string;
+      employeeCode?: string;
+      designation?: string;
+      biometricId?: string;
+      userId?: string | null;
+      isActive?: boolean;
+    }
+  ) {
+    return this.request<ApiResponse<any>>(`/employees/${employeeId}`, {
+      method: "PATCH",
+      body: JSON.stringify(employeeData),
+    });
+  }
+
+  async deleteEmployee(employeeId: string) {
+    return this.request<ApiResponse<void>>(`/employees/${employeeId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // --- Attendance Management ---
+  async getAttendanceReport(startDate?: string, endDate?: string) {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+    const query = params.toString();
+    return this.request<ApiResponse<any[]>>(
+      `/attendance/report${query ? `?${query}` : ""}`
+    );
+  }
+
+  async recordAttendancePunch(punchData: {
+    employeeCode: string;
+    source: string;
+  }) {
+    return this.request<ApiResponse<any>>("/attendance/punch", {
+      method: "POST",
+      body: JSON.stringify(punchData),
+    });
+  }
 }
 
 export const apiService = new ApiService();

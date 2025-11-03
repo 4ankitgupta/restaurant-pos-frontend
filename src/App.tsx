@@ -21,6 +21,8 @@ import PurchaseOrders from "./pages/PurchaseOrders";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import Cashier from "./pages/Cashier";
+import Employees from "./pages/Employees";
+import AttendanceReport from "./pages/AttendanceReport";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 
 // Super Admin imports
@@ -155,6 +157,22 @@ const App = () => (
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
                         <Users />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="employees"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Employees />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="attendance"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <AttendanceReport />
                       </ProtectedRoute>
                     }
                   />
