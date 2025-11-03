@@ -2,6 +2,14 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,6 +25,12 @@ import {
   Truck,
   RefreshCw,
   Menu,
+  UserCheck,
+  Clock,
+  FileText,
+  Armchair,
+  Coins,
+  CookingPot,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
@@ -35,63 +49,109 @@ export const Navbar: React.FC = () => {
     triggerRefresh();
   };
 
-  const getNavItems = () => {
+  const getNavCategories = () => {
     if (!user) return [];
-
-    const commonItems = [
-      { icon: Home, label: "Dashboard", path: "/dashboard" },
-    ];
 
     switch (user.role) {
       case "admin":
         return [
-          ...commonItems,
-          { icon: BarChart3, label: "Reports", path: "/reports" },
-          { icon: Package, label: "Inventory", path: "/inventory" },
-          { icon: Truck, label: "Supplier", path: "/supplier" },
           {
-            icon: ShoppingCart,
-            label: "Purchase Order",
-            path: "/purchase-order",
+            label: "Dashboard",
+            path: "/dashboard",
+            icon: Home,
           },
-          { icon: Utensils, label: "Menu", path: "/menu" },
-          { icon: Users, label: "Users", path: "/users" },
+          {
+            label: "Operations",
+            items: [
+              { icon: ShoppingCart, label: "POS System", path: "/pos" },
+              { icon: Armchair, label: "Tables", path: "/tables" },
+              { icon: CookingPot, label: "Kitchen", path: "/kitchen" },
+              { icon: Coins, label: "Cashier", path: "/cashier" },
+            ],
+          },
+          {
+            label: "Menu & Inventory",
+            items: [
+              { icon: Utensils, label: "Menu", path: "/menu" },
+              { icon: Package, label: "Inventory", path: "/inventory" },
+              { icon: Truck, label: "Suppliers", path: "/supplier" },
+              { icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-order" },
+            ],
+          },
+          {
+            label: "People",
+            items: [
+              { icon: Users, label: "Users", path: "/users" },
+              { icon: UserCheck, label: "Employees", path: "/employees" },
+              { icon: Clock, label: "Attendance", path: "/attendance" },
+            ],
+          },
+          {
+            label: "Reports",
+            path: "/reports",
+            icon: BarChart3,
+          },
         ];
       case "manager":
         return [
-          ...commonItems,
-          { icon: Package, label: "Inventory", path: "/inventory" },
-          { icon: Truck, label: "Supplier", path: "/supplier" },
           {
-            icon: ShoppingCart,
-            label: "Purchase Order",
-            path: "/purchase-order",
+            label: "Dashboard",
+            path: "/dashboard",
+            icon: Home,
           },
-          { icon: BarChart3, label: "Tables", path: "/tables" },
-          { icon: Utensils, label: "Menu", path: "/menu" },
-          { icon: Users, label: "Users", path: "/users" },
+          {
+            label: "Operations",
+            items: [
+              { icon: ShoppingCart, label: "POS System", path: "/pos" },
+              { icon: Armchair, label: "Tables", path: "/tables" },
+              { icon: CookingPot, label: "Kitchen", path: "/kitchen" },
+              { icon: Coins, label: "Cashier", path: "/cashier" },
+            ],
+          },
+          {
+            label: "Menu & Inventory",
+            items: [
+              { icon: Utensils, label: "Menu", path: "/menu" },
+              { icon: Package, label: "Inventory", path: "/inventory" },
+              { icon: Truck, label: "Suppliers", path: "/supplier" },
+              { icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-order" },
+            ],
+          },
+          {
+            label: "People",
+            items: [
+              { icon: Users, label: "Users", path: "/users" },
+              { icon: UserCheck, label: "Employees", path: "/employees" },
+              { icon: Clock, label: "Attendance", path: "/attendance" },
+            ],
+          },
+          {
+            label: "Reports",
+            path: "/reports",
+            icon: BarChart3,
+          },
         ];
       case "cashier":
         return [
-          // ...commonItems,
           { icon: ShoppingCart, label: "POS", path: "/pos" },
         ];
       case "waiter":
         return [
-          // ...commonItems,
-          { icon: Users, label: "Tables", path: "/tables" },
+          { icon: Armchair, label: "Tables", path: "/tables" },
         ];
       case "chef":
         return [
-          // ...commonItems,
           { icon: ChefHat, label: "Kitchen", path: "/kitchen" },
         ];
       default:
-        return commonItems;
+        return [];
     }
   };
 
-  const navItems = getNavItems();
+  const navCategories = getNavCategories();
+  const flatNavItems = navCategories.flatMap((cat) =>
+    cat.items ? cat.items : (cat.path ? [cat as any] : [])
+  );
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-card">
@@ -117,18 +177,68 @@ export const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent transition-fast"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-            </div>
+            {(user?.role === "admin" || user?.role === "manager") && (
+              <NavigationMenu className="hidden md:flex">
+                <NavigationMenuList>
+                  {navCategories.map((category, idx) => (
+                    <NavigationMenuItem key={idx}>
+                      {category.items ? (
+                        <>
+                          <NavigationMenuTrigger className="text-sm font-medium">
+                            {category.label}
+                          </NavigationMenuTrigger>
+                          <NavigationMenuContent>
+                            <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2">
+                              {category.items.map((item) => (
+                                <li key={item.path}>
+                                  <NavigationMenuLink asChild>
+                                    <Link
+                                      to={item.path}
+                                      className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <item.icon className="h-4 w-4" />
+                                        <div className="text-sm font-medium leading-none">
+                                          {item.label}
+                                        </div>
+                                      </div>
+                                    </Link>
+                                  </NavigationMenuLink>
+                                </li>
+                              ))}
+                            </ul>
+                          </NavigationMenuContent>
+                        </>
+                      ) : (
+                        <Link
+                          to={category.path!}
+                          className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
+                        >
+                          <category.icon className="h-4 w-4" />
+                          <span>{category.label}</span>
+                        </Link>
+                      )}
+                    </NavigationMenuItem>
+                  ))}
+                </NavigationMenuList>
+              </NavigationMenu>
+            )}
+
+            {/* Simple navigation for other roles */}
+            {user?.role !== "admin" && user?.role !== "manager" && (
+              <div className="hidden md:flex items-center space-x-4">
+                {flatNavItems.map((item: any) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent transition-colors"
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {user && (
@@ -181,17 +291,37 @@ export const Navbar: React.FC = () => {
                       </div>
 
                       {/* Mobile Navigation */}
-                      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {navItems.map((item) => (
-                          <Link
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => setMobileNavOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                          >
-                            <item.icon className="w-5 h-5 flex-shrink-0" />
-                            <span className="font-medium">{item.label}</span>
-                          </Link>
+                      <nav className="flex-1 p-4 space-y-3 overflow-y-auto">
+                        {navCategories.map((category: any, idx) => (
+                          <div key={idx}>
+                            {category.items ? (
+                              <div className="space-y-1">
+                                <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                  {category.label}
+                                </div>
+                                {category.items.map((item: any) => (
+                                  <Link
+                                    key={item.path}
+                                    to={item.path}
+                                    onClick={() => setMobileNavOpen(false)}
+                                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                                  >
+                                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                                    <span className="font-medium">{item.label}</span>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <Link
+                                to={category.path!}
+                                onClick={() => setMobileNavOpen(false)}
+                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                              >
+                                <category.icon className="w-5 h-5 flex-shrink-0" />
+                                <span className="font-medium">{category.label}</span>
+                              </Link>
+                            )}
+                          </div>
                         ))}
                       </nav>
 
