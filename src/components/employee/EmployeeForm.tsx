@@ -34,7 +34,6 @@ import { Employee } from "@/types/employee";
 const employeeFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   employeeCode: z.string().min(1, "Employee code is required"),
-  designation: z.string().optional(),
   biometricId: z.string().optional(),
   userId: z.string().optional(),
 });
@@ -63,7 +62,6 @@ export function EmployeeForm({
     defaultValues: {
       name: "",
       employeeCode: "",
-      designation: "",
       biometricId: "",
       userId: "",
     },
@@ -76,7 +74,6 @@ export function EmployeeForm({
         form.reset({
           name: editingEmployee.name,
           employeeCode: editingEmployee.employeeCode,
-          designation: editingEmployee.designation || "",
           biometricId: editingEmployee.biometricId || "",
           userId: editingEmployee.userId || "",
         });
@@ -84,7 +81,6 @@ export function EmployeeForm({
         form.reset({
           name: "",
           employeeCode: "",
-          designation: "",
           biometricId: "",
           userId: "",
         });
@@ -123,7 +119,6 @@ export function EmployeeForm({
         const createPayload = {
           name: data.name,
           employeeCode: data.employeeCode,
-          designation: data.designation || undefined,
           biometricId: data.biometricId || undefined,
           userId: data.userId || undefined,
         };
@@ -188,20 +183,6 @@ export function EmployeeForm({
 
             <FormField
               control={form.control}
-              name="designation"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Designation (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., Waiter, Chef" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="biometricId"
               render={({ field }) => (
                 <FormItem>
@@ -255,8 +236,8 @@ export function EmployeeForm({
                 {submitLoading
                   ? "Saving..."
                   : editingEmployee
-                    ? "Update"
-                    : "Create"}
+                  ? "Update"
+                  : "Create"}
               </Button>
             </div>
           </form>
