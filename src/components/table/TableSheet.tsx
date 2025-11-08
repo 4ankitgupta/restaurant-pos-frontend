@@ -10,13 +10,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  Users,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  BookOpen,
-} from "lucide-react";
+import { Users, Clock, CheckCircle, AlertCircle, BookOpen } from "lucide-react";
 
 interface TableSheetProps {
   table: APITable | null;
@@ -68,15 +62,10 @@ export function TableSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full sm:max-w-md overflow-y-auto"
-      >
+      <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Table {table.tableNumber}</SheetTitle>
-          <SheetDescription>
-            Capacity: {table.capacity} people
-          </SheetDescription>
+          <SheetDescription>Capacity: {table.capacity} people</SheetDescription>
         </SheetHeader>
 
         <div className="mt-6 space-y-6">
@@ -92,22 +81,7 @@ export function TableSheet({
                 <Badge variant="outline">{table.orderStatus}</Badge>
               </div>
             )}
-            {tableOrder && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="text-xl font-semibold">₹</div>
-                <Badge
-                  className={
-                    tableOrder.paymentStatus === "UNPAID"
-                      ? "bg-destructive text-destructive-foreground"
-                      : tableOrder.paymentStatus === "PARTIAL"
-                      ? "bg-warning text-warning-foreground"
-                      : "bg-success text-success-foreground"
-                  }
-                >
-                  {tableOrder.paymentStatus}
-                </Badge>
-              </div>
-            )}
+            {/* Removed payment status display per request */}
           </div>
 
           {/* Quick Actions */}

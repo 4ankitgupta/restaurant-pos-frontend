@@ -25,6 +25,7 @@ import remarkGfm from "remark-gfm";
 import { StreamingMessage } from "./StreamingMessage"; // Import the streaming component
 import { API_BASE_URL } from "@/config/apiConfig"; // Import your API base URL
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar
+import { SampleQueries } from "./SampleQueries"; // Import Sample Queries component
 // ---
 
 interface Message {
@@ -262,6 +263,14 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
     }
   };
 
+  // --- Handle Sample Query Selection ---
+  const handleSampleQuerySelect = (query: string) => {
+    setInputValue(query);
+    // Optionally auto-send the message
+    // setTimeout(() => sendMessage(), 100);
+  };
+  // ---
+
   // --- Speech Recognition Toggle ---
   const toggleListening = async () => {
     if (!recognitionRef.current) {
@@ -438,14 +447,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           {/* Messages */}
           <ScrollArea className="flex-1 p-4">
             {messages.length === 0 && !isLoading && !streamingContent ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <MessageSquare className="mx-auto h-12 w-12" />
-                  <p className="mt-2">
-                    Start a conversation to see your chat history.
-                  </p>
-                </div>
-              </div>
+              <SampleQueries onQuerySelect={handleSampleQuerySelect} />
             ) : (
               <div className="space-y-6">
                 {messages.map((message, index) => (

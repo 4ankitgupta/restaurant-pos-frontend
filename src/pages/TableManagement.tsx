@@ -530,21 +530,8 @@ const TableManagement: React.FC = () => {
                       const tableOrder = orders.find(
                         (order) => order.tableId === table.id
                       );
-                      return tableOrder ? (
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "w-full justify-center text-[10px] py-0.5",
-                            tableOrder.paymentStatus === "UNPAID"
-                              ? "bg-destructive/10 border-destructive/20 text-destructive"
-                              : tableOrder.paymentStatus === "PARTIAL"
-                              ? "bg-warning/10 border-warning/20 text-warning-foreground"
-                              : "bg-success/10 border-success/20 text-success"
-                          )}
-                        >
-                          ₹ {tableOrder.paymentStatus}
-                        </Badge>
-                      ) : null;
+                      // Removed payment status badge display per request
+                      return null;
                     })()}
                 </div>
               </CardContent>
