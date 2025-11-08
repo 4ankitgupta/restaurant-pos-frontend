@@ -128,49 +128,85 @@ const KitchenDisplay: React.FC = () => {
 
                 {/* --- Bulk Action Buttons --- */}
                 <div className="mt-3 flex gap-2">
-                  {order.orderItems.some(
-                    (item) => item.status === "ORDERED"
-                  ) && (
-                    <Button
-                      size="sm"
-                      className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
-                      onClick={async () => {
-                        for (const item of order.orderItems) {
-                          if (item.status === "ORDERED") {
-                            await handleUpdateItemStatus(item.id, "PREPARING");
-                          }
-                        }
-                        toast({
-                          title: "Success",
-                          description: "All items marked as preparing.",
-                        });
-                      }}
-                    >
-                      <Clock className="h-4 w-4 mr-2" /> Mark All Preparing
-                    </Button>
-                  )}
+                  {(() => {
+                    const items = order.orderItems;
+                    const hasAnyOrdered = items.some(
+                      (item) => item.status === "ORDERED"
+                    );
+                    const allNonOrdered =
+                      items.length > 0 &&
+                      items.every((item) =>
+                        [
+                          "PREPARING",
+                          "PREPARED",
+                          "SERVED",
+                          "CANCELLED",
+                        ].includes(item.status)
+                      );
+                    const allServedOrCancelled =
+                      items.length > 0 &&
+                      items.every((item) =>
+                        ["PREPARED", "SERVED", "CANCELLED"].includes(
+                          item.status
+                        )
+                      );
 
-                  {order.orderItems.every(
-                    (item) => item.status === "PREPARING"
-                  ) && (
-                    <Button
-                      size="sm"
-                      className="bg-green-500 hover:bg-green-600 text-white font-semibold"
-                      onClick={async () => {
-                        for (const item of order.orderItems) {
-                          if (item.status === "PREPARING") {
-                            await handleUpdateItemStatus(item.id, "PREPARED");
-                          }
-                        }
-                        toast({
-                          title: "Success",
-                          description: "All items marked as ready.",
-                        });
-                      }}
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" /> Mark All Ready
-                    </Button>
-                  )}
+                    // If any item is ORDERED -> show Mark All Preparing
+                    if (hasAnyOrdered) {
+                      return (
+                        <Button
+                          size="sm"
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold"
+                          onClick={async () => {
+                            for (const item of items) {
+                              if (item.status === "ORDERED") {
+                                await handleUpdateItemStatus(
+                                  item.id,
+                                  "PREPARING"
+                                );
+                              }
+                            }
+                            toast({
+                              title: "Success",
+                              description: "All items marked as preparing.",
+                            });
+                          }}
+                        >
+                          <Clock className="h-4 w-4 mr-2" /> Mark All Preparing
+                        </Button>
+                      );
+                    }
+
+                    // Otherwise, if all items are in (PREPARING, PREPARED, SERVED, CANCELLED)
+                    // and there is at least one item, show Mark All Ready
+                    if (allNonOrdered && !allServedOrCancelled) {
+                      return (
+                        <Button
+                          size="sm"
+                          className="bg-green-500 hover:bg-green-600 text-white font-semibold"
+                          onClick={async () => {
+                            for (const item of items) {
+                              if (item.status === "PREPARING") {
+                                await handleUpdateItemStatus(
+                                  item.id,
+                                  "PREPARED"
+                                );
+                              }
+                            }
+                            toast({
+                              title: "Success",
+                              description: "All items marked as ready.",
+                            });
+                          }}
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" /> Mark All
+                          Ready
+                        </Button>
+                      );
+                    }
+
+                    return null;
+                  })()}
                 </div>
               </CardHeader>
 
