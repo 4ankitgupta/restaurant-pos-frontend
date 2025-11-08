@@ -175,12 +175,12 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4"
       onClick={onClose}
     >
       <div
         className={cn(
-          "bg-background text-foreground flex h-[90vh] w-[80vw] max-w-6xl rounded-lg shadow-2xl transition-all duration-300",
+          "bg-background text-foreground flex h-full md:h-[90dvh] w-full md:w-[80vw] md:max-w-6xl md:rounded-lg shadow-2xl transition-all duration-300",
           isOpen ? "opacity-100 scale-100" : "opacity-0 scale-95"
         )}
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
@@ -376,7 +376,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           </ScrollArea>
 
           {/* Input Bar */}
-          <div className="p-4 border-t bg-background">
+          <div className="p-4 border-t bg-background shrink-0">
             <div className="flex gap-2">
               <Input
                 value={inputValue}
