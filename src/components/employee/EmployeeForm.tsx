@@ -105,7 +105,8 @@ export function EmployeeForm({
         // For update, all fields are optional
         const updatePayload = {
           ...data,
-          userId: data.userId || undefined,
+          biometricId: data.biometricId?.trim() || null,
+          userId: data.userId?.trim() || null,
         };
         await executeSubmit(() =>
           apiService.updateEmployee(editingEmployee.id, updatePayload)
@@ -119,8 +120,8 @@ export function EmployeeForm({
         const createPayload = {
           name: data.name,
           employeeCode: data.employeeCode,
-          biometricId: data.biometricId || undefined,
-          userId: data.userId || undefined,
+          biometricId: data.biometricId?.trim() || null,
+          userId: data.userId?.trim() || null,
         };
         await executeSubmit(() => apiService.createEmployee(createPayload));
         toast({
@@ -202,8 +203,11 @@ export function EmployeeForm({
                 <FormItem>
                   <FormLabel>Link to User (Optional)</FormLabel>
                   <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
+                    onValueChange={(value) => {
+                      // Convert special "NONE" value back to empty string for the form
+                      field.onChange(value === "NONE" ? "" : value);
+                    }}
+                    value={field.value || "NONE"}
                     disabled={usersLoading}
                   >
                     <FormControl>
@@ -212,6 +216,7 @@ export function EmployeeForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="NONE">None (Unlink)</SelectItem>
                       {users.map((user) => (
                         <SelectItem key={user.id} value={user.id}>
                           {user.name} ({user.email})
