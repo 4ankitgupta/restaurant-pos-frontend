@@ -2,7 +2,12 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -84,18 +89,18 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       backgroundImage: {
-        'gradient-primary': 'var(--gradient-primary)',
-        'gradient-hero': 'var(--gradient-hero)',
-        'gradient-card': 'var(--gradient-card)',
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-hero": "var(--gradient-hero)",
+        "gradient-card": "var(--gradient-card)",
       },
       boxShadow: {
-        'elegant': 'var(--shadow-elegant)',
-        'card': 'var(--shadow-card)',
-        'pos': 'var(--shadow-pos)',
+        elegant: "var(--shadow-elegant)",
+        card: "var(--shadow-card)",
+        pos: "var(--shadow-pos)",
       },
       transitionTimingFunction: {
-        'smooth': 'var(--transition-smooth)',
-        'fast': 'var(--transition-fast)',
+        smooth: "var(--transition-smooth)",
+        fast: "var(--transition-fast)",
       },
       keyframes: {
         "accordion-down": {
@@ -121,5 +126,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
