@@ -159,17 +159,12 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // Use the host of the current page, which will be your ngrok URL in production/tunneling
       // Or localhost during local development
-      const wsHost = window.location.host;
+      // const wsHost = window.location.host;
+      const wsHost = "localhost:8000";
 
-      // const websocketUrl = `${wsProtocol}//${wsHost}/?token=${token}`;
-      // console.log(`Connecting to WebSocket at: ${websocketUrl}`);
-      // const newWs = new WebSocket(websocketUrl);
-      //  http://192.168.1.37:8000/
-      const websocket = new WebSocket(
-        `ws://192.168.29.213:8000?token=${token}`
-      );
-      console.log(`Connecting to WebSocket at: ${websocket}`);
-      const newWs = websocket;
+      const websocketUrl = `${wsProtocol}//${wsHost}?token=${token}`;
+      console.log(`Connecting to WebSocket at: ${websocketUrl}`);
+      const newWs = new WebSocket(websocketUrl);
 
       newWs.onopen = async () => {
         console.log("WebSocket connected");

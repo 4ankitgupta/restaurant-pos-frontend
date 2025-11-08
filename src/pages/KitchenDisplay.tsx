@@ -68,11 +68,7 @@ const KitchenDisplay: React.FC = () => {
   const activeOrders = useMemo(() => {
     return orders
       .filter(
-        (order) =>
-          (order.status === "IN_PROGRESS" || order.status === "PENDING") &&
-          order.orderItems.some(
-            (item) => item.status === "ORDERED" || item.status === "PREPARING"
-          )
+        (order) => order.status === "IN_PROGRESS" || order.status === "PENDING"
       )
       .sort(
         (a, b) =>
@@ -180,12 +176,12 @@ const KitchenDisplay: React.FC = () => {
 
               <Separator className="border-gray-200" />
               <CardContent className="p-4 flex-grow space-y-4">
-                {order.orderItems
-                  .filter(
-                    (item) =>
-                      item.status === "ORDERED" || item.status === "PREPARING"
-                  )
-                  .map((item) => (
+                {order.orderItems.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500 italic">
+                    No items in this order yet
+                  </div>
+                ) : (
+                  order.orderItems.map((item) => (
                     <div
                       key={item.id}
                       className="flex items-center justify-between p-3 bg-gray-100 rounded-lg"
@@ -240,7 +236,8 @@ const KitchenDisplay: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </motion.div>
