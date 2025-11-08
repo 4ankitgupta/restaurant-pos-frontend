@@ -94,36 +94,61 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
           case "ORDER_ITEMS_UPDATED":
           case "PAYMENT_STATUS_UPDATE": {
             const normalized = normalizeOrder(message.payload);
-            return prevOrders.map((order) =>
-              order.id === normalized.id ? normalized : order
-            );
+            const exists = prevOrders.some((o) => o.id === normalized.id);
+            if (!exists) {
+              // If the order isn't in state yet (e.g., first push)
+              return [...prevOrders, normalized];
+            }
+            return prevOrders.map((order) => {
+              if (order.id !== normalized.id) return order;
+              // Merge to avoid losing table or items when payload omits them
+              return {
+                ...order,
+                ...normalized,
+                table: normalized.table ?? order.table,
+                orderItems: normalized.orderItems ?? order.orderItems,
+              } as APIOrder;
+            });
           }
 
           case "ORDER_ITEM_STATUS_UPDATE": {
-            // Payload may be the updated order item or contain orderId + item id
+            // Payload may be the updated order item or contain order snapshot in payload.order
             const payload = message.payload;
-            return prevOrders.map((order) => {
-              if (
-                order.id === payload.orderId ||
-                order.id === payload.order?.id
-              ) {
-                const updatedItem = { ...payload };
-                updatedItem.price = Number(updatedItem.price ?? 0);
-                if (updatedItem.menuItemVariant) {
-                  updatedItem.menuItemVariant = {
-                    ...updatedItem.menuItemVariant,
-                    price: Number(updatedItem.menuItemVariant.price ?? 0),
-                  };
-                  updatedItem.menuItemVariant.menuItem = {
-                    ...(updatedItem.menuItemVariant.menuItem || {}),
-                  };
-                }
-                const updatedOrderItems = order.orderItems.map((item) =>
-                  item.id === updatedItem.id ? updatedItem : item
-                );
-                return { ...order, orderItems: updatedOrderItems };
+
+            // If backend sent the full order snapshot, prefer replacing/adding the whole order
+            if (payload?.order) {
+              const normalizedOrder = normalizeOrder(payload.order);
+              const exists = prevOrders.some(
+                (o) => o.id === normalizedOrder.id
+              );
+              if (!exists) {
+                return [...prevOrders, normalizedOrder];
               }
-              return order;
+              return prevOrders.map((o) =>
+                o.id === normalizedOrder.id ? normalizedOrder : o
+              );
+            }
+
+            // Fallback: update only the single item within the matched order
+            return prevOrders.map((order) => {
+              if (order.id !== payload.orderId) return order;
+
+              const updatedItem = { ...payload };
+              updatedItem.price = Number(updatedItem.price ?? 0);
+              if (updatedItem.menuItemVariant) {
+                updatedItem.menuItemVariant = {
+                  ...updatedItem.menuItemVariant,
+                  price: Number(updatedItem.menuItemVariant.price ?? 0),
+                };
+                updatedItem.menuItemVariant.menuItem = {
+                  ...(updatedItem.menuItemVariant.menuItem || {}),
+                };
+              }
+
+              const updatedOrderItems = order.orderItems.map((item) =>
+                item.id === updatedItem.id ? updatedItem : item
+              );
+              return { ...order, orderItems: updatedOrderItems };
             });
           }
 
@@ -160,7 +185,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       // Use the host of the current page, which will be your ngrok URL in production/tunneling
       // Or localhost during local development
       // const wsHost = window.location.host;
-      const wsHost = "localhost:8000";
+      const wsHost = "192.168.29.213:8000";
 
       const websocketUrl = `${wsProtocol}//${wsHost}?token=${token}`;
       console.log(`Connecting to WebSocket at: ${websocketUrl}`);
