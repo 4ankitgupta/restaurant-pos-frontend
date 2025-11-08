@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   User, // Added User icon
   Bot, // Added Bot icon
+  Mic, // Added Mic icon
+  MicOff, // Added MicOff icon
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -56,6 +58,11 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   const [streamingContent, setStreamingContent] = useState("");
   // ---
 
+  // --- Speech Recognition State ---
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  // ---
+
   useEffect(() => {
     if (isOpen) {
       fetchConversations();
@@ -64,6 +71,91 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
       }
     }
   }, [isOpen]);
+
+  // --- Initialize Speech Recognition ---
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+
+        recognition.onresult = (event: any) => {
+          let interimTranscript = "";
+          let finalTranscript = "";
+
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + " ";
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+
+          if (finalTranscript) {
+            setInputValue((prev) => prev + finalTranscript);
+          }
+        };
+
+        recognition.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error);
+          setIsListening(false);
+
+          let errorMessage = "Failed to access microphone.";
+          let errorTitle = "Error";
+
+          switch (event.error) {
+            case "not-allowed":
+              errorTitle = "Microphone Access Denied";
+              errorMessage =
+                "Please allow microphone access in your browser settings to use voice input.";
+              break;
+            case "no-speech":
+              errorTitle = "No Speech Detected";
+              errorMessage = "No speech was detected. Please try again.";
+              break;
+            case "audio-capture":
+              errorTitle = "Microphone Not Found";
+              errorMessage =
+                "No microphone was found. Please connect a microphone and try again.";
+              break;
+            case "network":
+              errorTitle = "Network Error";
+              errorMessage =
+                "A network error occurred. Please check your connection.";
+              break;
+            default:
+              errorMessage = `Speech recognition error: ${event.error}`;
+          }
+
+          toast({
+            title: errorTitle,
+            description: errorMessage,
+            variant: "destructive",
+          });
+        };
+
+        recognition.onend = () => {
+          setIsListening(false);
+        };
+
+        recognitionRef.current = recognition;
+      }
+    }
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+  // ---
 
   useEffect(() => {
     // Auto-scroll logic, now triggered by streaming content as well
@@ -169,6 +261,98 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
       sendMessage();
     }
   };
+
+  // --- Speech Recognition Toggle ---
+  const toggleListening = async () => {
+    if (!recognitionRef.current) {
+      toast({
+        title: "Not Supported",
+        description:
+          "Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      try {
+        // Check current permission state
+        if (navigator.permissions) {
+          try {
+            const permissionStatus = await navigator.permissions.query({
+              name: "microphone" as PermissionName,
+            });
+
+            if (permissionStatus.state === "denied") {
+              toast({
+                title: "Microphone Access Blocked",
+                description:
+                  "Microphone access is blocked. Click the lock icon (🔒) in your address bar and allow microphone access, then try again.",
+                variant: "destructive",
+                duration: 6000,
+              });
+              return;
+            }
+          } catch (e) {
+            // Permission API might not support microphone query in some browsers
+            console.log(
+              "Permission query not supported, proceeding with request"
+            );
+          }
+        }
+
+        // Request microphone permission - this will trigger browser's permission popup
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+
+        // Stop the stream immediately as we only needed it for permission
+        stream.getTracks().forEach((track) => track.stop());
+
+        // Now start speech recognition
+        recognitionRef.current.start();
+        setIsListening(true);
+        toast({
+          title: "Listening...",
+          description: "Speak now. Click the mic button again to stop.",
+        });
+      } catch (error: any) {
+        console.error("Failed to start speech recognition:", error);
+
+        let errorTitle = "Cannot Start Voice Input";
+        let errorMessage = "Failed to start speech recognition.";
+        let duration = 5000;
+
+        if (
+          error.name === "NotAllowedError" ||
+          error.name === "PermissionDeniedError"
+        ) {
+          errorTitle = "Microphone Permission Required";
+          errorMessage =
+            "Please allow microphone access when prompted, or click the lock icon (🔒) in your address bar to enable microphone access.";
+          duration = 7000;
+        } else if (error.name === "NotFoundError") {
+          errorMessage =
+            "No microphone found. Please connect a microphone and try again.";
+        } else if (error.name === "NotReadableError") {
+          errorMessage =
+            "Your microphone is already in use by another application. Please close other apps using the microphone and try again.";
+          duration = 7000;
+        }
+
+        toast({
+          title: errorTitle,
+          description: errorMessage,
+          variant: "destructive",
+          duration,
+        });
+      }
+    }
+  };
+  // ---
 
   // --- Main JSX Structure (Kept your original modal/drawer logic) ---
   if (!isOpen) return null;
@@ -386,6 +570,19 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                 disabled={isLoading} // Disables input during stream
                 className="flex-1"
               />
+              <Button
+                onClick={toggleListening}
+                disabled={isLoading}
+                size="icon"
+                variant={isListening ? "destructive" : "outline"}
+                className={cn(isListening && "animate-pulse")}
+              >
+                {isListening ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </Button>
               <Button
                 onClick={sendMessage}
                 disabled={!inputValue.trim() || isLoading} // Disables button during stream
