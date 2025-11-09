@@ -442,7 +442,9 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           {isSidebarOpen && (
             <div className="flex h-full flex-col p-3">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-medium text-muted-foreground">History</h2>
+                <h2 className="text-sm font-medium text-muted-foreground">
+                  History
+                </h2>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -474,7 +476,9 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                         onClick={() => fetchMessages(convo.id)}
                       >
                         <MessageSquare className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate text-xs flex-1 max-w-[150px]">{convo.title}</span>
+                        <span className="truncate text-xs flex-1 max-w-[150px]">
+                          {convo.title}
+                        </span>
                       </Button>
                       <Button
                         variant="ghost"
@@ -501,10 +505,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                  "h-8 w-8",
-                  isSidebarOpen && "hidden"
-                )}
+                className={cn("h-8 w-8", isSidebarOpen && "hidden")}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               >
                 <Menu className="h-4 w-4" />
@@ -514,12 +515,19 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                   <Bot className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold">AI Assistant</h2>
-                  <p className="text-xs text-muted-foreground">Always here to help</p>
+                  <h2 className="text-sm font-semibold">Rasoi AI</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Always here to help
+                  </p>
                 </div>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={onClose}
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -539,7 +547,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                     )}
                   >
                     {message.role === "AI" && (
-                      <Avatar className="h-7 w-7 border border-border/50">
+                      <Avatar className="hidden sm:inline-flex h-7 w-7 border border-border/50">
                         <AvatarFallback className="bg-primary/5">
                           <Bot className="h-4 w-4 text-primary" />
                         </AvatarFallback>
@@ -547,7 +555,8 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                     )}
                     <div
                       className={cn(
-                        "max-w-[75%] rounded-2xl px-4 py-2.5 break-words",
+                        // Increased mobile size by ~20% (75% -> 90%), retain original at sm+ breakpoints
+                        "max-w-[90%] sm:max-w-[75%] rounded-2xl px-4 py-2.5 break-words",
                         message.role === "USER"
                           ? "bg-primary text-primary-foreground shadow-sm"
                           : "bg-card border border-border/50 shadow-sm"
@@ -605,7 +614,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                       )}
                     </div>
                     {message.role === "USER" && (
-                      <Avatar className="h-7 w-7 border border-border/50">
+                      <Avatar className="hidden sm:inline-flex h-7 w-7 border border-border/50">
                         <AvatarFallback className="bg-muted">
                           <User className="h-4 w-4" />
                         </AvatarFallback>
@@ -625,11 +634,20 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                         <Bot className="h-4 w-4 text-primary" />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="bg-card border border-border/50 rounded-2xl px-4 py-2.5 shadow-sm">
+                    <div className="bg-card border border-border/50 rounded-2xl px-4 py-2.5 shadow-sm max-w-[90%] sm:max-w-[75%]">
                       <div className="flex gap-1">
-                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div
+                          className="h-2 w-2 rounded-full bg-primary/60 animate-bounce"
+                          style={{ animationDelay: "0ms" }}
+                        />
+                        <div
+                          className="h-2 w-2 rounded-full bg-primary/60 animate-bounce"
+                          style={{ animationDelay: "150ms" }}
+                        />
+                        <div
+                          className="h-2 w-2 rounded-full bg-primary/60 animate-bounce"
+                          style={{ animationDelay: "300ms" }}
+                        />
                       </div>
                     </div>
                   </div>

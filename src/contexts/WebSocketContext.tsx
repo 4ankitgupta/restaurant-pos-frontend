@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { APIOrder } from "@/types/restaurant";
 import { useAuth } from "./AuthContext";
+import { WEBSOCKET_URL } from "@/config/apiConfig";
 
 // New message type to handle individual item status updates
 interface WebSocketMessage {
@@ -177,17 +178,21 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
     if (!token) return;
 
     // --- FIX: Dynamic WebSocket URL ---
-    // This will use wss:// on secure (https) connections and ws:// on insecure (http) connections.
+    // Use WebSocket URL from .env file, fallback to dynamic detection
     const connect = () => {
-      const isSecure = window.location.protocol === "https:";
-      const wsProtocol = isSecure ? "wss:" : "ws:";
+      let websocketUrl: string;
 
-      // Use the host of the current page, which will be your ngrok URL in production/tunneling
-      // Or localhost during local development
-      // const wsHost = window.location.host;
-      const wsHost = "192.168.29.213:8000";
+      if (WEBSOCKET_URL) {
+        // Use the configured WebSocket URL from .env
+        websocketUrl = `${WEBSOCKET_URL}?token=${token}`;
+      } else {
+        // Fallback: dynamically detect based on current page protocol
+        const isSecure = window.location.protocol === "https:";
+        const wsProtocol = isSecure ? "wss:" : "ws:";
+        const wsHost = window.location.host;
+        websocketUrl = `${wsProtocol}//${wsHost}?token=${token}`;
+      }
 
-      const websocketUrl = `${wsProtocol}//${wsHost}?token=${token}`;
       console.log(`Connecting to WebSocket at: ${websocketUrl}`);
       const newWs = new WebSocket(websocketUrl);
 
