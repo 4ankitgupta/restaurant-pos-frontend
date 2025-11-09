@@ -470,16 +470,16 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                           conversationId === convo.id ? "secondary" : "ghost"
                         }
                         size="sm"
-                        className="w-full justify-start text-left h-auto py-2 pr-10"
+                        className="w-full justify-start text-left h-auto py-2 pr-9"
                         onClick={() => fetchMessages(convo.id)}
                       >
                         <MessageSquare className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate text-xs flex-1">{convo.title}</span>
+                        <span className="truncate text-xs flex-1 max-w-[150px]">{convo.title}</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
                         onClick={(e) => handleDeleteClick(convo.id, e)}
                         title="Delete conversation"
                       >
