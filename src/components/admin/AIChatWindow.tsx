@@ -7,11 +7,11 @@ import {
   Loader2,
   MessageSquare,
   ChevronLeft,
-  User, // Added User icon
-  Bot, // Added Bot icon
-  Mic, // Added Mic icon
-  MicOff, // Added MicOff icon
-  Trash2, // Added Trash icon for delete
+  User,
+  Bot,
+  Mic,
+  MicOff,
+  Trash2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -30,14 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-// --- New Imports ---
 import remarkGfm from "remark-gfm";
-import { StreamingMessage } from "./StreamingMessage"; // Import the streaming component
-import { API_BASE_URL } from "@/config/apiConfig"; // Import your API base URL
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"; // Import Avatar
-import { SampleQueries } from "./SampleQueries"; // Import Sample Queries component
-// ---
+import { StreamingMessage } from "./StreamingMessage";
+import { API_BASE_URL } from "@/config/apiConfig";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SampleQueries } from "./SampleQueries";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Message {
   role: "USER" | "AI";
@@ -75,12 +73,10 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   const recognitionRef = useRef<any>(null);
   // ---
 
-  // --- Delete Conversation State ---
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [conversationToDelete, setConversationToDelete] = useState<
     string | null
   >(null);
-  // ---
 
   useEffect(() => {
     if (isOpen) {
@@ -275,8 +271,9 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   };
   // --- End of modified function ---
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !isLoading) {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey && !isLoading) {
+      e.preventDefault();
       sendMessage();
     }
   };
@@ -438,52 +435,55 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
         {/* Sidebar */}
         <div
           className={cn(
-            "h-full bg-muted/50 transition-all duration-300",
-            isSidebarOpen ? "w-64 border-r" : "w-0"
+            "h-full bg-muted/30 border-r border-border/50 transition-all duration-300",
+            isSidebarOpen ? "w-72" : "w-0"
           )}
         >
           {isSidebarOpen && (
-            <div className="flex h-full flex-col p-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Conversations</h2>
+            <div className="flex h-full flex-col p-3">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-medium text-muted-foreground">History</h2>
                 <Button
                   variant="ghost"
                   size="icon"
+                  className="h-7 w-7"
                   onClick={() => setIsSidebarOpen(false)}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
               </div>
               <Button
                 variant="outline"
-                className="mt-4"
+                size="sm"
+                className="w-full justify-start gap-2 mb-2"
                 onClick={startNewConversation}
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="h-3.5 w-3.5" />
                 New Chat
               </Button>
-              <ScrollArea className="mt-4 flex-1">
-                <div className="space-y-1 pr-2">
+              <ScrollArea className="flex-1 -mx-3 px-3">
+                <div className="space-y-1">
                   {conversations.map((convo) => (
-                    <div key={convo.id} className="relative group">
+                    <div key={convo.id} className="group relative">
                       <Button
                         variant={
                           conversationId === convo.id ? "secondary" : "ghost"
                         }
-                        className="w-full justify-start pr-9 text-left"
+                        size="sm"
+                        className="w-full justify-start text-left h-auto py-2 pr-10"
                         onClick={() => fetchMessages(convo.id)}
                       >
-                        <MessageSquare className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span className="truncate flex-1">{convo.title}</span>
+                        <MessageSquare className="mr-2 h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="truncate text-xs flex-1">{convo.title}</span>
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
                         onClick={(e) => handleDeleteClick(convo.id, e)}
                         title="Delete conversation"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   ))}
@@ -494,66 +494,76 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
         </div>
 
         {/* Chat Area */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col bg-gradient-to-b from-background to-muted/20">
           {/* Header */}
-          <div className="flex items-center justify-between border-b p-4">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 bg-background/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="icon"
+                className={cn(
+                  "h-8 w-8",
+                  isSidebarOpen && "hidden"
+                )}
                 onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className={cn(isSidebarOpen && "hidden")}
               >
                 <Menu className="h-4 w-4" />
               </Button>
-              <h2 className="text-lg font-semibold">AI Assistant</h2>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold">AI Assistant</h2>
+                  <p className="text-xs text-muted-foreground">Always here to help</p>
+                </div>
+              </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
 
           {/* Messages */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className="flex-1 px-4 py-6">
             {messages.length === 0 && !isLoading && !streamingContent ? (
               <SampleQueries onQuerySelect={handleSampleQuerySelect} />
             ) : (
-              <div className="space-y-6">
+              <div className="max-w-3xl mx-auto space-y-4">
                 {messages.map((message, index) => (
                   <div
                     key={index}
                     className={cn(
-                      "flex items-start gap-3",
+                      "flex items-start gap-3 animate-fade-in",
                       message.role === "USER" ? "justify-end" : "justify-start"
                     )}
                   >
                     {message.role === "AI" && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          <Bot className="h-5 w-5" />
+                      <Avatar className="h-7 w-7 border border-border/50">
+                        <AvatarFallback className="bg-primary/5">
+                          <Bot className="h-4 w-4 text-primary" />
                         </AvatarFallback>
                       </Avatar>
                     )}
                     <div
                       className={cn(
-                        "max-w-xs sm:max-w-md lg:max-w-lg rounded-2xl px-4 py-3 shadow-sm break-words",
+                        "max-w-[75%] rounded-2xl px-4 py-2.5 break-words",
                         message.role === "USER"
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-card border"
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "bg-card border border-border/50 shadow-sm"
                       )}
                     >
-                      {/* --- MODIFIED: Use ReactMarkdown for AI messages --- */}
                       {message.role === "USER" ? (
-                        <p className="whitespace-pre-wrap text-sm">
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
                           {message.content}
                         </p>
                       ) : (
-                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-2 prose-headings:my-3 prose-ul:my-2 prose-ol:my-2 prose-li:my-1">
+                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1.5 prose-headings:my-2 prose-ul:my-1.5 prose-ol:my-1.5 prose-li:my-0.5">
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
                               table: ({ node, ...props }) => (
-                                <div className="overflow-x-auto my-4">
+                                <div className="overflow-x-auto my-3">
                                   <table
                                     className="min-w-full border-collapse border border-border rounded-lg"
                                     {...props}
@@ -561,29 +571,29 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                                 </div>
                               ),
                               thead: ({ node, ...props }) => (
-                                <thead className="bg-muted" {...props} />
+                                <thead className="bg-muted/50" {...props} />
                               ),
                               th: ({ node, ...props }) => (
                                 <th
-                                  className="border border-border px-4 py-2 text-left font-medium"
+                                  className="border border-border px-3 py-1.5 text-left font-medium text-xs"
                                   {...props}
                                 />
                               ),
                               td: ({ node, ...props }) => (
                                 <td
-                                  className="border border-border px-4 py-2"
+                                  className="border border-border px-3 py-1.5 text-xs"
                                   {...props}
                                 />
                               ),
                               ul: ({ node, ...props }) => (
                                 <ul
-                                  className="list-disc pl-6 space-y-1"
+                                  className="list-disc pl-5 space-y-0.5"
                                   {...props}
                                 />
                               ),
                               ol: ({ node, ...props }) => (
                                 <ol
-                                  className="list-decimal pl-6 space-y-1"
+                                  className="list-decimal pl-5 space-y-0.5"
                                   {...props}
                                 />
                               ),
@@ -593,37 +603,37 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                           </ReactMarkdown>
                         </div>
                       )}
-                      {/* --- End of modification --- */}
                     </div>
                     {message.role === "USER" && (
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          <User className="h-5 w-5" />
+                      <Avatar className="h-7 w-7 border border-border/50">
+                        <AvatarFallback className="bg-muted">
+                          <User className="h-4 w-4" />
                         </AvatarFallback>
                       </Avatar>
                     )}
                   </div>
                 ))}
 
-                {/* --- MODIFIED: Render streaming message OR initial loader --- */}
                 {isLoading && streamingContent && (
                   <StreamingMessage content={streamingContent} />
                 )}
 
-                {/* This shows the initial "thinking" spinner */}
                 {isLoading && !streamingContent && (
-                  <div className="flex items-start gap-3 justify-start">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        <Bot className="h-5 w-5" />
+                  <div className="flex items-start gap-3 justify-start animate-fade-in">
+                    <Avatar className="h-7 w-7 border border-border/50">
+                      <AvatarFallback className="bg-primary/5">
+                        <Bot className="h-4 w-4 text-primary" />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="bg-card border rounded-2xl px-4 py-3 shadow-sm">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    <div className="bg-card border border-border/50 rounded-2xl px-4 py-2.5 shadow-sm">
+                      <div className="flex gap-1">
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
                     </div>
                   </div>
                 )}
-                {/* --- End of modification --- */}
 
                 <div ref={messagesEndRef} />
               </div>
@@ -631,40 +641,49 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           </ScrollArea>
 
           {/* Input Bar */}
-          <div className="p-4 border-t bg-background shrink-0">
-            <div className="flex gap-2">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                disabled={isLoading} // Disables input during stream
-                className="flex-1"
-              />
-              <Button
-                onClick={toggleListening}
-                disabled={isLoading}
-                size="icon"
-                variant={isListening ? "destructive" : "outline"}
-                className={cn(isListening && "animate-pulse")}
-              >
-                {isListening ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                onClick={sendMessage}
-                disabled={!inputValue.trim() || isLoading} // Disables button during stream
-                size="icon"
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4" />
-                )}
-              </Button>
+          <div className="p-4 border-t border-border/50 bg-background/80 backdrop-blur-sm shrink-0">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 relative">
+                  <Textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Ask me anything..."
+                    disabled={isLoading}
+                    className="min-h-[44px] max-h-32 resize-none pr-10 text-sm"
+                    rows={1}
+                  />
+                  <Button
+                    onClick={toggleListening}
+                    disabled={isLoading}
+                    size="icon"
+                    variant="ghost"
+                    className={cn(
+                      "absolute right-1 bottom-1 h-8 w-8",
+                      isListening && "text-destructive animate-pulse"
+                    )}
+                  >
+                    {isListening ? (
+                      <MicOff className="h-4 w-4" />
+                    ) : (
+                      <Mic className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  onClick={sendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  size="icon"
+                  className="h-11 w-11 shrink-0"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
