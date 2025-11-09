@@ -11,6 +11,7 @@ import {
   Bot, // Added Bot icon
   Mic, // Added Mic icon
   MicOff, // Added MicOff icon
+  Trash2, // Added Trash icon for delete
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { apiService } from "@/services/apiService";
 import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // --- New Imports ---
 import remarkGfm from "remark-gfm";
@@ -62,6 +73,13 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   // --- Speech Recognition State ---
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  // ---
+
+  // --- Delete Conversation State ---
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<
+    string | null
+  >(null);
   // ---
 
   useEffect(() => {
@@ -363,6 +381,45 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   };
   // ---
 
+  // --- Delete Conversation Handlers ---
+  const handleDeleteClick = (conversationId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the conversation selection
+    setConversationToDelete(conversationId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!conversationToDelete) return;
+
+    try {
+      await apiService.deleteAIConversation(conversationToDelete);
+
+      toast({
+        title: "Success",
+        description: "Conversation deleted successfully",
+      });
+
+      // If the deleted conversation was the active one, start a new conversation
+      if (conversationId === conversationToDelete) {
+        startNewConversation();
+      }
+
+      // Refresh the conversations list
+      await fetchConversations();
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete conversation",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setConversationToDelete(null);
+    }
+  };
+  // ---
+
   // --- Main JSX Structure (Kept your original modal/drawer logic) ---
   if (!isOpen) return null;
 
@@ -406,19 +463,31 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                 New Chat
               </Button>
               <ScrollArea className="mt-4 flex-1">
-                {conversations.map((convo) => (
-                  <Button
-                    key={convo.id}
-                    variant={
-                      conversationId === convo.id ? "secondary" : "ghost"
-                    }
-                    className="w-full justify-start"
-                    onClick={() => fetchMessages(convo.id)}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    <span className="truncate">{convo.title}</span>
-                  </Button>
-                ))}
+                <div className="space-y-1 pr-2">
+                  {conversations.map((convo) => (
+                    <div key={convo.id} className="relative group">
+                      <Button
+                        variant={
+                          conversationId === convo.id ? "secondary" : "ghost"
+                        }
+                        className="w-full justify-start pr-9 text-left"
+                        onClick={() => fetchMessages(convo.id)}
+                      >
+                        <MessageSquare className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate flex-1">{convo.title}</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
+                        onClick={(e) => handleDeleteClick(convo.id, e)}
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </ScrollArea>
             </div>
           )}
@@ -600,6 +669,29 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this conversation? This action
+              cannot be undone and all messages in this conversation will be
+              permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

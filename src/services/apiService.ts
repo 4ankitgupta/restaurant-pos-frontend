@@ -89,6 +89,15 @@ class ApiService {
     });
   };
 
+  deleteAIConversation = (conversationId: string) => {
+    return this.request<ApiResponse<{ success: boolean; message: string }>>(
+      `/agent/conversations/${conversationId}`,
+      {
+        method: "DELETE",
+      }
+    );
+  };
+
   // --- Cashier Actions ---
   getActiveAndUnpaidOrders = () => {
     return this.request<ApiResponse<APIOrder[]>>("/cashier/orders");
