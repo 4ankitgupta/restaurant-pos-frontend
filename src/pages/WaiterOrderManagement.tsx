@@ -261,6 +261,32 @@ const WaiterOrderManagement: React.FC = () => {
     }
   };
 
+  const handleServeAll = async () => {
+    const preparedItems = cart.filter((item) => item.status === "PREPARED");
+
+    if (preparedItems.length === 0) return;
+
+    try {
+      // Call the API for each prepared item
+      await Promise.all(
+        preparedItems.map((item) =>
+          apiService.updateOrderItemStatus(item.id, "SERVED")
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: `${preparedItems.length} item(s) marked as served`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to serve all items",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleCompleteOrder = async () => {
     if (!currentOrder) return;
     try {
@@ -395,7 +421,7 @@ const WaiterOrderManagement: React.FC = () => {
   }, [cart]);
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[90vh] bg-background">
       {/* Menu Section */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 relative">
         {/* Header */}
@@ -510,8 +536,7 @@ const WaiterOrderManagement: React.FC = () => {
 
       {/* Order Summary Section - Desktop */}
       <div className="hidden md:flex w-80 lg:w-96 bg-card border-l flex-col shrink-0">
-        {/* Order Header */}
-        <div className="p-4 border-b space-y-3">
+        {/* <div className="p-4 border-b space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Current Order</h2>
             <Button
@@ -524,7 +549,6 @@ const WaiterOrderManagement: React.FC = () => {
             </Button>
           </div>
 
-          {/* Order Status Summary */}
           {currentOrder && (
             <div className="grid grid-cols-4 gap-2 text-center">
               <div>
@@ -551,7 +575,7 @@ const WaiterOrderManagement: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -697,6 +721,18 @@ const WaiterOrderManagement: React.FC = () => {
             {orderLoading ? "Processing..." : "Send to Kitchen"}
           </Button>
 
+          {cart.filter((item) => item.status === "PREPARED").length > 0 && (
+            <Button
+              size="lg"
+              className="w-full"
+              variant="default"
+              onClick={handleServeAll}
+            >
+              <CheckCircle className="mr-2 h-5 w-5" />
+              Serve All Ready Items
+            </Button>
+          )}
+
           {currentOrder && (
             <Button
               size="lg"
@@ -719,11 +755,11 @@ const WaiterOrderManagement: React.FC = () => {
           onClick={() => setIsOrderPanelOpen(false)}
         >
           <div
-            className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-card border-l flex flex-col shadow-2xl animate-slide-in-right"
+            className="absolute right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l flex flex-col shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Order Header */}
-            <div className="p-4 border-b space-y-3">
+            {/* <div className="p-4 border-b space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold">Current Order</h2>
                 <div className="flex gap-2">
@@ -745,7 +781,6 @@ const WaiterOrderManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Order Status Summary */}
               {currentOrder && (
                 <div className="grid grid-cols-4 gap-2 text-center">
                   <div>
@@ -774,7 +809,7 @@ const WaiterOrderManagement: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -801,6 +836,11 @@ const WaiterOrderManagement: React.FC = () => {
                             ).toFixed(2)}{" "}
                             each
                           </p>
+                          {item.note && (
+                            <p className="text-xs text-muted-foreground">
+                              Note: {item.note}
+                            </p>
+                          )}
                           <Badge
                             variant={getBadgeVariant(item.status)}
                             className="mt-1 text-xs"
@@ -914,6 +954,21 @@ const WaiterOrderManagement: React.FC = () => {
                 <Save className="mr-2 h-5 w-5" />
                 {orderLoading ? "Processing..." : "Send to Kitchen"}
               </Button>
+
+              {cart.filter((item) => item.status === "PREPARED").length > 0 && (
+                <Button
+                  size="lg"
+                  className="w-full"
+                  variant="default"
+                  onClick={() => {
+                    handleServeAll();
+                    setIsOrderPanelOpen(false);
+                  }}
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Serve All Ready Items
+                </Button>
+              )}
 
               {currentOrder && (
                 <Button
