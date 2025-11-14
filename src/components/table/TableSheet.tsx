@@ -115,6 +115,7 @@ export function TableSheet({
                     onOpenChange(false);
                   }}
                   className="w-full bg-gradient-primary"
+                  disabled={table.orderStatus === null}
                 >
                   <BookOpen className="mr-2 h-4 w-4" />
                   Take / View Order

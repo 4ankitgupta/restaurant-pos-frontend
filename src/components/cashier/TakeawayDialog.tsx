@@ -34,7 +34,9 @@ interface TakeawayDialogProps {
   onOpenChange: (open: boolean) => void;
   menuItems: APIMenuItem[];
   categories: MenuCategory[];
-  onSubmit: (items: { menuItemVariantId: string; quantity: number; note?: string }[]) => void;
+  onSubmit: (
+    items: { menuItemVariantId: string; quantity: number; note?: string }[]
+  ) => void;
   isLoading: boolean;
 }
 
@@ -64,17 +66,31 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
   }, [categories, activeCategory]);
 
   const handleItemClick = (menuItem: APIMenuItem) => {
+    // If there's no variant, inform user (cannot add without a variant id)
+    if (menuItem.variants.length === 0) {
+      toast({
+        title: "No variants configured",
+        description: "Please add a variant for this item before ordering.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (menuItem.variants.length === 1) {
-      handleVariantSelect(menuItem.variants[0].id);
+      handleVariantSelect(menuItem.variants[0].id, menuItem.id);
     } else {
       setSelectedItemId(menuItem.id);
       setVariantDialogOpen(true);
     }
   };
 
-  const handleVariantSelect = (variantId: string, note?: string) => {
-    const menuItem = selectedItemId
-      ? menuItems.find((item) => item.id === selectedItemId)
+  const handleVariantSelect = (
+    variantId: string,
+    originatingItemId?: string,
+    note?: string
+  ) => {
+    const sourceItemId = originatingItemId ?? selectedItemId ?? null;
+    const menuItem = sourceItemId
+      ? menuItems.find((item) => item.id === sourceItemId)
       : undefined;
     if (!menuItem) return;
 
@@ -357,7 +373,11 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
           <DialogFooter>
             <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2">
               <Badge variant="secondary">Total Items: {totalItems}</Badge>
-              <Button onClick={handleSubmit} disabled={isLoading} className="w-full sm:w-auto">
+              <Button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full sm:w-auto"
+              >
                 {isLoading ? "Creating..." : "Create Take-away Order"}
               </Button>
             </div>
@@ -369,7 +389,9 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
         item={menuItems.find((item) => item.id === selectedItemId)}
         open={variantDialogOpen}
         onOpenChange={setVariantDialogOpen}
-        onSelect={handleVariantSelect}
+        onSelect={(variantId, note) =>
+          handleVariantSelect(variantId, undefined, note)
+        }
       />
 
       <EditNoteDialog
