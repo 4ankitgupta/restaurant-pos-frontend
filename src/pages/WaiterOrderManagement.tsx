@@ -20,7 +20,25 @@ import {
   ChefHat,
   PanelRightOpen,
   MessageSquare,
+  MoreVertical,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VariantSelectionDialog } from "@/components/cashier/VariantSelectionDialog";
 import { EditNoteDialog } from "@/components/cashier/EditNoteDialog";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -84,6 +102,7 @@ const mapOrderItemsToCart = (
 };
 
 const WaiterOrderManagement: React.FC = () => {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { orders } = useWebSocket();
@@ -96,6 +115,7 @@ const WaiterOrderManagement: React.FC = () => {
   const [isSending, setIsSending] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
   const [isOrderPanelOpen, setIsOrderPanelOpen] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<OrderItem | null>(null);
 
   // Variant selection dialog state
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -306,6 +326,13 @@ const WaiterOrderManagement: React.FC = () => {
     }
   };
 
+  const canShowCancel = (status: OrderItemStatus) => {
+    // Manager can cancel at any stage except already cancelled
+    if (user?.role === "manager") return status !== "CANCELLED";
+    // Others (e.g., waiter) can cancel only when ORDERED
+    return status === "ORDERED";
+  };
+
   const processOrder = async () => {
     const newItems = cart
       .filter((item) => item.status === "PENDING")
@@ -412,13 +439,23 @@ const WaiterOrderManagement: React.FC = () => {
     return { pending, preparing, ready, served };
   }, [cart]);
 
-  const totalAmount = useMemo(() => {
+  // Prefer API-provided order total; fall back to local cart sum for new/unsent items
+  const displayTotalAmount = useMemo(() => {
+    if (
+      currentOrder &&
+      typeof (currentOrder as any).totalAmount !== "undefined"
+    ) {
+      return Number((currentOrder as any).totalAmount) || 0;
+    }
+    // Fallback: local sum (useful for brand new orders before API responds)
     return cart.reduce(
       (sum, item) =>
-        sum + (item.price ?? item.menuItemVariant?.price ?? 0) * item.quantity,
+        sum +
+        (Number(item.price ?? item.menuItemVariant?.price ?? 0) || 0) *
+          item.quantity,
       0
     );
-  }, [cart]);
+  }, [currentOrder, cart]);
 
   return (
     <div className="flex h-[90vh] bg-background">
@@ -665,6 +702,26 @@ const WaiterOrderManagement: React.FC = () => {
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            disabled={!canShowCancel(item.status)}
+                            className="text-destructive"
+                            onClick={() => setCancelTarget(item)}
+                          >
+                            <XCircle className="h-3 w-3 mr-2" /> Cancel item
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
 
@@ -680,17 +737,6 @@ const WaiterOrderManagement: React.FC = () => {
                         <CheckCircle className="h-3 w-3 mr-1" />
                         Serve
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="flex-1"
-                        onClick={() =>
-                          handleUpdateItemStatus(item.id, "CANCELLED")
-                        }
-                      >
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Cancel
-                      </Button>
                     </div>
                   )}
                 </div>
@@ -703,7 +749,9 @@ const WaiterOrderManagement: React.FC = () => {
         <div className="p-4 border-t space-y-3 bg-muted/20">
           <div className="flex items-center justify-between text-lg font-bold">
             <span>Total</span>
-            <span className="text-primary">₹{totalAmount.toFixed(2)}</span>
+            <span className="text-primary">
+              ₹{displayTotalAmount.toFixed(2)}
+            </span>
           </div>
 
           <Separator />
@@ -896,6 +944,26 @@ const WaiterOrderManagement: React.FC = () => {
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                              >
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                disabled={!canShowCancel(item.status)}
+                                className="text-destructive"
+                                onClick={() => setCancelTarget(item)}
+                              >
+                                <XCircle className="h-3 w-3 mr-2" /> Cancel item
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
 
@@ -911,17 +979,6 @@ const WaiterOrderManagement: React.FC = () => {
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Serve
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() =>
-                              handleUpdateItemStatus(item.id, "CANCELLED")
-                            }
-                          >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Cancel
-                          </Button>
                         </div>
                       )}
                     </div>
@@ -934,7 +991,9 @@ const WaiterOrderManagement: React.FC = () => {
             <div className="p-4 border-t space-y-3 bg-muted/20">
               <div className="flex items-center justify-between text-lg font-bold">
                 <span>Total</span>
-                <span className="text-primary">₹{totalAmount.toFixed(2)}</span>
+                <span className="text-primary">
+                  ₹{displayTotalAmount.toFixed(2)}
+                </span>
               </div>
 
               <Separator />
@@ -1001,6 +1060,36 @@ const WaiterOrderManagement: React.FC = () => {
         onSave={handleNoteSave}
         itemName={editingNote?.itemName || ""}
       />
+
+      {/* Confirm Cancel Dialog */}
+      <AlertDialog
+        open={!!cancelTarget}
+        onOpenChange={(open) => !open && setCancelTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this item?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will cancel the selected order item. This cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, keep it</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (cancelTarget) {
+                  await handleUpdateItemStatus(cancelTarget.id, "CANCELLED");
+                  setCancelTarget(null);
+                }
+              }}
+            >
+              Yes, cancel item
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

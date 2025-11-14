@@ -15,6 +15,9 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
     const orderId = order.id.substring(0, 8).toUpperCase();
     const orderDate = new Date(order.createdAt).toLocaleString();
     const tableNumber = order.table?.tableNumber || "Take-away";
+    const printableItems = order.orderItems.filter(
+      (item) => item.status !== "CANCELLED"
+    );
 
     return (
       <div className="bill-receipt" ref={ref}>
@@ -38,7 +41,7 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
               </tr>
             </thead>
             <tbody>
-              {order.orderItems.map((item) => (
+              {printableItems.map((item) => (
                 <tr key={item.id}>
                   <td>
                     {item.menuItemVariant.menuItem.name} (

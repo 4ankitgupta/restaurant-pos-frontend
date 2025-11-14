@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/contexts/WebSocketContext";
@@ -82,6 +83,8 @@ const KitchenDisplay: React.FC = () => {
         return "bg-blue-500";
       case "PREPARING":
         return "bg-yellow-500";
+      case "CANCELLED":
+        return "bg-red-500";
       default:
         return "bg-gray-400";
     }
@@ -269,6 +272,14 @@ const KitchenDisplay: React.FC = () => {
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Ready
                           </Button>
+                        )}
+                        {item.status === "CANCELLED" && (
+                          <Badge
+                            variant="destructive"
+                            className="font-semibold"
+                          >
+                            Cancelled
+                          </Badge>
                         )}
                       </div>
                     </div>
