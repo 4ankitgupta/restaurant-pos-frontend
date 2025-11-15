@@ -57,7 +57,19 @@ const STATUS_OPTIONS: (APITable["status"] | "all")[] = [
 const TableManagement: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { orders } = useWebSocket();
+  const { orders, lastTableUpdate } = useWebSocket();
+  // --- NEW: Effect to listen for real-time table updates ---
+  useEffect(() => {
+    if (lastTableUpdate) {
+      setTables((prevTables) =>
+        prevTables.map((table) =>
+          table.id === lastTableUpdate.id
+            ? { ...table, status: lastTableUpdate.status }
+            : table
+        )
+      );
+    }
+  }, [lastTableUpdate]);
   const canManageTables = user?.role === "manager" || user?.role === "admin";
   const [tables, setTables] = useState<APITable[]>([]);
   const {

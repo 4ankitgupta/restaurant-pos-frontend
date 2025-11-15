@@ -7,68 +7,63 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { APIOrder } from "@/types/restaurant";
+import { APIOrder, APITable } from "@/types/restaurant";
 import { useAuth } from "./AuthContext";
 import { WEBSOCKET_URL } from "@/config/apiConfig";
 
-// New message type to handle individual item status updates
-interface WebSocketMessage {
+// Updated message type to include TABLE_UPDATE
+const WebSocketContext = createContext<WebSocketContextType | undefined>(
+  undefined
+);
+type WebSocketMessage = {
   type:
     | "NEW_ORDER"
     | "ORDER_STATUS_UPDATE"
     | "ORDER_ITEMS_UPDATED"
     | "PAYMENT_STATUS_UPDATE"
-    | "ORDER_ITEM_STATUS_UPDATE";
+    | "ORDER_ITEM_STATUS_UPDATE"
+    | "TABLE_UPDATE";
   payload: any;
-}
+};
 
-interface WebSocketContextType {
+type WebSocketContextType = {
   orders: APIOrder[];
+  lastTableUpdate: APITable | null;
   isConnected: boolean;
   refreshOrders: () => void;
-}
-
-const WebSocketContext = createContext<WebSocketContextType | undefined>(
-  undefined
-);
+};
 
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user } = useAuth();
   const [orders, setOrders] = useState<APIOrder[]>([]);
+  const [lastTableUpdate, setLastTableUpdate] = useState<APITable | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [ws, setWs] = useState<WebSocket | null>(null);
 
   const refreshOrders = useCallback(() => {
-    // Force a refresh by reconnecting WebSocket
     if (ws) {
-      ws.close(1000, "User requested refresh"); // Use a standard close code
+      ws.close(1000, "User requested refresh");
     }
   }, [ws]);
 
-  // Helper to normalize orders received from backend / websocket
   const normalizeOrder = (raw: any) => {
     if (!raw) return raw;
     const order = { ...raw } as any;
     if (Array.isArray(order.orderItems)) {
       order.orderItems = order.orderItems.map((oi: any) => {
         const cloned = { ...oi };
-        // Ensure price is a number
         cloned.price = Number(cloned.price ?? 0);
-
         if (cloned.menuItemVariant) {
           cloned.menuItemVariant = { ...cloned.menuItemVariant };
           cloned.menuItemVariant.price = Number(
             cloned.menuItemVariant.price ?? 0
           );
-
-          // Normalize nested menuItem (some backends may omit fields)
           cloned.menuItemVariant.menuItem = {
             ...(cloned.menuItemVariant.menuItem || {}),
           };
         }
-
         return cloned;
       });
     }
@@ -78,31 +73,32 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleWebSocketMessage = useCallback((event: MessageEvent) => {
     try {
       const message: WebSocketMessage = JSON.parse(event.data);
-      // incoming message parsed into `message` - we use normalizeOrder helper above
+
+      // Handle TABLE_UPDATE separately
+      if (message.type === "TABLE_UPDATE") {
+        setLastTableUpdate(message.payload as APITable);
+        return;
+      }
 
       setOrders((prevOrders) => {
         switch (message.type) {
           case "NEW_ORDER": {
             const normalized = normalizeOrder(message.payload);
-            // Avoid adding duplicates
             if (prevOrders.some((order) => order.id === normalized.id)) {
               return prevOrders;
             }
             return [...prevOrders, normalized];
           }
-
           case "ORDER_STATUS_UPDATE":
           case "ORDER_ITEMS_UPDATED":
           case "PAYMENT_STATUS_UPDATE": {
             const normalized = normalizeOrder(message.payload);
             const exists = prevOrders.some((o) => o.id === normalized.id);
             if (!exists) {
-              // If the order isn't in state yet (e.g., first push)
               return [...prevOrders, normalized];
             }
             return prevOrders.map((order) => {
               if (order.id !== normalized.id) return order;
-              // Merge to avoid losing table or items when payload omits them
               return {
                 ...order,
                 ...normalized,
@@ -111,12 +107,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
               } as APIOrder;
             });
           }
-
           case "ORDER_ITEM_STATUS_UPDATE": {
-            // Payload may be the updated order item or contain order snapshot in payload.order
             const payload = message.payload;
-
-            // If backend sent the full order snapshot, prefer replacing/adding the whole order
             if (payload?.order) {
               const normalizedOrder = normalizeOrder(payload.order);
               const exists = prevOrders.some(
@@ -129,11 +121,8 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                 o.id === normalizedOrder.id ? normalizedOrder : o
               );
             }
-
-            // Fallback: update only the single item within the matched order
             return prevOrders.map((order) => {
               if (order.id !== payload.orderId) return order;
-
               const updatedItem = { ...payload };
               updatedItem.price = Number(updatedItem.price ?? 0);
               if (updatedItem.menuItemVariant) {
@@ -145,16 +134,13 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
                   ...(updatedItem.menuItemVariant.menuItem || {}),
                 };
               }
-
               const updatedOrderItems = order.orderItems.map((item) =>
                 item.id === updatedItem.id ? updatedItem : item
               );
               return { ...order, orderItems: updatedOrderItems };
             });
           }
-
           default:
-            console.warn("Unknown WebSocket message type:", message.type);
             return prevOrders;
         }
       });
@@ -246,6 +232,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const contextValue: WebSocketContextType = {
     orders,
+    lastTableUpdate,
     isConnected,
     refreshOrders,
   };
