@@ -64,7 +64,7 @@ const TableManagement: React.FC = () => {
       setTables((prevTables) =>
         prevTables.map((table) =>
           table.id === lastTableUpdate.id
-            ? { ...table, status: lastTableUpdate.status }
+            ? { ...table, ...lastTableUpdate } // Merge full update (includes orderStatus)
             : table
         )
       );
