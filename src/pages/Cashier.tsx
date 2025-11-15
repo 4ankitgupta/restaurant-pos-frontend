@@ -10,8 +10,10 @@ import { OrderList } from "@/components/cashier/OrderList";
 import { OrderDetail } from "@/components/cashier/OrderDetail";
 import { PaymentDialog } from "@/components/cashier/PaymentDialog";
 import { AddItemsDialog } from "@/components/cashier/AddItemsDialog";
+import { POSTerminal } from "@/components/cashier/POSTerminal";
 import { TakeawayDialog } from "@/components/cashier/TakeawayDialog";
 import { toast } from "@/hooks/use-toast";
+import { useLocation } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +41,8 @@ const Cashier = () => {
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]); // <-- ADD THIS
   const [selectedOrder, setSelectedOrder] = useState<APIOrder | null>(null);
   const [activeTab, setActiveTab] = useState<TabValue>("active");
+  const location = useLocation();
+  const isPOSMode = location.pathname === "/pos";
 
   const [isPaymentOpen, setPaymentOpen] = useState(false);
   const [isAddItemsOpen, setAddItemsOpen] = useState(false);
@@ -162,52 +166,62 @@ const Cashier = () => {
 
   return (
     <div className="h-screen flex flex-col p-4 gap-4 bg-muted/20">
-      <header className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Cashier Station</h1>
-        <Button onClick={() => setTakeawayOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" /> New Take-away
-        </Button>
-      </header>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
-        {/* Left column for the order list */}
-        <div className="lg:col-span-1 flex flex-col overflow-y-auto">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as TabValue)}
-            className="flex flex-col flex-1"
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active">Active & Unpaid</TabsTrigger>
-              <TabsTrigger value="completed">Completed Today</TabsTrigger>
-            </TabsList>
-            <TabsContent value="active" className="flex-1 min-h-0">
-              <OrderList
-                orders={activeOrders}
-                title="Active & Unpaid Orders"
-                onSelectOrder={handleSelectOrder}
-                selectedOrderId={selectedOrder?.id}
-              />
-            </TabsContent>
-            <TabsContent value="completed" className="flex-1 min-h-0">
-              <OrderList
-                orders={completedOrders}
-                title="Completed Orders"
-                onSelectOrder={handleSelectOrder}
-                selectedOrderId={selectedOrder?.id}
-              />
-            </TabsContent>
-          </Tabs>
+      {!isPOSMode && (
+        <header className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Cashier Station</h1>
+
+          <Button onClick={() => setTakeawayOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" /> New Take-away
+          </Button>
+        </header>
+      )}
+
+      {!isPOSMode ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 overflow-hidden">
+          {/* Left column for the order list */}
+          <div className="lg:col-span-1 flex flex-col overflow-y-auto">
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => setActiveTab(v as TabValue)}
+              className="flex flex-col flex-1"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="active">Active & Unpaid</TabsTrigger>
+                <TabsTrigger value="completed">Completed Today</TabsTrigger>
+              </TabsList>
+              <TabsContent value="active" className="flex-1 min-h-0">
+                <OrderList
+                  orders={activeOrders}
+                  title="Active & Unpaid Orders"
+                  onSelectOrder={handleSelectOrder}
+                  selectedOrderId={selectedOrder?.id}
+                />
+              </TabsContent>
+              <TabsContent value="completed" className="flex-1 min-h-0">
+                <OrderList
+                  orders={completedOrders}
+                  title="Completed Orders"
+                  onSelectOrder={handleSelectOrder}
+                  selectedOrderId={selectedOrder?.id}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+          {/* Right column for order details */}
+          <div className="lg:col-span-2 overflow-y-auto">
+            <OrderDetail
+              order={selectedOrder}
+              onPay={() => setPaymentOpen(true)}
+              onAddItems={() => setAddItemsOpen(true)}
+              onRefund={() => setRefundConfirmOpen(true)}
+            />
+          </div>
         </div>
-        {/* Right column for order details */}
-        <div className="lg:col-span-2 overflow-y-auto">
-          <OrderDetail
-            order={selectedOrder}
-            onPay={() => setPaymentOpen(true)}
-            onAddItems={() => setAddItemsOpen(true)}
-            onRefund={() => setRefundConfirmOpen(true)}
-          />
+      ) : (
+        <div className="flex-1 overflow-hidden">
+          <POSTerminal />
         </div>
-      </div>
+      )}
       {/* Dialogs */}
       {selectedOrder && (
         <PaymentDialog

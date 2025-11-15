@@ -66,7 +66,7 @@ export const Navbar: React.FC = () => {
               { icon: ShoppingCart, label: "POS System", path: "/pos" },
               { icon: Armchair, label: "Tables", path: "/tables" },
               { icon: CookingPot, label: "Kitchen", path: "/kitchen" },
-              { icon: Coins, label: "Cashier", path: "/cashier" },
+              { icon: Coins, label: "Manage Orders", path: "/cashier" },
             ],
           },
           {
@@ -75,7 +75,11 @@ export const Navbar: React.FC = () => {
               { icon: Utensils, label: "Menu", path: "/menu" },
               { icon: Package, label: "Inventory", path: "/inventory" },
               { icon: Truck, label: "Suppliers", path: "/supplier" },
-              { icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-order" },
+              {
+                icon: ShoppingCart,
+                label: "Purchase Orders",
+                path: "/purchase-order",
+              },
             ],
           },
           {
@@ -105,7 +109,7 @@ export const Navbar: React.FC = () => {
               { icon: ShoppingCart, label: "POS System", path: "/pos" },
               { icon: Armchair, label: "Tables", path: "/tables" },
               { icon: CookingPot, label: "Kitchen", path: "/kitchen" },
-              { icon: Coins, label: "Cashier", path: "/cashier" },
+              { icon: Coins, label: "Manage Orders", path: "/cashier" },
             ],
           },
           {
@@ -114,7 +118,11 @@ export const Navbar: React.FC = () => {
               { icon: Utensils, label: "Menu", path: "/menu" },
               { icon: Package, label: "Inventory", path: "/inventory" },
               { icon: Truck, label: "Suppliers", path: "/supplier" },
-              { icon: ShoppingCart, label: "Purchase Orders", path: "/purchase-order" },
+              {
+                icon: ShoppingCart,
+                label: "Purchase Orders",
+                path: "/purchase-order",
+              },
             ],
           },
           {
@@ -134,15 +142,12 @@ export const Navbar: React.FC = () => {
       case "cashier":
         return [
           { icon: ShoppingCart, label: "POS", path: "/pos" },
+          { icon: Coins, label: "Manage Orders", path: "/cashier" },
         ];
       case "waiter":
-        return [
-          { icon: Armchair, label: "Tables", path: "/tables" },
-        ];
+        return [{ icon: Armchair, label: "Tables", path: "/tables" }];
       case "chef":
-        return [
-          { icon: ChefHat, label: "Kitchen", path: "/kitchen" },
-        ];
+        return [{ icon: ChefHat, label: "Kitchen", path: "/kitchen" }];
       default:
         return [];
     }
@@ -150,7 +155,7 @@ export const Navbar: React.FC = () => {
 
   const navCategories = getNavCategories();
   const flatNavItems = navCategories.flatMap((cat) =>
-    cat.items ? cat.items : (cat.path ? [cat as any] : [])
+    cat.items ? cat.items : cat.path ? [cat as any] : []
   );
 
   return (
@@ -279,7 +284,9 @@ export const Navbar: React.FC = () => {
                             className="w-10 h-10 object-contain"
                           />
                           <div className="flex-1 min-w-0">
-                            <h2 className="font-semibold text-lg">RasoiTrack</h2>
+                            <h2 className="font-semibold text-lg">
+                              RasoiTrack
+                            </h2>
                             <p className="text-xs text-muted-foreground truncate">
                               {user.name}
                             </p>
@@ -307,7 +314,9 @@ export const Navbar: React.FC = () => {
                                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                                   >
                                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                                    <span className="font-medium">{item.label}</span>
+                                    <span className="font-medium">
+                                      {item.label}
+                                    </span>
                                   </Link>
                                 ))}
                               </div>
@@ -318,7 +327,9 @@ export const Navbar: React.FC = () => {
                                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                               >
                                 <category.icon className="w-5 h-5 flex-shrink-0" />
-                                <span className="font-medium">{category.label}</span>
+                                <span className="font-medium">
+                                  {category.label}
+                                </span>
                               </Link>
                             )}
                           </div>
