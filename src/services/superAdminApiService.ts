@@ -328,6 +328,32 @@ class SuperAdminApiService {
       body: JSON.stringify(data),
     });
   }
+
+  // Zomato Integration
+  async getZomatoConfig(restaurantId: string): Promise<any> {
+    return this.request(`/restaurants/${restaurantId}/zomato-config`);
+  }
+
+  async updateZomatoConfig(
+    restaurantId: string,
+    data: {
+      zomatoApiKey: string;
+      zomatoRestaurantId: string;
+      webhookSecret?: string;
+      enabled: boolean;
+    }
+  ): Promise<any> {
+    return this.request(`/restaurants/${restaurantId}/zomato-config`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteZomatoConfig(restaurantId: string): Promise<void> {
+    return this.request(`/restaurants/${restaurantId}/zomato-config`, {
+      method: "DELETE",
+    });
+  }
 }
 
 export const superAdminApi = new SuperAdminApiService();

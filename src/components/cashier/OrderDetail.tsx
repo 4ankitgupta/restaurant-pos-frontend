@@ -19,6 +19,9 @@ import {
   RefreshCw,
   Printer,
   Package,
+  Bike,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -84,13 +87,69 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
       <Card className="h-full flex flex-col">
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
-            <span>
-              {order.takeAway
-                ? "Take-away"
-                : `Table ${order.table?.tableNumber || ""}`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span>
+                {order.orderType === "DELIVERY_ZOMATO" ||
+                order.orderType === "DELIVERY_SWIGGY" ||
+                order.orderType === "DELIVERY_OTHER"
+                  ? "Delivery"
+                  : order.takeAway
+                  ? "Take-away"
+                  : `Table ${order.table?.tableNumber || ""}`}
+              </span>
+              {order.orderType === "DELIVERY_ZOMATO" && (
+                <Badge
+                  variant="destructive"
+                  className="flex items-center gap-1"
+                >
+                  <Bike className="h-3 w-3" />
+                  Zomato
+                </Badge>
+              )}
+              {order.orderType === "DELIVERY_SWIGGY" && (
+                <Badge
+                  variant="default"
+                  className="flex items-center gap-1 bg-orange-500"
+                >
+                  <Bike className="h-3 w-3" />
+                  Swiggy
+                </Badge>
+              )}
+              {order.orderType === "DELIVERY_OTHER" && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  <Bike className="h-3 w-3" />
+                  Delivery
+                </Badge>
+              )}
+            </div>
             <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
           </CardTitle>
+
+          {/* Customer Info for Delivery Orders */}
+          {(order.orderType === "DELIVERY_ZOMATO" ||
+            order.orderType === "DELIVERY_SWIGGY" ||
+            order.orderType === "DELIVERY_OTHER") && (
+            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+              {order.customerName && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Customer:</span>
+                  <span>{order.customerName}</span>
+                </div>
+              )}
+              {order.customerPhone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3" />
+                  <span>{order.customerPhone}</span>
+                </div>
+              )}
+              {order.deliveryAddress && (
+                <div className="flex items-start gap-2">
+                  <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                  <span>{order.deliveryAddress}</span>
+                </div>
+              )}
+            </div>
+          )}
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
           <ScrollArea className="h-full">

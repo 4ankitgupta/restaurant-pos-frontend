@@ -90,6 +90,16 @@ export interface APIOrder {
   restaurantId: string;
   tableId: string | null;
   takeAway: boolean;
+  orderType?:
+    | "DINE_IN"
+    | "TAKE_AWAY"
+    | "DELIVERY_ZOMATO"
+    | "DELIVERY_SWIGGY"
+    | "DELIVERY_OTHER";
+  sourceId?: string | null;
+  customerName?: string | null;
+  customerPhone?: string | null;
+  deliveryAddress?: string | null;
   table?: {
     id: string;
     tableNumber: string;

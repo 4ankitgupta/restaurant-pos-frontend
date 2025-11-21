@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/apiService";
 import { OrderItemStatus } from "@/types/restaurant";
 import { format, parseISO } from "date-fns";
-import { ChefHat, Clock, CheckCircle } from "lucide-react";
+import { ChefHat, Clock, CheckCircle, Bike, Phone, MapPin } from "lucide-react";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { Order, APIOrder } from "@/types/restaurant";
 
@@ -123,11 +123,78 @@ const KitchenDisplay: React.FC = () => {
             <Card className="bg-white border-gray-200 h-full flex flex-col shadow-md rounded-xl">
               <CardHeader className="p-4">
                 <CardTitle className="flex justify-between items-center text-2xl font-bold text-gray-900">
-                  <span>Table {order.table?.tableNumber || "N/A"}</span>
+                  <div className="flex items-center gap-2">
+                    <span>
+                      {order.orderType === "DELIVERY_ZOMATO" ||
+                      order.orderType === "DELIVERY_SWIGGY" ||
+                      order.orderType === "DELIVERY_OTHER"
+                        ? "Delivery"
+                        : order.table?.tableNumber
+                        ? `Table ${order.table.tableNumber}`
+                        : order.takeAway
+                        ? "Take Away"
+                        : "Table N/A"}
+                    </span>
+                    {order.orderType === "DELIVERY_ZOMATO" && (
+                      <Badge
+                        variant="destructive"
+                        className="flex items-center gap-1"
+                      >
+                        <Bike className="h-3 w-3" />
+                        Zomato
+                      </Badge>
+                    )}
+                    {order.orderType === "DELIVERY_SWIGGY" && (
+                      <Badge
+                        variant="default"
+                        className="flex items-center gap-1 bg-orange-500"
+                      >
+                        <Bike className="h-3 w-3" />
+                        Swiggy
+                      </Badge>
+                    )}
+                    {order.orderType === "DELIVERY_OTHER" && (
+                      <Badge
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        <Bike className="h-3 w-3" />
+                        Delivery
+                      </Badge>
+                    )}
+                  </div>
                   <span className="text-sm font-medium text-gray-500">
                     {format(parseISO(order.createdAt), "p")}
                   </span>
                 </CardTitle>
+
+                {/* Customer Info for Delivery Orders */}
+                {(order.orderType === "DELIVERY_ZOMATO" ||
+                  order.orderType === "DELIVERY_SWIGGY" ||
+                  order.orderType === "DELIVERY_OTHER") && (
+                  <div className="mt-2 space-y-1 text-sm text-gray-600">
+                    {order.customerName && (
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">Customer:</span>
+                        <span>{order.customerName}</span>
+                      </div>
+                    )}
+                    {order.customerPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3 w-3" />
+                        <span>{order.customerPhone}</span>
+                      </div>
+                    )}
+                    {order.deliveryAddress && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                        <span className="line-clamp-2">
+                          {order.deliveryAddress}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* --- Bulk Action Buttons --- */}
                 <div className="mt-3 flex gap-2">

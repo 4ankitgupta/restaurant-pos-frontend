@@ -13,7 +13,15 @@ import {
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Building, Edit, Users, Eye, Settings } from "lucide-react";
+import {
+  Plus,
+  Building,
+  Edit,
+  Users,
+  Eye,
+  Settings,
+  Utensils,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -25,6 +33,7 @@ import {
 } from "@/components/ui/card";
 import { RestaurantForm } from "./RestaurantForm";
 import { FeatureFlagsDialog } from "./FeatureFlagsDialog";
+import { ZomatoConfigDialog } from "./ZomatoConfigDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManageRestaurants: React.FC = () => {
@@ -33,10 +42,14 @@ export const ManageRestaurants: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isFeatureFlagsDialogOpen, setIsFeatureFlagsDialogOpen] =
     useState(false);
+  const [isZomatoConfigDialogOpen, setIsZomatoConfigDialogOpen] =
+    useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(
     null
   );
   const [managingFeaturesRestaurant, setManagingFeaturesRestaurant] =
+    useState<Restaurant | null>(null);
+  const [managingZomatoRestaurant, setManagingZomatoRestaurant] =
     useState<Restaurant | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -109,6 +122,16 @@ export const ManageRestaurants: React.FC = () => {
   const closeFeatureFlagsDialog = () => {
     setIsFeatureFlagsDialogOpen(false);
     setManagingFeaturesRestaurant(null);
+  };
+
+  const openZomatoConfigDialog = (restaurant: Restaurant) => {
+    setManagingZomatoRestaurant(restaurant);
+    setIsZomatoConfigDialogOpen(true);
+  };
+
+  const closeZomatoConfigDialog = () => {
+    setIsZomatoConfigDialogOpen(false);
+    setManagingZomatoRestaurant(null);
   };
 
   const onViewUsers = (restaurantId: string) => {
@@ -209,6 +232,17 @@ export const ManageRestaurants: React.FC = () => {
                       <Settings className="w-3 h-3 mr-1" />
                       Features
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openZomatoConfigDialog(restaurant)}
+                      className="flex-1"
+                    >
+                      <Utensils className="w-3 h-3 mr-1" />
+                      Zomato
+                    </Button>
+                  </div>
+                  <div className="flex gap-2 mt-2">
                     <Button
                       size="sm"
                       variant="outline"
@@ -355,6 +389,14 @@ export const ManageRestaurants: React.FC = () => {
                       <Button
                         size="sm"
                         variant="ghost"
+                        onClick={() => openZomatoConfigDialog(restaurant)}
+                        title="Zomato Integration"
+                      >
+                        <Utensils className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => onViewUsers(restaurant.id)}
                         title="View Users"
                       >
@@ -404,6 +446,16 @@ export const ManageRestaurants: React.FC = () => {
           />
         )}
       </Dialog>
+
+      {/* Zomato Configuration Dialog */}
+      <ZomatoConfigDialog
+        restaurant={managingZomatoRestaurant}
+        open={isZomatoConfigDialogOpen}
+        onOpenChange={setIsZomatoConfigDialogOpen}
+        onSuccess={() => {
+          fetchRestaurants();
+        }}
+      />
     </div>
   );
 };

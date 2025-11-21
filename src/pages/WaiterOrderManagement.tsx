@@ -21,6 +21,7 @@ import {
   PanelRightOpen,
   MessageSquare,
   MoreVertical,
+  Bike,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -473,15 +474,53 @@ const WaiterOrderManagement: React.FC = () => {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold">
+                <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
                   {currentOrder
-                    ? `Table ${currentOrder.table?.tableNumber || "N/A"}`
+                    ? currentOrder.orderType === "DELIVERY_ZOMATO" ||
+                      currentOrder.orderType === "DELIVERY_SWIGGY" ||
+                      currentOrder.orderType === "DELIVERY_OTHER"
+                      ? "Delivery Order"
+                      : `Table ${currentOrder.table?.tableNumber || "N/A"}`
                     : "New Order"}
+                  {currentOrder?.orderType === "DELIVERY_ZOMATO" && (
+                    <Badge
+                      variant="destructive"
+                      className="flex items-center gap-1"
+                    >
+                      <Bike className="h-3 w-3" />
+                      Zomato
+                    </Badge>
+                  )}
+                  {currentOrder?.orderType === "DELIVERY_SWIGGY" && (
+                    <Badge
+                      variant="default"
+                      className="flex items-center gap-1 bg-orange-500"
+                    >
+                      <Bike className="h-3 w-3" />
+                      Swiggy
+                    </Badge>
+                  )}
+                  {currentOrder?.orderType === "DELIVERY_OTHER" && (
+                    <Badge
+                      variant="secondary"
+                      className="flex items-center gap-1"
+                    >
+                      <Bike className="h-3 w-3" />
+                      Delivery
+                    </Badge>
+                  )}
                 </h1>
                 {currentOrder && (
-                  <p className="text-sm text-muted-foreground">
-                    Order #{currentOrder.id.slice(0, 8)}
-                  </p>
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Order #{currentOrder.id.slice(0, 8)}
+                    </p>
+                    {currentOrder.customerName && (
+                      <p className="text-sm text-muted-foreground">
+                        Customer: {currentOrder.customerName}
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
             </div>
