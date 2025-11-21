@@ -32,6 +32,7 @@ import {
   Armchair,
   Coins,
   CookingPot,
+  Receipt,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
@@ -110,6 +111,13 @@ export const Navbar: React.FC = () => {
           items: peopleItems,
         });
 
+        // Expenses
+        adminCategories.push({
+          label: "Expenses",
+          path: "/expenses",
+          icon: Receipt,
+        });
+
         // Reports - only show if enabled
         if (hasReports) {
           adminCategories.push({
@@ -171,6 +179,13 @@ export const Navbar: React.FC = () => {
         managerCategories.push({
           label: "People",
           items: managerPeopleItems,
+        });
+
+        // Expenses
+        managerCategories.push({
+          label: "Expenses",
+          path: "/expenses",
+          icon: Receipt,
         });
 
         // Reports - only show if enabled

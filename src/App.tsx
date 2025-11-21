@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import Cashier from "./pages/Cashier";
 import Employees from "./pages/Employees";
 import AttendanceReport from "./pages/AttendanceReport";
+import Expenses from "./pages/Expenses";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 
 // Super Admin imports
@@ -193,6 +194,14 @@ const App = () => (
                         <FeatureProtectedRoute feature="reports">
                           <Reports />
                         </FeatureProtectedRoute>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="expenses"
+                    element={
+                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                        <Expenses />
                       </ProtectedRoute>
                     }
                   />

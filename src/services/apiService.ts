@@ -671,6 +671,120 @@ class ApiService {
       body: JSON.stringify(punchData),
     });
   }
+
+  // --- Expense Management ---
+  getExpenseCategories = () => {
+    return this.request<ApiResponse<any[]>>("/expenses/categories");
+  };
+
+  createExpenseCategory = (data: {
+    name: string;
+    description?: string;
+    color?: string;
+  }) => {
+    return this.request<ApiResponse<any>>("/expenses/categories", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  };
+
+  updateExpenseCategory = (
+    id: string,
+    data: { name?: string; description?: string; color?: string }
+  ) => {
+    return this.request<ApiResponse<any>>(`/expenses/categories/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  };
+
+  deleteExpenseCategory = (id: string) => {
+    return this.request<ApiResponse<any>>(`/expenses/categories/${id}`, {
+      method: "DELETE",
+    });
+  };
+
+  getExpenses = (filters?: {
+    startDate?: string;
+    endDate?: string;
+    categoryId?: string;
+    status?: string;
+    isRecurring?: boolean;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.categoryId) params.append("categoryId", filters.categoryId);
+    if (filters?.status) params.append("status", filters.status);
+    if (filters?.isRecurring !== undefined)
+      params.append("isRecurring", String(filters.isRecurring));
+
+    return this.request<ApiResponse<any[]>>(`/expenses?${params.toString()}`);
+  };
+
+  createExpense = (data: any) => {
+    return this.request<ApiResponse<any>>("/expenses", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  };
+
+  updateExpense = (id: string, data: any) => {
+    return this.request<ApiResponse<any>>(`/expenses/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  };
+
+  deleteExpense = (id: string) => {
+    return this.request<ApiResponse<any>>(`/expenses/${id}`, {
+      method: "DELETE",
+    });
+  };
+
+  getRecurringExpenses = () => {
+    return this.request<ApiResponse<any[]>>("/expenses/recurring");
+  };
+
+  createRecurringExpense = (data: any) => {
+    return this.request<ApiResponse<any>>("/expenses/recurring", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  };
+
+  updateRecurringExpense = (id: string, data: any) => {
+    return this.request<ApiResponse<any>>(`/expenses/recurring/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  };
+
+  deleteRecurringExpense = (id: string) => {
+    return this.request<ApiResponse<any>>(`/expenses/recurring/${id}`, {
+      method: "DELETE",
+    });
+  };
+
+  getExpenseAnalytics = (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    return this.request<ApiResponse<any>>(
+      `/expenses/analytics?${params.toString()}`
+    );
+  };
+
+  getProfitAndLossReport = (startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams();
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    return this.request<ApiResponse<any>>(
+      `/reports/profit-and-loss?${params.toString()}`
+    );
+  };
 }
 
 export const apiService = new ApiService();
