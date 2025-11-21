@@ -50,6 +50,17 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handle 401 Unauthorized - Token expired or invalid
+        if (response.status === 401) {
+          // Clear local storage and redirect to login
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+
+          // Only redirect if not already on login page
+          if (!window.location.pathname.includes("/login")) {
+            window.location.href = "/login";
+          }
+        }
         throw data as ApiError;
       }
 
@@ -226,6 +237,12 @@ class ApiService {
           name: string;
           email: string;
           role: string;
+          restaurantId: string;
+          restaurant?: {
+            id: string;
+            name: string;
+            featureFlags: Record<string, boolean>;
+          };
         };
         tokens: {
           accessToken: string;

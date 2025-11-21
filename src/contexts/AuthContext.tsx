@@ -75,6 +75,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           /\s/g,
           "+"
         )}&background=f97316&color=fff`,
+        // Include restaurant data with feature flags
+        restaurant: userData.restaurant
+          ? {
+              id: userData.restaurant.id,
+              name: userData.restaurant.name,
+              featureFlags: userData.restaurant.featureFlags || {},
+            }
+          : undefined,
       };
 
       localStorage.setItem("accessToken", tokens.accessToken);

@@ -13,20 +13,31 @@ import {
 } from "@/components/ui/table";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Building, Edit, Users, Eye } from "lucide-react";
+import { Plus, Building, Edit, Users, Eye, Settings } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { RestaurantForm } from "./RestaurantForm";
+import { FeatureFlagsDialog } from "./FeatureFlagsDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManageRestaurants: React.FC = () => {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isFeatureFlagsDialogOpen, setIsFeatureFlagsDialogOpen] =
+    useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(
     null
   );
+  const [managingFeaturesRestaurant, setManagingFeaturesRestaurant] =
+    useState<Restaurant | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -90,6 +101,16 @@ export const ManageRestaurants: React.FC = () => {
     setEditingRestaurant(null);
   };
 
+  const openFeatureFlagsDialog = (restaurant: Restaurant) => {
+    setManagingFeaturesRestaurant(restaurant);
+    setIsFeatureFlagsDialogOpen(true);
+  };
+
+  const closeFeatureFlagsDialog = () => {
+    setIsFeatureFlagsDialogOpen(false);
+    setManagingFeaturesRestaurant(null);
+  };
+
   const onViewUsers = (restaurantId: string) => {
     navigate(`/super-admin/restaurants/${restaurantId}/users`);
   };
@@ -148,7 +169,9 @@ export const ManageRestaurants: React.FC = () => {
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold truncate">{restaurant.name}</h3>
+                      <h3 className="font-semibold truncate">
+                        {restaurant.name}
+                      </h3>
                       <p className="text-sm text-muted-foreground truncate">
                         {restaurant.email || "No email"}
                       </p>
@@ -177,6 +200,15 @@ export const ManageRestaurants: React.FC = () => {
                     </Badge>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openFeatureFlagsDialog(restaurant)}
+                      className="flex-1"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      Features
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -315,6 +347,14 @@ export const ManageRestaurants: React.FC = () => {
                       <Button
                         size="sm"
                         variant="ghost"
+                        onClick={() => openFeatureFlagsDialog(restaurant)}
+                        title="Manage Features"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => onViewUsers(restaurant.id)}
                         title="View Users"
                       >
@@ -348,6 +388,22 @@ export const ManageRestaurants: React.FC = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Feature Flags Dialog */}
+      <Dialog
+        open={isFeatureFlagsDialogOpen}
+        onOpenChange={setIsFeatureFlagsDialogOpen}
+      >
+        {managingFeaturesRestaurant && (
+          <FeatureFlagsDialog
+            restaurant={managingFeaturesRestaurant}
+            onClose={closeFeatureFlagsDialog}
+            onSuccess={() => {
+              fetchRestaurants();
+            }}
+          />
+        )}
+      </Dialog>
     </div>
   );
 };

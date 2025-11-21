@@ -7,9 +7,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { FeatureProtectedRoute } from "@/components/auth/FeatureProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import POSSystem from "./pages/POSSystem";
 import WaiterOrderManagement from "./pages/WaiterOrderManagement";
 import TableManagement from "./pages/TableManagement";
 import KitchenDisplay from "./pages/KitchenDisplay";
@@ -104,7 +104,9 @@ const App = () => (
                     path="supplier"
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Suppliers />
+                        <FeatureProtectedRoute feature="inventory_management">
+                          <Suppliers />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -112,7 +114,9 @@ const App = () => (
                     path="purchase-order"
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <PurchaseOrders />
+                        <FeatureProtectedRoute feature="inventory_management">
+                          <PurchaseOrders />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -140,7 +144,9 @@ const App = () => (
                     path="inventory"
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Inventory />
+                        <FeatureProtectedRoute feature="inventory_management">
+                          <Inventory />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -164,7 +170,9 @@ const App = () => (
                     path="employees"
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Employees />
+                        <FeatureProtectedRoute feature="attendance">
+                          <Employees />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -172,7 +180,9 @@ const App = () => (
                     path="attendance"
                     element={
                       <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <AttendanceReport />
+                        <FeatureProtectedRoute feature="attendance">
+                          <AttendanceReport />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />
@@ -180,7 +190,9 @@ const App = () => (
                     path="reports"
                     element={
                       <ProtectedRoute allowedRoles={["admin"]}>
-                        <Reports />
+                        <FeatureProtectedRoute feature="reports">
+                          <Reports />
+                        </FeatureProtectedRoute>
                       </ProtectedRoute>
                     }
                   />

@@ -24,6 +24,7 @@ export interface Restaurant {
   phone: string | null; // UPDATED: Based on schema
   address: string | null; // UPDATED: Based on schema
   isActive: boolean;
+  featureFlags?: Record<string, boolean> | null; // Feature flags for granular control
   subscriptionId?: string;
   subscription?: Subscription;
   createdAt: string;
@@ -79,7 +80,6 @@ export interface Setting {
   updatedAt: string;
 }
 
-
 class SuperAdminApiService {
   private baseURL = SUPER_ADMIN_API_BASE_URL;
 
@@ -105,11 +105,11 @@ class SuperAdminApiService {
       if (!response.ok) {
         // Handle backend's { message: "...", data: null, success: false, statusCode: 400 }
         if (data && data.success === false) {
-           throw {
-             code: data.statusCode || response.status,
-             message: data.message || "Request failed",
-             errors: data.errors,
-           } as SuperAdminApiError;
+          throw {
+            code: data.statusCode || response.status,
+            message: data.message || "Request failed",
+            errors: data.errors,
+          } as SuperAdminApiError;
         }
         // Handle simple error messages
         throw {
@@ -121,12 +121,11 @@ class SuperAdminApiService {
 
       // Handle successful responses that might have { success: true, data: ..., ... }
       if (data && data.success === true) {
-         return data.data;
+        return data.data;
       }
-      
+
       // Handle simple data responses
       return data.data || data;
-
     } catch (error) {
       if ((error as SuperAdminApiError).code) {
         throw error;
@@ -158,7 +157,7 @@ class SuperAdminApiService {
   async getRestaurants(): Promise<Restaurant[]> {
     return this.request("/restaurants");
   }
-  
+
   // NEW: Get single restaurant
   async getRestaurant(id: string): Promise<Restaurant> {
     return this.request(`/restaurants/${id}`);
@@ -188,6 +187,7 @@ class SuperAdminApiService {
       email?: string;
       phone?: string;
       address?: string;
+      featureFlags?: Record<string, boolean>;
     }
   ): Promise<Restaurant> {
     return this.request(`/restaurants/${id}`, {
@@ -244,7 +244,6 @@ class SuperAdminApiService {
     });
   }
 
-
   // Subscriptions
   // ... (your existing subscription methods)
   async getSubscriptions(): Promise<Subscription[]> {
@@ -276,7 +275,6 @@ class SuperAdminApiService {
       body: JSON.stringify(data),
     });
   }
-
 
   // Announcements
   // ... (your existing announcement methods)

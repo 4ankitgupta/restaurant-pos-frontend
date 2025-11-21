@@ -200,6 +200,24 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         console.log("WebSocket disconnected", event.code, event.reason);
         setIsConnected(false);
 
+        // Check if the closure reason indicates an authentication error
+        const authErrorReasons = [
+          "invalid token",
+          "jwt expired",
+          "unauthorized",
+        ];
+        const isAuthError = authErrorReasons.some((reason) =>
+          event.reason?.toLowerCase().includes(reason)
+        );
+
+        // If authentication error, don't reconnect - the token is invalid
+        if (isAuthError) {
+          console.log(
+            "WebSocket closed due to authentication error. Please login again."
+          );
+          return;
+        }
+
         // Check localStorage directly for the token.
         // This is the source of truth for auth status, not the closure.
         const currentToken = localStorage.getItem("accessToken");

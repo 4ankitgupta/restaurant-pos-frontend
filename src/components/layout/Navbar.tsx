@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useFeature } from "@/hooks/useFeature";
 import {
   Home,
   ShoppingCart,
@@ -40,6 +41,11 @@ export const Navbar: React.FC = () => {
   const isMobile = useIsMobile();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  // Feature flag checks
+  const hasInventoryManagement = useFeature("inventory_management");
+  const hasReports = useFeature("reports");
+  const hasAttendance = useFeature("attendance");
+
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -54,7 +60,7 @@ export const Navbar: React.FC = () => {
 
     switch (user.role) {
       case "admin":
-        return [
+        const adminCategories: any[] = [
           {
             label: "Dashboard",
             path: "/dashboard",
@@ -69,35 +75,53 @@ export const Navbar: React.FC = () => {
               { icon: Coins, label: "Manage Orders", path: "/cashier" },
             ],
           },
-          {
-            label: "Menu & Inventory",
-            items: [
-              { icon: Utensils, label: "Menu", path: "/menu" },
-              { icon: Package, label: "Inventory", path: "/inventory" },
-              { icon: Truck, label: "Suppliers", path: "/supplier" },
-              {
-                icon: ShoppingCart,
-                label: "Purchase Orders",
-                path: "/purchase-order",
-              },
-            ],
-          },
-          {
-            label: "People",
-            items: [
-              { icon: Users, label: "Users", path: "/users" },
-              { icon: UserCheck, label: "Employees", path: "/employees" },
-              { icon: Clock, label: "Attendance", path: "/attendance" },
-            ],
-          },
-          {
+        ];
+
+        // Menu & Inventory section - conditionally add inventory items
+        const inventoryItems = [
+          { icon: Utensils, label: "Menu", path: "/menu" },
+        ];
+        if (hasInventoryManagement) {
+          inventoryItems.push(
+            { icon: Package, label: "Inventory", path: "/inventory" },
+            { icon: Truck, label: "Suppliers", path: "/supplier" },
+            {
+              icon: ShoppingCart,
+              label: "Purchase Orders",
+              path: "/purchase-order",
+            }
+          );
+        }
+        adminCategories.push({
+          label: "Menu & Inventory",
+          items: inventoryItems,
+        });
+
+        // People section - conditionally add attendance items
+        const peopleItems = [{ icon: Users, label: "Users", path: "/users" }];
+        if (hasAttendance) {
+          peopleItems.push(
+            { icon: UserCheck, label: "Employees", path: "/employees" },
+            { icon: Clock, label: "Attendance", path: "/attendance" }
+          );
+        }
+        adminCategories.push({
+          label: "People",
+          items: peopleItems,
+        });
+
+        // Reports - only show if enabled
+        if (hasReports) {
+          adminCategories.push({
             label: "Reports",
             path: "/reports",
             icon: BarChart3,
-          },
-        ];
+          });
+        }
+
+        return adminCategories;
       case "manager":
-        return [
+        const managerCategories: any[] = [
           {
             label: "Dashboard",
             path: "/dashboard",
@@ -112,33 +136,53 @@ export const Navbar: React.FC = () => {
               { icon: Coins, label: "Manage Orders", path: "/cashier" },
             ],
           },
-          {
-            label: "Menu & Inventory",
-            items: [
-              { icon: Utensils, label: "Menu", path: "/menu" },
-              { icon: Package, label: "Inventory", path: "/inventory" },
-              { icon: Truck, label: "Suppliers", path: "/supplier" },
-              {
-                icon: ShoppingCart,
-                label: "Purchase Orders",
-                path: "/purchase-order",
-              },
-            ],
-          },
-          {
-            label: "People",
-            items: [
-              { icon: Users, label: "Users", path: "/users" },
-              { icon: UserCheck, label: "Employees", path: "/employees" },
-              { icon: Clock, label: "Attendance", path: "/attendance" },
-            ],
-          },
-          {
+        ];
+
+        // Menu & Inventory section - conditionally add inventory items
+        const managerInventoryItems = [
+          { icon: Utensils, label: "Menu", path: "/menu" },
+        ];
+        if (hasInventoryManagement) {
+          managerInventoryItems.push(
+            { icon: Package, label: "Inventory", path: "/inventory" },
+            { icon: Truck, label: "Suppliers", path: "/supplier" },
+            {
+              icon: ShoppingCart,
+              label: "Purchase Orders",
+              path: "/purchase-order",
+            }
+          );
+        }
+        managerCategories.push({
+          label: "Menu & Inventory",
+          items: managerInventoryItems,
+        });
+
+        // People section - conditionally add attendance items
+        const managerPeopleItems = [
+          { icon: Users, label: "Users", path: "/users" },
+        ];
+        if (hasAttendance) {
+          managerPeopleItems.push(
+            { icon: UserCheck, label: "Employees", path: "/employees" },
+            { icon: Clock, label: "Attendance", path: "/attendance" }
+          );
+        }
+        managerCategories.push({
+          label: "People",
+          items: managerPeopleItems,
+        });
+
+        // Reports - only show if enabled
+        if (hasReports) {
+          managerCategories.push({
             label: "Reports",
             path: "/reports",
             icon: BarChart3,
-          },
-        ];
+          });
+        }
+
+        return managerCategories;
       case "cashier":
         return [
           { icon: ShoppingCart, label: "POS", path: "/pos" },

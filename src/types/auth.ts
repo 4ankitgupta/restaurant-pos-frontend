@@ -15,6 +15,11 @@ export interface User {
   email: string;
   role: UserRole;
   avatar?: string;
+  restaurant?: {
+    id: string;
+    name: string;
+    featureFlags: Record<string, boolean>;
+  };
 }
 
 export interface AuthContext {
