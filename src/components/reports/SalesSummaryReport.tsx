@@ -22,12 +22,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(
-    amount
-  );
-const formatDate = (date: string) => new Date(date).toLocaleString();
+import { ExportButtons } from "./ExportButtons";
+import { formatCurrency, formatDateTime } from "@/lib/reportFormatting";
+import { TrendingUp, ShoppingCart, IndianRupee } from "lucide-react";
 
 const SalesSummaryReport = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -73,6 +70,13 @@ const SalesSummaryReport = () => {
       <Button onClick={handleGenerateReport} disabled={isLoading}>
         {isLoading ? "Generating..." : "Generate Report"}
       </Button>
+      {reportData && (
+        <ExportButtons
+          data={reportData.orders}
+          filename="sales-summary-report"
+          reportTitle="Sales Summary Report"
+        />
+      )}
     </>
   );
 
@@ -81,10 +85,10 @@ const SalesSummaryReport = () => {
       title="Sales Summary Report"
       subtitle={
         reportData
-          ? `Report for ${formatDate(
+          ? `Report for ${formatDateTime(
               reportData.reportMeta.startDate
-            )} to ${formatDate(reportData.reportMeta.endDate)}`
-          : "No date range selected"
+            )} to ${formatDateTime(reportData.reportMeta.endDate)}`
+          : "Select date range to generate report"
       }
       filters={filters}
       isLoading={isLoading}
@@ -99,30 +103,66 @@ const SalesSummaryReport = () => {
         </div>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200 dark:from-green-950 dark:to-green-900">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-muted-foreground font-medium">Total Sales</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base text-muted-foreground font-medium">
+                    Total Sales
+                  </CardTitle>
+                  <IndianRupee className="h-5 w-5 text-green-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-primary">
+                <div className="text-3xl font-bold text-green-600">
                   {formatCurrency(reportData.summary.totalSales)}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {reportData.summary.orderCount} orders
+                  {reportData.summary.orderCount} orders completed
                 </p>
               </CardContent>
             </Card>
-            <Card className="bg-gradient-to-br from-secondary/5 to-secondary/10 border-secondary/20">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 dark:from-blue-950 dark:to-blue-900">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-muted-foreground font-medium">Average Order Value</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base text-muted-foreground font-medium">
+                    Average Order Value
+                  </CardTitle>
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">
-                  {formatCurrency(reportData.summary.totalSales / reportData.summary.orderCount || 0)}
+                <div className="text-3xl font-bold text-blue-600">
+                  {formatCurrency(
+                    reportData.summary.totalSales /
+                      reportData.summary.orderCount || 0
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Per transaction
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 dark:from-purple-950 dark:to-purple-900">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base text-muted-foreground font-medium">
+                    Total Orders
+                  </CardTitle>
+                  <ShoppingCart className="h-5 w-5 text-purple-600" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">
+                  {reportData.summary.orderCount}
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {reportData.orders.filter((o: any) => o.takeAway).length}{" "}
+                  takeaway,{" "}
+                  {reportData.summary.orderCount -
+                    reportData.orders.filter((o: any) => o.takeAway)
+                      .length}{" "}
+                  dine-in
                 </p>
               </CardContent>
             </Card>
@@ -148,9 +188,11 @@ const SalesSummaryReport = () => {
                         <TableCell className="font-mono text-xs">
                           {order.id.slice(0, 8)}
                         </TableCell>
-                        <TableCell>{formatDate(order.createdAt)}</TableCell>
+                        <TableCell>{formatDateTime(order.createdAt)}</TableCell>
                         <TableCell>
-                          <Badge variant={order.takeAway ? "secondary" : "outline"}>
+                          <Badge
+                            variant={order.takeAway ? "secondary" : "outline"}
+                          >
                             {order.takeAway ? "Takeaway" : "Dine-In"}
                           </Badge>
                         </TableCell>

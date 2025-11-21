@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,61 @@ interface DateRangePickerProps {
   className?: string;
 }
 
+// Date preset configurations
+const datePresets = [
+  {
+    label: "Today",
+    getValue: () => ({ from: new Date(), to: new Date() }),
+  },
+  {
+    label: "Yesterday",
+    getValue: () => {
+      const yesterday = subDays(new Date(), 1);
+      return { from: yesterday, to: yesterday };
+    },
+  },
+  {
+    label: "Last 7 Days",
+    getValue: () => ({
+      from: subDays(new Date(), 6),
+      to: new Date(),
+    }),
+  },
+  {
+    label: "Current Month",
+    getValue: () => ({
+      from: startOfMonth(new Date()),
+      to: new Date(),
+    }),
+  },
+  {
+    label: "Last Month",
+    getValue: () => {
+      const lastMonth = subDays(startOfMonth(new Date()), 1);
+      return {
+        from: startOfMonth(lastMonth),
+        to: lastMonth,
+      };
+    },
+  },
+  {
+    label: "Current FY (Apr 1st)",
+    getValue: () => {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth();
+      const financialYearStart = new Date(
+        currentMonth >= 3 ? currentYear : currentYear - 1,
+        3,
+        1
+      ); // April 1st
+      return {
+        from: financialYearStart,
+        to: new Date(),
+      };
+    },
+  },
+];
+
 export function DateRangePicker({
   onDateChange,
   className,
@@ -27,8 +82,29 @@ export function DateRangePicker({
     onDateChange(selectedDate);
   };
 
+  const handlePresetClick = (preset: (typeof datePresets)[0]) => {
+    const range = preset.getValue();
+    handleDateSelect(range);
+  };
+
   return (
-    <div className={cn("grid gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-2", className)}>
+      {/* Quick Presets */}
+      <div className="flex flex-wrap gap-2">
+        {datePresets.map((preset) => (
+          <Button
+            key={preset.label}
+            variant="outline"
+            size="sm"
+            onClick={() => handlePresetClick(preset)}
+            className="text-xs"
+          >
+            {preset.label}
+          </Button>
+        ))}
+      </div>
+
+      {/* Calendar Popover */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
