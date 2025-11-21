@@ -309,17 +309,26 @@ const Cashier = () => {
         <PaymentDialog
           open={isPaymentOpen}
           onOpenChange={setPaymentOpen}
-          totalAmount={selectedOrder.totalAmount}
-          onProcessPayment={async (method) => {
+          order={selectedOrder}
+          onProcessPayment={async (paymentData) => {
             try {
               await processRefund(() =>
                 apiService.createPayment({
                   orderId: selectedOrder.id,
-                  amount: Number(selectedOrder.totalAmount),
-                  paymentMethod: method,
+                  amount: paymentData.amount,
+                  paymentMethod: paymentData.method,
+                  tenderedAmount: paymentData.tenderedAmount,
+                  orderItemIds: paymentData.orderItemIds,
                 })
               );
-              toast({ title: "Success", description: "Payment successful." });
+              toast({
+                title: "Success",
+                description: paymentData.tenderedAmount
+                  ? `Payment successful. Change: ₹${(
+                      (paymentData.tenderedAmount || 0) - paymentData.amount
+                    ).toFixed(2)}`
+                  : "Payment successful.",
+              });
               setPaymentOpen(false);
               setSelectedOrder(null);
               loadOrders();

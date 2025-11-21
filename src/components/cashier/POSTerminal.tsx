@@ -450,19 +450,35 @@ export const POSTerminal: React.FC = () => {
     }
   };
 
-  const handleProcessPayment = async (
-    method: "CASH" | "CARD" | "UPI" | "WALLET"
-  ) => {
+  const handleProcessPayment = async (paymentData: {
+    method: "CASH" | "CARD" | "UPI" | "WALLET";
+    amount: number;
+    tenderedAmount?: number;
+    orderItemIds?: string[];
+  }) => {
     if (!paymentOrder) return;
     try {
       await execPay(() =>
         apiService.createPayment({
           orderId: paymentOrder.id,
-          amount: Number(paymentOrder.totalAmount),
-          paymentMethod: method,
+          amount: paymentData.amount,
+          paymentMethod: paymentData.method,
+          tenderedAmount: paymentData.tenderedAmount,
+          orderItemIds: paymentData.orderItemIds,
         })
       );
-      toast({ title: "Payment successful", description: "Order settled." });
+
+      const changeMessage = paymentData.tenderedAmount
+        ? ` Change: ₹${(
+            (paymentData.tenderedAmount || 0) - paymentData.amount
+          ).toFixed(2)}`
+        : "";
+
+      toast({
+        title: "Payment successful",
+        description: `Order settled.${changeMessage}`,
+      });
+
       setPaymentOpen(false);
       setPaymentOrder(null);
       setCart(new Map());
@@ -840,7 +856,7 @@ export const POSTerminal: React.FC = () => {
         <PaymentDialog
           open={paymentOpen}
           onOpenChange={setPaymentOpen}
-          totalAmount={paymentOrder.totalAmount}
+          order={paymentOrder}
           onProcessPayment={handleProcessPayment}
           isLoading={payLoading}
         />

@@ -38,6 +38,8 @@ export type OrderItemStatus =
   | "SERVED"
   | "CANCELLED";
 
+export type OrderItemPaymentStatus = "UNPAID" | "PAID";
+
 export interface OrderItem {
   id: string;
   menuItemVariant: {
@@ -55,6 +57,7 @@ export interface OrderItem {
   quantity: number;
   note?: string;
   status: OrderItemStatus;
+  paymentStatus: OrderItemPaymentStatus;
   price: number; // Price at the time of order
 }
 
@@ -111,6 +114,7 @@ export interface APIOrder {
     price: number;
     note?: string;
     status: OrderItemStatus;
+    paymentStatus: OrderItemPaymentStatus;
     menuItemVariantId: string;
     menuItemVariant: {
       id: string;

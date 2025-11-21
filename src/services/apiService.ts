@@ -372,14 +372,19 @@ class ApiService {
     orderId: string;
     amount: number;
     paymentMethod: "CASH" | "CARD" | "UPI" | "WALLET";
+    tenderedAmount?: number;
+    orderItemIds?: string[];
   }) {
     return this.request<{
       data: {
         id: string;
         amount: number;
+        tenderedAmount?: number;
+        changeAmount?: number;
         paymentMethod: string;
         status: string;
         orderId: string;
+        coveredItems?: string;
       };
     }>("/cashier/payment", {
       method: "POST",
