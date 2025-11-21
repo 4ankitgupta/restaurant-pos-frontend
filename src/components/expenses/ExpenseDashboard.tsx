@@ -85,7 +85,7 @@ export const ExpenseDashboard: React.FC = () => {
   const categories = categoriesData?.data || [];
   const expenses = expensesData?.data || [];
   const analytics = analyticsData?.data || {};
-  
+
   // Show loading state for initial load
   const isInitialLoading = loadingExpenses && expenses.length === 0;
 
@@ -264,56 +264,59 @@ export const ExpenseDashboard: React.FC = () => {
                   }
                 />
               </div>
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={filters.categoryId}
-                onValueChange={(value) =>
-                  setFilters({
-                    ...filters,
-                    categoryId: value,
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {categories.map((cat: any) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select
+                  value={filters.categoryId}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      categoryId: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((cat: any) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={filters.status}
+                  onValueChange={(value) =>
+                    setFilters({
+                      ...filters,
+                      status: value,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="PAID">Paid</SelectItem>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="OVERDUE">Overdue</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={filters.status}
-                onValueChange={(value) =>
-                  setFilters({
-                    ...filters,
-                    status: value,
-                  })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="PAID">Paid</SelectItem>
-                  <SelectItem value="PENDING">Pending</SelectItem>
-                  <SelectItem value="OVERDUE">Overdue</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            </div>
-            
+
             {/* Clear Filters Button */}
-            {(filters.startDate || filters.endDate || filters.categoryId !== "all" || filters.status !== "all") && (
+            {(filters.startDate ||
+              filters.endDate ||
+              filters.categoryId !== "all" ||
+              filters.status !== "all") && (
               <div className="flex justify-end">
                 <Button
                   variant="outline"
@@ -359,8 +362,14 @@ export const ExpenseDashboard: React.FC = () => {
                   </TableRow>
                 ) : expenses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      {filters.startDate || filters.endDate || filters.categoryId !== "all" || filters.status !== "all"
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {filters.startDate ||
+                      filters.endDate ||
+                      filters.categoryId !== "all" ||
+                      filters.status !== "all"
                         ? "No expenses found matching your filters. Try adjusting the filters."
                         : "No expenses recorded yet. Click 'Add Expense' to create your first entry."}
                     </TableCell>
@@ -524,13 +533,13 @@ const ExpenseDialog: React.FC<ExpenseDialogProps> = ({
       expenseDate: new Date(formData.expenseDate).toISOString(),
       status: formData.status,
     };
-    
+
     // Only include optional fields if they have values
     if (formData.categoryId) payload.categoryId = formData.categoryId;
     if (formData.paymentMethod) payload.paymentMethod = formData.paymentMethod;
     if (formData.paidBy) payload.paidBy = formData.paidBy;
     if (formData.referenceNo) payload.referenceNo = formData.referenceNo;
-    
+
     onSubmit(payload);
   };
 

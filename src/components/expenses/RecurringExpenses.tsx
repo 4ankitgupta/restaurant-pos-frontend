@@ -355,7 +355,8 @@ const RecurringExpenseDialog: React.FC<RecurringExpenseDialogProps> = ({
     // Only include optional fields if they have values
     if (formData.description) payload.description = formData.description;
     if (formData.categoryId) payload.categoryId = formData.categoryId;
-    if (formData.endDate) payload.endDate = new Date(formData.endDate).toISOString();
+    if (formData.endDate)
+      payload.endDate = new Date(formData.endDate).toISOString();
 
     if (formData.interval === "MONTHLY" && formData.dayOfMonth) {
       payload.dayOfMonth = parseInt(formData.dayOfMonth);

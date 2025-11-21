@@ -267,12 +267,12 @@ const CategoryDialog: React.FC<CategoryDialogProps> = ({
       name: formData.name,
       color: formData.color,
     };
-    
+
     // Only include description if it has a value
     if (formData.description?.trim()) {
       payload.description = formData.description;
     }
-    
+
     onSubmit(payload);
   };
 
