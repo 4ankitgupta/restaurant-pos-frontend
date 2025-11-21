@@ -7,11 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiService, ApiError } from "@/services/apiService";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  IndianRupee, 
-  Users, 
-  AlertCircle, 
-  TrendingUp, 
+import {
+  IndianRupee,
+  Users,
+  AlertCircle,
+  TrendingUp,
   TrendingDown,
   ShoppingCart,
   BarChart3,
@@ -23,10 +23,14 @@ import {
   RefreshCcw,
   ArrowRight,
   Calendar,
-  Percent
+  Percent,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { formatCurrency, formatPercentage, formatNumber } from "@/lib/reportFormatting";
+import {
+  formatCurrency,
+  formatPercentage,
+  formatNumber,
+} from "@/lib/reportFormatting";
 import {
   Bar,
   BarChart,
@@ -40,7 +44,7 @@ import {
   AreaChart,
   Cell,
   Pie,
-  PieChart as RechartsPieChart
+  PieChart as RechartsPieChart,
 } from "recharts";
 
 interface AdminDashboardData {
@@ -92,7 +96,10 @@ const AdminDashboard = () => {
           fullDate: date,
           Total: total,
         }))
-        .sort((a, b) => new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime())
+        .sort(
+          (a, b) =>
+            new Date(a.fullDate).getTime() - new Date(b.fullDate).getTime()
+        )
     : [];
 
   const paymentChartData = data
@@ -102,10 +109,13 @@ const AdminDashboard = () => {
       }))
     : [];
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-  
-  const totalPayments = paymentChartData.reduce((sum, item) => sum + item.value, 0);
-  
+  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
+
+  const totalPayments = paymentChartData.reduce(
+    (sum, item) => sum + item.value,
+    0
+  );
+
   // Calculate growth (mock for now - would need previous period data)
   const revenueGrowth = 12.5;
   const customerGrowth = 8.3;
@@ -148,8 +158,8 @@ const AdminDashboard = () => {
             <Clock className="h-3 w-3" />
             Live Data
           </Badge>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="sm"
             onClick={() => window.location.reload()}
             className="gap-2"
@@ -164,7 +174,9 @@ const AdminDashboard = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800 hover:shadow-lg transition-all hover:scale-105">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Revenue
+            </CardTitle>
             <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center">
               <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
@@ -181,7 +193,7 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800 hover:shadow-lg transition-all hover:scale-105">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -192,7 +204,9 @@ const AdminDashboard = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">{formatNumber(data.totalCustomers)}</div>
+            <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+              {formatNumber(data.totalCustomers)}
+            </div>
             <div className="flex items-center gap-1 mt-2">
               <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
               <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
@@ -201,7 +215,7 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover:shadow-lg transition-all hover:scale-105">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -223,7 +237,7 @@ const AdminDashboard = () => {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border-orange-200 dark:border-orange-800 hover:shadow-lg transition-all hover:scale-105">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -254,42 +268,42 @@ const AdminDashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary hover:bg-primary/5"
-              onClick={() => navigate('/reports')}
+              onClick={() => navigate("/reports")}
             >
               <BarChart3 className="h-5 w-5" />
               <span className="text-xs font-medium">Reports</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary hover:bg-primary/5"
-              onClick={() => navigate('/inventory')}
+              onClick={() => navigate("/inventory")}
             >
               <ShoppingCart className="h-5 w-5" />
               <span className="text-xs font-medium">Inventory</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary hover:bg-primary/5"
-              onClick={() => navigate('/menu')}
+              onClick={() => navigate("/menu")}
             >
               <Users className="h-5 w-5" />
               <span className="text-xs font-medium">Menu</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary hover:bg-primary/5"
-              onClick={() => navigate('/employees')}
+              onClick={() => navigate("/employees")}
             >
               <Users className="h-5 w-5" />
               <span className="text-xs font-medium">Staff</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 hover:border-primary hover:bg-primary/5"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate("/settings")}
             >
               <Target className="h-5 w-5" />
               <span className="text-xs font-medium">Settings</span>
@@ -322,20 +336,28 @@ const AdminDashboard = () => {
             <AreaChart data={salesChartData}>
               <defs>
                 <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  <stop
+                    offset="5%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="hsl(var(--primary))"
+                    stopOpacity={0}
+                  />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: "hsl(var(--muted-foreground))" }}
               />
-              <YAxis 
+              <YAxis
                 tickFormatter={(value) => `₹${value / 1000}k`}
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: "hsl(var(--muted-foreground))" }}
               />
               <RechartsTooltip
                 contentStyle={{
@@ -345,9 +367,9 @@ const AdminDashboard = () => {
                 }}
                 formatter={(value: any) => [formatCurrency(value), "Sales"]}
               />
-              <Area 
+              <Area
                 type="monotone"
-                dataKey="Total" 
+                dataKey="Total"
                 stroke="hsl(var(--primary))"
                 strokeWidth={2}
                 fillOpacity={1}
@@ -386,8 +408,12 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">This Month</span>
-                    <span className="text-lg font-bold text-green-600">+{revenueGrowth}%</span>
+                    <span className="text-sm text-muted-foreground">
+                      This Month
+                    </span>
+                    <span className="text-lg font-bold text-green-600">
+                      +{revenueGrowth}%
+                    </span>
                   </div>
                   <Progress value={revenueGrowth * 5} className="h-2" />
                   <p className="text-xs text-muted-foreground">
@@ -407,7 +433,9 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Return Rate</span>
+                    <span className="text-sm text-muted-foreground">
+                      Return Rate
+                    </span>
                     <span className="text-lg font-bold text-blue-600">68%</span>
                   </div>
                   <Progress value={68} className="h-2" />
@@ -428,12 +456,19 @@ const AdminDashboard = () => {
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Progress</span>
-                    <span className="text-lg font-bold text-purple-600">87%</span>
+                    <span className="text-sm text-muted-foreground">
+                      Progress
+                    </span>
+                    <span className="text-lg font-bold text-purple-600">
+                      87%
+                    </span>
                   </div>
                   <Progress value={87} className="h-2" />
                   <p className="text-xs text-muted-foreground">
-                    {formatCurrency(data.totalRevenue * 1.15 - data.totalRevenue)} to goal
+                    {formatCurrency(
+                      data.totalRevenue * 1.15 - data.totalRevenue
+                    )}{" "}
+                    to goal
                   </p>
                 </div>
               </CardContent>
@@ -455,10 +490,10 @@ const AdminDashboard = () => {
                       Based on quantity sold
                     </p>
                   </div>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="outline"
-                    onClick={() => navigate('/reports')}
+                    onClick={() => navigate("/reports")}
                     className="gap-2"
                   >
                     Full Report
@@ -472,23 +507,33 @@ const AdminDashboard = () => {
                     const maxQty = data.topSellingItems[0]?.quantity || 1;
                     const percentage = (item.quantity / maxQty) * 100;
                     return (
-                      <div 
-                        key={item.name} 
-                        className="space-y-2"
-                      >
+                      <div key={item.name} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                              index === 0 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-                              index === 1 ? 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400' :
-                              index === 2 ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-                              'bg-muted text-muted-foreground'
-                            }`}>
-                              {index === 0 ? '🏆' : index === 1 ? '🥈' : index === 2 ? '🥉' : index + 1}
+                            <div
+                              className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                                index === 0
+                                  ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                  : index === 1
+                                  ? "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
+                                  : index === 2
+                                  ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {index === 0
+                                ? "🏆"
+                                : index === 1
+                                ? "🥈"
+                                : index === 2
+                                ? "🥉"
+                                : index + 1}
                             </div>
                             <div>
                               <p className="font-medium">{item.name}</p>
-                              <p className="text-xs text-muted-foreground">{item.quantity} units</p>
+                              <p className="text-xs text-muted-foreground">
+                                {item.quantity} units
+                              </p>
                             </div>
                           </div>
                           <Badge variant={index < 3 ? "default" : "outline"}>
@@ -505,7 +550,9 @@ const AdminDashboard = () => {
 
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle className="text-base">Performance Insights</CardTitle>
+                <CardTitle className="text-base">
+                  Performance Insights
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -513,31 +560,37 @@ const AdminDashboard = () => {
                     <div className="flex items-start gap-3">
                       <TrendingUp className="h-5 w-5 text-green-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-green-900 dark:text-green-100">Strong Performers</p>
+                        <p className="font-medium text-green-900 dark:text-green-100">
+                          Strong Performers
+                        </p>
                         <p className="text-sm text-green-700 dark:text-green-300 mt-1">
                           Top 3 items account for 45% of total sales
                         </p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900">
                     <div className="flex items-start gap-3">
                       <BarChart3 className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-blue-900 dark:text-blue-100">Category Leader</p>
+                        <p className="font-medium text-blue-900 dark:text-blue-100">
+                          Category Leader
+                        </p>
                         <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
                           {data.topSellingItems[0]?.name} leads in its category
                         </p>
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900">
                     <div className="flex items-start gap-3">
                       <Target className="h-5 w-5 text-purple-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-purple-900 dark:text-purple-100">Recommendation</p>
+                        <p className="font-medium text-purple-900 dark:text-purple-100">
+                          Recommendation
+                        </p>
                         <p className="text-sm text-purple-700 dark:text-purple-300 mt-1">
                           Focus promotions on top 5 items for maximum impact
                         </p>
@@ -567,13 +620,18 @@ const AdminDashboard = () => {
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) =>
+                        `${name}: ${(percent * 100).toFixed(0)}%`
+                      }
                       outerRadius={100}
                       fill="#8884d8"
                       dataKey="value"
                     >
                       {paymentChartData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
                       ))}
                     </Pie>
                     <RechartsTooltip
@@ -582,7 +640,10 @@ const AdminDashboard = () => {
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "0.5rem",
                       }}
-                      formatter={(value: any) => [formatCurrency(value), "Amount"]}
+                      formatter={(value: any) => [
+                        formatCurrency(value),
+                        "Amount",
+                      ]}
                     />
                   </RechartsPieChart>
                 </ResponsiveContainer>
@@ -604,22 +665,31 @@ const AdminDashboard = () => {
                       <div key={item.name} className="space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="h-3 w-3 rounded-full" 
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                            <div
+                              className="h-3 w-3 rounded-full"
+                              style={{
+                                backgroundColor: COLORS[index % COLORS.length],
+                              }}
                             />
-                            <span className="capitalize font-medium">{item.name.toLowerCase()}</span>
+                            <span className="capitalize font-medium">
+                              {item.name.toLowerCase()}
+                            </span>
                           </div>
                           <div className="text-right">
-                            <div className="font-bold text-sm">{formatCurrency(item.value)}</div>
-                            <div className="text-xs text-muted-foreground">{percentage.toFixed(1)}%</div>
+                            <div className="font-bold text-sm">
+                              {formatCurrency(item.value)}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {percentage.toFixed(1)}%
+                            </div>
                           </div>
                         </div>
-                        <Progress 
-                          value={percentage} 
+                        <Progress
+                          value={percentage}
                           className="h-2"
                           style={{
-                            ['--progress-background' as any]: COLORS[index % COLORS.length]
+                            ["--progress-background" as any]:
+                              COLORS[index % COLORS.length],
                           }}
                         />
                       </div>

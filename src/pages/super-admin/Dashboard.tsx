@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { superAdminApi } from "@/services/superAdminApiService";
-import { 
-  Store, 
-  Package, 
-  CreditCard, 
-  TrendingUp, 
+import {
+  Store,
+  Package,
+  CreditCard,
+  TrendingUp,
   Users,
   DollarSign,
   BarChart3,
@@ -27,7 +27,7 @@ import {
   RefreshCcw,
   ArrowRight,
   TrendingDown,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
@@ -69,8 +69,14 @@ export const SuperAdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const platformGrowth = stats.restaurants > 0 ? ((stats.activeRestaurants / stats.restaurants) * 100).toFixed(1) : "0";
-  const avgSubscriptionsPerRestaurant = stats.restaurants > 0 ? (stats.subscriptions / stats.restaurants).toFixed(1) : "0";
+  const platformGrowth =
+    stats.restaurants > 0
+      ? ((stats.activeRestaurants / stats.restaurants) * 100).toFixed(1)
+      : "0";
+  const avgSubscriptionsPerRestaurant =
+    stats.restaurants > 0
+      ? (stats.subscriptions / stats.restaurants).toFixed(1)
+      : "0";
 
   const statCards = [
     {
@@ -116,17 +122,26 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Super Admin Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Super Admin Dashboard
+          </h1>
           <p className="text-sm md:text-base text-muted-foreground mt-1">
             Platform-wide metrics and system health
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+          <Badge
+            variant="outline"
+            className="bg-purple-50 text-purple-700 border-purple-200"
+          >
             <Shield className="w-3 h-3 mr-1" />
             Platform Admin
           </Badge>
-          <Button onClick={() => window.location.reload()} variant="outline" size="sm">
+          <Button
+            onClick={() => window.location.reload()}
+            variant="outline"
+            size="sm"
+          >
             <RefreshCcw className="w-4 h-4 mr-2" />
             Refresh
           </Button>
@@ -136,11 +151,18 @@ export const SuperAdminDashboard: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
-          <Card key={stat.title} className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card
+            key={stat.title}
+            className="overflow-hidden hover:shadow-lg transition-shadow"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardDescription className="text-xs md:text-sm">{stat.title}</CardDescription>
-                <div className={`p-2 rounded-lg bg-gradient-to-br ${stat.gradient}`}>
+                <CardDescription className="text-xs md:text-sm">
+                  {stat.title}
+                </CardDescription>
+                <div
+                  className={`p-2 rounded-lg bg-gradient-to-br ${stat.gradient}`}
+                >
                   <stat.icon className="w-4 h-4 text-white" />
                 </div>
               </div>
@@ -161,7 +183,9 @@ export const SuperAdminDashboard: React.FC = () => {
                       {stat.growth}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">{stat.description}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.description}
+                  </p>
                 </>
               )}
             </CardContent>
@@ -180,19 +204,35 @@ export const SuperAdminDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            <Button onClick={() => navigate("/super-admin/restaurants")} variant="outline" className="justify-start">
+            <Button
+              onClick={() => navigate("/super-admin/restaurants")}
+              variant="outline"
+              className="justify-start"
+            >
               <Store className="w-4 h-4 mr-2" />
               Restaurants
             </Button>
-            <Button onClick={() => navigate("/super-admin/plans")} variant="outline" className="justify-start">
+            <Button
+              onClick={() => navigate("/super-admin/plans")}
+              variant="outline"
+              className="justify-start"
+            >
               <Package className="w-4 h-4 mr-2" />
               Billing Plans
             </Button>
-            <Button onClick={() => navigate("/super-admin/subscriptions")} variant="outline" className="justify-start">
+            <Button
+              onClick={() => navigate("/super-admin/subscriptions")}
+              variant="outline"
+              className="justify-start"
+            >
               <CreditCard className="w-4 h-4 mr-2" />
               Subscriptions
             </Button>
-            <Button onClick={() => navigate("/super-admin/announcements")} variant="outline" className="justify-start">
+            <Button
+              onClick={() => navigate("/super-admin/announcements")}
+              variant="outline"
+              className="justify-start"
+            >
               <Users className="w-4 h-4 mr-2" />
               Announcements
             </Button>
@@ -219,9 +259,13 @@ export const SuperAdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">+18.5%</div>
-                <p className="text-xs text-muted-foreground mt-1">vs last month</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  vs last month
+                </p>
                 <Progress value={85} className="mt-3 h-2" />
-                <p className="text-xs text-muted-foreground mt-2">Platform-wide increase</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Platform-wide increase
+                </p>
               </CardContent>
             </Card>
 
@@ -233,9 +277,13 @@ export const SuperAdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">94%</div>
-                <p className="text-xs text-muted-foreground mt-1">Active subscriptions</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Active subscriptions
+                </p>
                 <Progress value={94} className="mt-3 h-2" />
-                <p className="text-xs text-muted-foreground mt-2">Excellent retention rate</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Excellent retention rate
+                </p>
               </CardContent>
             </Card>
 
@@ -247,9 +295,13 @@ export const SuperAdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-purple-600">99.9%</div>
-                <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Last 30 days
+                </p>
                 <Progress value={99.9} className="mt-3 h-2" />
-                <p className="text-xs text-muted-foreground mt-2">All systems operational</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  All systems operational
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -265,22 +317,34 @@ export const SuperAdminDashboard: React.FC = () => {
               <CardContent className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Monthly Recurring Revenue</p>
-                    <p className="text-xs text-muted-foreground mt-1">Across all restaurants</p>
+                    <p className="text-sm font-medium">
+                      Monthly Recurring Revenue
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Across all restaurants
+                    </p>
                   </div>
                   <div className="text-xl font-bold text-green-600">₹2.4L</div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Average Revenue per Restaurant</p>
-                    <p className="text-xs text-muted-foreground mt-1">Monthly average</p>
+                    <p className="text-sm font-medium">
+                      Average Revenue per Restaurant
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Monthly average
+                    </p>
                   </div>
                   <div className="text-xl font-bold text-blue-600">₹12K</div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">Projected Annual Revenue</p>
-                    <p className="text-xs text-muted-foreground mt-1">Based on current growth</p>
+                    <p className="text-sm font-medium">
+                      Projected Annual Revenue
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Based on current growth
+                    </p>
                   </div>
                   <div className="text-xl font-bold text-purple-600">₹32L</div>
                 </div>
@@ -298,22 +362,34 @@ export const SuperAdminDashboard: React.FC = () => {
                 <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
                   <Clock className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium">3 Subscriptions Expiring Soon</p>
-                    <p className="text-xs text-muted-foreground mt-1">Within next 7 days</p>
+                    <p className="text-sm font-medium">
+                      3 Subscriptions Expiring Soon
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Within next 7 days
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border-l-4 border-green-500">
                   <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium">All Systems Operational</p>
-                    <p className="text-xs text-muted-foreground mt-1">No issues detected</p>
+                    <p className="text-sm font-medium">
+                      All Systems Operational
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      No issues detected
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
                   <TrendingUp className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium">5 New Restaurant Signups</p>
-                    <p className="text-xs text-muted-foreground mt-1">This week</p>
+                    <p className="text-sm font-medium">
+                      5 New Restaurant Signups
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This week
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -339,8 +415,13 @@ export const SuperAdminDashboard: React.FC = () => {
                       <span className="text-sm">Active Restaurants</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{stats.activeRestaurants}</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                      <span className="font-semibold">
+                        {stats.activeRestaurants}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="bg-green-50 text-green-700"
+                      >
                         {platformGrowth}%
                       </Badge>
                     </div>
@@ -355,13 +436,30 @@ export const SuperAdminDashboard: React.FC = () => {
                       <span className="text-sm">Inactive Restaurants</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">{stats.restaurants - stats.activeRestaurants}</span>
-                      <Badge variant="outline" className="bg-gray-50 text-gray-600">
-                        {((stats.restaurants - stats.activeRestaurants) / Math.max(stats.restaurants, 1) * 100).toFixed(1)}%
+                      <span className="font-semibold">
+                        {stats.restaurants - stats.activeRestaurants}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="bg-gray-50 text-gray-600"
+                      >
+                        {(
+                          ((stats.restaurants - stats.activeRestaurants) /
+                            Math.max(stats.restaurants, 1)) *
+                          100
+                        ).toFixed(1)}
+                        %
                       </Badge>
                     </div>
                   </div>
-                  <Progress value={((stats.restaurants - stats.activeRestaurants) / Math.max(stats.restaurants, 1) * 100)} className="h-2" />
+                  <Progress
+                    value={
+                      ((stats.restaurants - stats.activeRestaurants) /
+                        Math.max(stats.restaurants, 1)) *
+                      100
+                    }
+                    className="h-2"
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -372,7 +470,10 @@ export const SuperAdminDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">2</span>
-                      <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                      <Badge
+                        variant="outline"
+                        className="bg-yellow-50 text-yellow-700"
+                      >
                         New
                       </Badge>
                     </div>
@@ -392,7 +493,9 @@ export const SuperAdminDashboard: React.FC = () => {
               <CardContent className="space-y-3">
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Average Orders/Day</span>
+                    <span className="text-sm font-medium">
+                      Average Orders/Day
+                    </span>
                     <span className="text-lg font-bold text-blue-600">245</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -402,8 +505,12 @@ export const SuperAdminDashboard: React.FC = () => {
 
                 <div className="p-3 bg-green-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Average Order Value</span>
-                    <span className="text-lg font-bold text-green-600">₹425</span>
+                    <span className="text-sm font-medium">
+                      Average Order Value
+                    </span>
+                    <span className="text-lg font-bold text-green-600">
+                      ₹425
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Cross-platform average ticket size
@@ -412,7 +519,9 @@ export const SuperAdminDashboard: React.FC = () => {
 
                 <div className="p-3 bg-purple-50 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Top Performing Restaurant</span>
+                    <span className="text-sm font-medium">
+                      Top Performing Restaurant
+                    </span>
                     <Badge className="bg-purple-600">Gold Tier</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -437,9 +546,13 @@ export const SuperAdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-lg font-semibold text-green-600">Operational</span>
+                  <span className="text-lg font-semibold text-green-600">
+                    Operational
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Response time: 45ms</p>
+                <p className="text-xs text-muted-foreground">
+                  Response time: 45ms
+                </p>
                 <Progress value={100} className="mt-3 h-2" />
               </CardContent>
             </Card>
@@ -454,9 +567,13 @@ export const SuperAdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-lg font-semibold text-green-600">Healthy</span>
+                  <span className="text-lg font-semibold text-green-600">
+                    Healthy
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Connections: 45/100</p>
+                <p className="text-xs text-muted-foreground">
+                  Connections: 45/100
+                </p>
                 <Progress value={45} className="mt-3 h-2" />
               </CardContent>
             </Card>
@@ -471,9 +588,13 @@ export const SuperAdminDashboard: React.FC = () => {
               <CardContent>
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-lg font-semibold text-green-600">Connected</span>
+                  <span className="text-lg font-semibold text-green-600">
+                    Connected
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">Last sync: 2 min ago</p>
+                <p className="text-xs text-muted-foreground">
+                  Last sync: 2 min ago
+                </p>
                 <Progress value={100} className="mt-3 h-2" />
               </CardContent>
             </Card>
@@ -491,29 +612,47 @@ export const SuperAdminDashboard: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                     <span className="text-sm font-medium">Server Uptime</span>
-                    <span className="text-sm font-bold text-blue-600">99.98%</span>
+                    <span className="text-sm font-bold text-blue-600">
+                      99.98%
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm font-medium">API Success Rate</span>
-                    <span className="text-sm font-bold text-green-600">99.5%</span>
+                    <span className="text-sm font-medium">
+                      API Success Rate
+                    </span>
+                    <span className="text-sm font-bold text-green-600">
+                      99.5%
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                    <span className="text-sm font-medium">Average Load Time</span>
-                    <span className="text-sm font-bold text-purple-600">1.2s</span>
+                    <span className="text-sm font-medium">
+                      Average Load Time
+                    </span>
+                    <span className="text-sm font-bold text-purple-600">
+                      1.2s
+                    </span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
                     <span className="text-sm font-medium">Active Users</span>
-                    <span className="text-sm font-bold text-orange-600">142</span>
+                    <span className="text-sm font-bold text-orange-600">
+                      142
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                    <span className="text-sm font-medium">Daily Transactions</span>
-                    <span className="text-sm font-bold text-pink-600">1,245</span>
+                    <span className="text-sm font-medium">
+                      Daily Transactions
+                    </span>
+                    <span className="text-sm font-bold text-pink-600">
+                      1,245
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-3 bg-cyan-50 rounded-lg">
                     <span className="text-sm font-medium">Storage Used</span>
-                    <span className="text-sm font-bold text-cyan-600">45.2 GB</span>
+                    <span className="text-sm font-bold text-cyan-600">
+                      45.2 GB
+                    </span>
                   </div>
                 </div>
               </div>
