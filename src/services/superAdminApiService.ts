@@ -439,6 +439,34 @@ class SuperAdminApiService {
       method: "DELETE",
     });
   }
+
+  // WhatsApp Integration
+  async getWhatsAppConfig(restaurantId: string): Promise<{
+    whatsappEnabled: boolean;
+    whatsappProvider: "PLATFORM" | "CUSTOM";
+    messageCredits: number;
+  }> {
+    return this.request(`/restaurants/${restaurantId}/whatsapp-config`);
+  }
+
+  async updateWhatsAppConfig(
+    restaurantId: string,
+    data: {
+      whatsappEnabled?: boolean;
+      whatsappProvider?: "PLATFORM" | "CUSTOM";
+      addCredits?: number;
+      customConfig?: {
+        accountSid: string;
+        authToken: string;
+        fromNumber: string;
+      };
+    }
+  ): Promise<any> {
+    return this.request(`/restaurants/${restaurantId}/whatsapp-config`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
 }
 
 export const superAdminApi = new SuperAdminApiService();

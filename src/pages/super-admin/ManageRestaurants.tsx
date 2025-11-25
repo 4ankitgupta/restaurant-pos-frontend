@@ -34,6 +34,7 @@ import {
 import { RestaurantForm } from "./RestaurantForm";
 import { FeatureFlagsDialog } from "./FeatureFlagsDialog";
 import { ZomatoConfigDialog } from "./ZomatoConfigDialog";
+import { WhatsAppConfigDialog } from "./WhatsAppConfigDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManageRestaurants: React.FC = () => {
@@ -44,12 +45,16 @@ export const ManageRestaurants: React.FC = () => {
     useState(false);
   const [isZomatoConfigDialogOpen, setIsZomatoConfigDialogOpen] =
     useState(false);
+  const [isWhatsAppConfigDialogOpen, setIsWhatsAppConfigDialogOpen] =
+    useState(false);
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(
     null
   );
   const [managingFeaturesRestaurant, setManagingFeaturesRestaurant] =
     useState<Restaurant | null>(null);
   const [managingZomatoRestaurant, setManagingZomatoRestaurant] =
+    useState<Restaurant | null>(null);
+  const [managingWhatsAppRestaurant, setManagingWhatsAppRestaurant] =
     useState<Restaurant | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -132,6 +137,16 @@ export const ManageRestaurants: React.FC = () => {
   const closeZomatoConfigDialog = () => {
     setIsZomatoConfigDialogOpen(false);
     setManagingZomatoRestaurant(null);
+  };
+
+  const openWhatsAppConfigDialog = (restaurant: Restaurant) => {
+    setManagingWhatsAppRestaurant(restaurant);
+    setIsWhatsAppConfigDialogOpen(true);
+  };
+
+  const closeWhatsAppConfigDialog = () => {
+    setIsWhatsAppConfigDialogOpen(false);
+    setManagingWhatsAppRestaurant(null);
   };
 
   const onViewUsers = (restaurantId: string) => {
@@ -240,6 +255,15 @@ export const ManageRestaurants: React.FC = () => {
                     >
                       <Utensils className="w-3 h-3 mr-1" />
                       Zomato
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openWhatsAppConfigDialog(restaurant)}
+                      className="flex-1 bg-green-50 hover:bg-green-100 dark:bg-green-950"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      WhatsApp
                     </Button>
                   </div>
                   <div className="flex gap-2 mt-2">
@@ -456,6 +480,16 @@ export const ManageRestaurants: React.FC = () => {
           fetchRestaurants();
         }}
       />
+
+      {/* WhatsApp Configuration Dialog */}
+      {managingWhatsAppRestaurant && (
+        <WhatsAppConfigDialog
+          restaurantId={managingWhatsAppRestaurant.id}
+          restaurantName={managingWhatsAppRestaurant.name}
+          open={isWhatsAppConfigDialogOpen}
+          onOpenChange={setIsWhatsAppConfigDialogOpen}
+        />
+      )}
     </div>
   );
 };
