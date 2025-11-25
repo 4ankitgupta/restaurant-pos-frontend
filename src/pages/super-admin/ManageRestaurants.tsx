@@ -21,6 +21,7 @@ import {
   Eye,
   Settings,
   Utensils,
+  MessageCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -417,6 +418,15 @@ export const ManageRestaurants: React.FC = () => {
                         title="Zomato Integration"
                       >
                         <Utensils className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => openWhatsAppConfigDialog(restaurant)}
+                        title="WhatsApp Configuration"
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-950"
+                      >
+                        <MessageCircle className="w-4 h-4" />
                       </Button>
                       <Button
                         size="sm"
