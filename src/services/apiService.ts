@@ -276,11 +276,16 @@ class ApiService {
   }
 
   // Menu Management
-  async createCategory(categoryData: { name: string; description: string }) {
+  async createCategory(categoryData: {
+    name: string;
+    nameHindi?: string;
+    description: string;
+  }) {
     return this.request<
       ApiResponse<{
         id: string;
         name: string;
+        nameHindi?: string;
         description: string;
         restaurantId: string;
       }>
@@ -292,6 +297,7 @@ class ApiService {
 
   async createMenuItem(itemData: {
     name: string;
+    nameHindi?: string;
     description?: string;
     categoryId: string;
     variants: { name: string; price: number }[];
@@ -300,6 +306,7 @@ class ApiService {
       ApiResponse<{
         id: string;
         name: string;
+        nameHindi?: string;
         description: string;
         // price removed (variants present)
         isAvailable: boolean;
@@ -316,6 +323,7 @@ class ApiService {
       data: Array<{
         id: string;
         name: string;
+        nameHindi?: string;
         description: string | null;
         restaurantId: string;
       }>;
@@ -330,6 +338,7 @@ class ApiService {
     itemId: string,
     itemData: {
       name?: string;
+      nameHindi?: string;
       description?: string;
       categoryId?: string;
       isAvailable?: boolean;
@@ -352,6 +361,7 @@ class ApiService {
     categoryId: string,
     categoryData: {
       name: string;
+      nameHindi?: string;
       description: string;
     }
   ) {

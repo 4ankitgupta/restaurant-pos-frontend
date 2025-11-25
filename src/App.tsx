@@ -25,6 +25,7 @@ import Employees from "./pages/Employees";
 import AttendanceReport from "./pages/AttendanceReport";
 import Expenses from "./pages/Expenses";
 import { RefreshProvider } from "@/contexts/RefreshContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 
 // Super Admin imports
 import SuperAdminLogin from "./pages/SuperAdminLogin";
@@ -45,214 +46,219 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <RefreshProvider>
-          <WebSocketProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
-                <Route path="/login" element={<Login />} />
+        <LanguageProvider>
+          <RefreshProvider>
+            <WebSocketProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/login" replace />} />
+                  <Route path="/login" element={<Login />} />
 
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <AppLayout />
-                    </ProtectedRoute>
-                  }
-                >
                   <Route
-                    path="dashboard"
+                    path="/"
                     element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Dashboard />
+                      <ProtectedRoute>
+                        <AppLayout />
                       </ProtectedRoute>
                     }
-                  />
-                  {/* ADD NEW CASHIER ROUTE */}
-                  <Route
-                    path="cashier"
-                    element={
-                      <ProtectedRoute
-                        allowedRoles={["admin", "cashier", "manager"]}
-                      >
-                        <Cashier />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="pos"
-                    element={
-                      <ProtectedRoute
-                        allowedRoles={["admin", "cashier", "manager"]}
-                      >
-                        <Cashier />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="waiter-order"
-                    element={
-                      <ProtectedRoute
-                        allowedRoles={["admin", "waiter", "manager"]}
-                      >
-                        <WaiterOrderManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="supplier"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <FeatureProtectedRoute feature="inventory_management">
-                          <Suppliers />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="purchase-order"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <FeatureProtectedRoute feature="inventory_management">
-                          <PurchaseOrders />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="tables"
-                    element={
-                      <ProtectedRoute
-                        allowedRoles={["admin", "waiter", "manager"]}
-                      >
-                        <TableManagement />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="kitchen"
-                    element={
-                      <ProtectedRoute
-                        allowedRoles={["admin", "chef", "manager"]}
-                      >
-                        <KitchenDisplay />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="inventory"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <FeatureProtectedRoute feature="inventory_management">
-                          <Inventory />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="menu"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Menu />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="users"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Users />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="employees"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <FeatureProtectedRoute feature="attendance">
-                          <Employees />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="attendance"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <FeatureProtectedRoute feature="attendance">
-                          <AttendanceReport />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="reports"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin"]}>
-                        <FeatureProtectedRoute feature="reports">
-                          <Reports />
-                        </FeatureProtectedRoute>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="expenses"
-                    element={
-                      <ProtectedRoute allowedRoles={["admin", "manager"]}>
-                        <Expenses />
-                      </ProtectedRoute>
-                    }
-                  />
-                </Route>
-
-                {/* --- SUPER ADMIN ROUTES --- */}
-                <Route
-                  path="/super-admin/*"
-                  element={
-                    <SuperAdminAuthProvider>
-                      <Routes>
-                        <Route path="login" element={<SuperAdminLogin />} />
-                        <Route
-                          path="/*"
-                          element={
-                            <SuperAdminProtectedRoute>
-                              <SuperAdminLayout />
-                            </SuperAdminProtectedRoute>
-                          }
+                  >
+                    <Route
+                      path="dashboard"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    {/* ADD NEW CASHIER ROUTE */}
+                    <Route
+                      path="cashier"
+                      element={
+                        <ProtectedRoute
+                          allowedRoles={["admin", "cashier", "manager"]}
                         >
-                          <Route index element={<SuperAdminDashboard />} />
-                          <Route
-                            path="restaurants"
-                            element={<ManageRestaurants />}
-                          />
-                          <Route
-                            path="restaurants/:restaurantId/users"
-                            element={<ManageRestaurantUsers />}
-                          />
-                          <Route path="plans" element={<ManagePlans />} />
-                          <Route
-                            path="subscriptions"
-                            element={<ManageSubscriptions />}
-                          />
-                          <Route
-                            path="announcements"
-                            element={<ManageAnnouncements />}
-                          />
-                          <Route path="settings" element={<ManageSettings />} />
-                        </Route>
-                      </Routes>
-                    </SuperAdminAuthProvider>
-                  }
-                />
-                {/* --- END SUPER ADMIN ROUTES --- */}
+                          <Cashier />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="pos"
+                      element={
+                        <ProtectedRoute
+                          allowedRoles={["admin", "cashier", "manager"]}
+                        >
+                          <Cashier />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="waiter-order"
+                      element={
+                        <ProtectedRoute
+                          allowedRoles={["admin", "waiter", "manager"]}
+                        >
+                          <WaiterOrderManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="supplier"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <FeatureProtectedRoute feature="inventory_management">
+                            <Suppliers />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="purchase-order"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <FeatureProtectedRoute feature="inventory_management">
+                            <PurchaseOrders />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="tables"
+                      element={
+                        <ProtectedRoute
+                          allowedRoles={["admin", "waiter", "manager"]}
+                        >
+                          <TableManagement />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="kitchen"
+                      element={
+                        <ProtectedRoute
+                          allowedRoles={["admin", "chef", "manager"]}
+                        >
+                          <KitchenDisplay />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="inventory"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <FeatureProtectedRoute feature="inventory_management">
+                            <Inventory />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="menu"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <Menu />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="users"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <Users />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="employees"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <FeatureProtectedRoute feature="attendance">
+                            <Employees />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="attendance"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <FeatureProtectedRoute feature="attendance">
+                            <AttendanceReport />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="reports"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin"]}>
+                          <FeatureProtectedRoute feature="reports">
+                            <Reports />
+                          </FeatureProtectedRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="expenses"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin", "manager"]}>
+                          <Expenses />
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Route>
 
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </WebSocketProvider>
-        </RefreshProvider>
+                  {/* --- SUPER ADMIN ROUTES --- */}
+                  <Route
+                    path="/super-admin/*"
+                    element={
+                      <SuperAdminAuthProvider>
+                        <Routes>
+                          <Route path="login" element={<SuperAdminLogin />} />
+                          <Route
+                            path="/*"
+                            element={
+                              <SuperAdminProtectedRoute>
+                                <SuperAdminLayout />
+                              </SuperAdminProtectedRoute>
+                            }
+                          >
+                            <Route index element={<SuperAdminDashboard />} />
+                            <Route
+                              path="restaurants"
+                              element={<ManageRestaurants />}
+                            />
+                            <Route
+                              path="restaurants/:restaurantId/users"
+                              element={<ManageRestaurantUsers />}
+                            />
+                            <Route path="plans" element={<ManagePlans />} />
+                            <Route
+                              path="subscriptions"
+                              element={<ManageSubscriptions />}
+                            />
+                            <Route
+                              path="announcements"
+                              element={<ManageAnnouncements />}
+                            />
+                            <Route
+                              path="settings"
+                              element={<ManageSettings />}
+                            />
+                          </Route>
+                        </Routes>
+                      </SuperAdminAuthProvider>
+                    }
+                  />
+                  {/* --- END SUPER ADMIN ROUTES --- */}
+
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </WebSocketProvider>
+          </RefreshProvider>
+        </LanguageProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

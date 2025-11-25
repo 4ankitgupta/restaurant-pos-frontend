@@ -16,10 +16,13 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "../ui/card";
 import { VariantSelectionDialog } from "./VariantSelectionDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getLocalizedName } from "@/lib/utils";
 
 interface MenuCategory {
   id: string;
   name: string;
+  nameHindi?: string;
 }
 
 interface CartItem {
@@ -53,6 +56,7 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (categories.length > 0 && !activeCategory) {
@@ -163,11 +167,11 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
   };
 
   const filteredItems = menuItems
-    ? menuItems.filter(
-        (item) =>
-          item.categoryId === activeCategory &&
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    ? menuItems.filter((item) => {
+        if (item.categoryId !== activeCategory) return false;
+        const localized = getLocalizedName(item as any, language).toLowerCase();
+        return localized.includes(searchTerm.toLowerCase());
+      })
     : [];
 
   const [editingNote, setEditingNote] = useState<{
@@ -249,7 +253,7 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                     className="whitespace-nowrap"
                     size="sm"
                   >
-                    {category.name}
+                    {getLocalizedName(category as any, language)}
                   </Button>
                 ))}
               </div>
@@ -271,7 +275,9 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                         onClick={() => handleItemClick(item)}
                       >
                         <CardContent className="p-3">
-                          <p className="font-medium">{item.name}</p>
+                          <p className="font-medium">
+                            {getLocalizedName(item as any, language)}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {getItemPriceRange(item)}
                           </p>
@@ -314,9 +320,11 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="font-medium">{item.name}</p>
+                              <p className="font-medium">
+                                {getLocalizedName(item as any, language)}
+                              </p>
                               <p className="text-sm">
-                                {variant.name} - ₹
+                                {getLocalizedName(variant as any, language)} - ₹
                                 {parseFloat(variant.price).toFixed(2)}
                               </p>
                               {cartItem.note && (

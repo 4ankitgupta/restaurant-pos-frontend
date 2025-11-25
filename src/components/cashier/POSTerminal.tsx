@@ -27,11 +27,14 @@ import {
 import { PaymentDialog } from "./PaymentDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getLocalizedName } from "@/lib/utils";
 
 // Local types
 interface MenuCategory {
   id: string;
   name: string;
+  nameHindi?: string;
 }
 
 type ServiceType = "DINE_IN" | "TAKEAWAY";
@@ -54,6 +57,7 @@ export const POSTerminal: React.FC = () => {
   const { refreshKey } = useRefresh();
   // --- FIXED: Destructure lastTableUpdate correctly from context ---
   const { orders: wsOrders, lastTableUpdate } = useWebSocket();
+  const { language } = useLanguage();
 
   // Mode and context
   const [serviceType, setServiceType] = useState<ServiceType>("DINE_IN");
@@ -168,12 +172,12 @@ export const POSTerminal: React.FC = () => {
 
   // Derived
   const filteredItems = useMemo(() => {
-    return menuItems.filter(
-      (item) =>
-        (!activeCategory || item.categoryId === activeCategory) &&
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [menuItems, activeCategory, searchTerm]);
+    return menuItems.filter((item) => {
+      if (activeCategory && item.categoryId !== activeCategory) return false;
+      const localized = getLocalizedName(item as any, language).toLowerCase();
+      return localized.includes(searchTerm.toLowerCase());
+    });
+  }, [menuItems, activeCategory, searchTerm, language]);
 
   // Helpers
   const getStatusBadge = (status: string) => {
@@ -611,7 +615,7 @@ export const POSTerminal: React.FC = () => {
                     className="whitespace-nowrap"
                     onClick={() => setActiveCategory(cat.id)}
                   >
-                    {cat.name}
+                    {getLocalizedName(cat as any, language)}
                   </Button>
                 ))}
               </div>
@@ -626,7 +630,7 @@ export const POSTerminal: React.FC = () => {
                     >
                       <CardContent className="p-3">
                         <p className="font-medium line-clamp-2 min-h-[2.5rem] leading-tight">
-                          {item.name}
+                          {getLocalizedName(item as any, language)}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1 font-mono">
                           {getItemPriceRange(item)}
@@ -675,11 +679,16 @@ export const POSTerminal: React.FC = () => {
                           <div className="flex-1">
                             <div className="font-medium flex items-center gap-2">
                               {item.quantity}x{" "}
-                              {item.menuItemVariant?.menuItem?.name ||
-                                "Unknown Item"}
+                              {getLocalizedName(
+                                item.menuItemVariant?.menuItem as any,
+                                language
+                              ) || "Unknown Item"}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {item.menuItemVariant?.name}
+                              {getLocalizedName(
+                                item.menuItemVariant as any,
+                                language
+                              )}
                             </div>
                             {item.note && (
                               <div className="text-xs italic text-muted-foreground">
@@ -720,9 +729,11 @@ export const POSTerminal: React.FC = () => {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-medium text-sm">{item.name}</p>
+                            <p className="font-medium text-sm">
+                              {getLocalizedName(item as any, language)}
+                            </p>
                             <p className="text-xs text-muted-foreground">
-                              {variant.name}
+                              {getLocalizedName(variant as any, language)}
                             </p>
                           </div>
                           <p className="font-medium text-sm">

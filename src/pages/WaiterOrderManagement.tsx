@@ -24,6 +24,8 @@ import {
   Bike,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { getLocalizedName } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +60,7 @@ import {
 interface MenuCategory {
   id: string;
   name: string;
+  nameHindi?: string;
 }
 
 const mapOrderItemsToCart = (
@@ -94,8 +97,8 @@ const mapOrderItemsToCart = (
         },
         quantity: item.quantity,
         status: item.status,
-        variantName: item.menuItemVariant.name,
         note: item.note,
+        paymentStatus: item.paymentStatus,
         price: Number(item.price), // <-- FIX: Convert to number
       } as OrderItem;
     })
@@ -112,6 +115,7 @@ const WaiterOrderManagement: React.FC = () => {
   const [cart, setCart] = useState<OrderItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
+  const { language } = useLanguage();
 
   const [isSending, setIsSending] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -223,6 +227,7 @@ const WaiterOrderManagement: React.FC = () => {
         },
         quantity: 1,
         status: "PENDING",
+        paymentStatus: "UNPAID",
         note: "",
         price: Number(variant.price),
       };
@@ -416,11 +421,11 @@ const WaiterOrderManagement: React.FC = () => {
     }
   };
 
-  const currentItems = menuItems.filter(
-    (item) =>
-      item.categoryId === activeCategory &&
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const currentItems = menuItems.filter((item) => {
+    if (item.categoryId !== activeCategory) return false;
+    const localized = getLocalizedName(item as any, language).toLowerCase();
+    return localized.includes(searchTerm.toLowerCase());
+  });
 
   const canCompleteOrder =
     currentOrder &&
@@ -534,14 +539,17 @@ const WaiterOrderManagement: React.FC = () => {
             </Button>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search menu items..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search menu items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-1" />
           </div>
         </div>
 
@@ -556,7 +564,7 @@ const WaiterOrderManagement: React.FC = () => {
                 className="whitespace-nowrap"
                 size="sm"
               >
-                {category.name}
+                {getLocalizedName(category, language)}
               </Button>
             ))}
           </div>
@@ -575,7 +583,7 @@ const WaiterOrderManagement: React.FC = () => {
               >
                 <CardContent className="p-4">
                   <h3 className="font-semibold text-sm line-clamp-2 mb-2">
-                    {item.name}
+                    {getLocalizedName(item, language)}
                   </h3>
                   <p className="text-lg font-bold text-primary">
                     {item.variants.length === 1
@@ -667,7 +675,10 @@ const WaiterOrderManagement: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-sm truncate">
-                        {item.menuItemVariant?.menuItem.name}
+                        {getLocalizedName(
+                          item.menuItemVariant?.menuItem,
+                          language
+                        )}
                       </h4>
                       <p className="text-xs text-muted-foreground">
                         ₹
@@ -679,7 +690,10 @@ const WaiterOrderManagement: React.FC = () => {
                         each
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.menuItemVariant?.name}
+                        {getLocalizedName(
+                          item.menuItemVariant as any,
+                          language
+                        )}
                       </p>
                       {item.note && (
                         <p className="text-xs text-muted-foreground">
@@ -912,7 +926,10 @@ const WaiterOrderManagement: React.FC = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium text-sm truncate">
-                            {item.menuItemVariant?.menuItem.name}
+                            {getLocalizedName(
+                              item.menuItemVariant?.menuItem,
+                              language
+                            )}
                           </h4>
                           <p className="text-xs text-muted-foreground">
                             ₹

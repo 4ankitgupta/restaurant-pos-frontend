@@ -3,6 +3,7 @@
 export interface MenuItemVariant {
   id: string;
   name: string;
+  nameHindi?: string;
   price: number;
 }
 
@@ -18,13 +19,16 @@ export interface MenuItem {
 export interface APIMenuItem {
   id: string;
   name: string;
+  nameHindi?: string;
   description: string | null;
+  descriptionHindi?: string | null;
   isAvailable: boolean;
   restaurantId: string;
   categoryId: string | null;
   variants: Array<{
     id: string;
     name: string;
+    nameHindi?: string;
     price: string;
   }>;
 }
@@ -45,11 +49,14 @@ export interface OrderItem {
   menuItemVariant: {
     id: string;
     name: string;
+    nameHindi?: string;
     price: number;
     menuItem: {
       id: string;
       name: string;
+      nameHindi?: string;
       description?: string;
+      descriptionHindi?: string;
       category: string;
       available: boolean;
     };
@@ -132,11 +139,14 @@ export interface APIOrder {
     menuItemVariant: {
       id: string;
       name: string;
+      nameHindi?: string;
       price: number;
       menuItem: {
         id: string;
         name: string;
+        nameHindi?: string;
         description: string | null;
+        descriptionHindi?: string | null;
         isAvailable: boolean;
         restaurantId: string;
         categoryId: string | null;
@@ -216,19 +226,24 @@ export interface StockLog {
 // --- NEW: Types for menu item variant creation/update ---
 export interface CreateMenuItemVariantDTO {
   name: string;
+  nameHindi?: string;
   price: number;
 }
 
 export interface CreateMenuItemDTO {
   name: string;
+  nameHindi?: string;
   description?: string;
+  descriptionHindi?: string;
   categoryId: string;
   variants: CreateMenuItemVariantDTO[];
 }
 
 export interface UpdateMenuItemDTO {
   name?: string;
+  nameHindi?: string;
   description?: string;
+  descriptionHindi?: string;
   categoryId?: string;
   variants?: CreateMenuItemVariantDTO[];
 }

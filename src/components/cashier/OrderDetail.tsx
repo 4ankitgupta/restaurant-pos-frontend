@@ -24,6 +24,8 @@ import {
   MapPin,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getLocalizedName } from "@/lib/utils";
 
 interface OrderDetailProps {
   order: APIOrder | null;
@@ -39,6 +41,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   onRefund,
 }) => {
   const { user } = useAuth();
+  const { language } = useLanguage();
   const billReceiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
@@ -158,8 +161,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
                 <div key={item.id} className="flex items-start justify-between">
                   <div>
                     <p className="font-medium">
-                      {item.quantity}x {item.menuItemVariant?.menuItem.name} (
-                      {item.menuItemVariant?.name})
+                      {item.quantity}x{" "}
+                      {getLocalizedName(
+                        item.menuItemVariant?.menuItem as any,
+                        language
+                      )}{" "}
+                      ({getLocalizedName(item.menuItemVariant as any, language)}
+                      )
                     </p>
                     {item.note && (
                       <p className="text-sm text-muted-foreground italic">

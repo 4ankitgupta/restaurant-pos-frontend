@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 interface MenuCategory {
   id: string;
   name: string;
+  nameHindi?: string;
   description: string | null;
 }
 
@@ -34,6 +35,7 @@ export const MenuCategoryForm: React.FC<MenuCategoryFormProps> = ({
 }) => {
   const [categoryForm, setCategoryForm] = useState({
     name: "",
+    nameHindi: "",
     description: "",
   });
   const { loading, execute } = useApi();
@@ -42,10 +44,11 @@ export const MenuCategoryForm: React.FC<MenuCategoryFormProps> = ({
     if (editingCategory) {
       setCategoryForm({
         name: editingCategory.name,
+        nameHindi: editingCategory.nameHindi || "",
         description: editingCategory.description || "",
       });
     } else {
-      setCategoryForm({ name: "", description: "" });
+      setCategoryForm({ name: "", nameHindi: "", description: "" });
     }
   }, [editingCategory, open]);
 
@@ -84,7 +87,7 @@ export const MenuCategoryForm: React.FC<MenuCategoryFormProps> = ({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="category-name">Name</Label>
+            <Label htmlFor="category-name">Name (English)</Label>
             <Input
               id="category-name"
               value={categoryForm.name}
@@ -92,6 +95,20 @@ export const MenuCategoryForm: React.FC<MenuCategoryFormProps> = ({
                 setCategoryForm((prev) => ({ ...prev, name: e.target.value }))
               }
               required
+            />
+          </div>
+          <div>
+            <Label htmlFor="category-name-hindi">Name (Hindi)</Label>
+            <Input
+              id="category-name-hindi"
+              value={categoryForm.nameHindi}
+              onChange={(e) =>
+                setCategoryForm((prev) => ({
+                  ...prev,
+                  nameHindi: e.target.value,
+                }))
+              }
+              placeholder="e.g. शुरुआत"
             />
           </div>
           <div>

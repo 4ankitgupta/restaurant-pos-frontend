@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { Check, MessageSquarePlus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getLocalizedName, getLocalizedText } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VariantSelectionDialogProps {
@@ -30,6 +31,7 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
 }) => {
   const [selectedVariantId, setSelectedVariantId] = useState<string>("");
   const [note, setNote] = useState("");
+  const { language } = useLanguage();
 
   const handleSubmit = () => {
     if (!selectedVariantId) return;
@@ -43,9 +45,13 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">{item?.name}</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">
+            {item ? getLocalizedName(item as any, language) : ""}
+          </DialogTitle>
           {item?.description && (
-            <p className="text-sm text-muted-foreground">{item.description}</p>
+            <p className="text-sm text-muted-foreground">
+              {getLocalizedText(item, "description", language)}
+            </p>
           )}
         </DialogHeader>
 
@@ -81,7 +87,9 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
                           className="shrink-0"
                         />
                         <div className="flex-1">
-                          <div className="font-medium">{variant.name}</div>
+                          <div className="font-medium">
+                            {getLocalizedName(variant as any, language)}
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

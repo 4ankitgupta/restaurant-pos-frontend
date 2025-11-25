@@ -42,10 +42,16 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
 }) => {
   const [itemForm, setItemForm] = useState({
     name: "",
+    nameHindi: "",
     description: "",
+    descriptionHindi: "",
     categoryId: "",
     isAvailable: true,
-    variants: [{ name: "", price: "" }] as { name: string; price: string }[],
+    variants: [{ name: "", nameHindi: "", price: "" }] as {
+      name: string;
+      nameHindi: string;
+      price: string;
+    }[],
   });
   const { loading: createLoading, execute: executeCreate } = useApi();
   const { loading: updateLoading, execute: executeUpdate } = useApi();
@@ -54,21 +60,26 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
     if (editingItem) {
       setItemForm({
         name: editingItem.name,
+        nameHindi: editingItem.nameHindi || "",
         description: editingItem.description || "",
+        descriptionHindi: editingItem.descriptionHindi || "",
         categoryId: editingItem.categoryId || "",
         isAvailable: editingItem.isAvailable,
         variants: editingItem.variants.map((v) => ({
           name: v.name,
+          nameHindi: v.nameHindi || "",
           price: v.price,
         })),
       });
     } else {
       setItemForm({
         name: "",
+        nameHindi: "",
         description: "",
+        descriptionHindi: "",
         categoryId: "",
         isAvailable: true,
-        variants: [{ name: "", price: "" }],
+        variants: [{ name: "", nameHindi: "", price: "" }],
       });
     }
   }, [editingItem]);
@@ -94,7 +105,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const addVariant = () => {
     setItemForm((prev) => ({
       ...prev,
-      variants: [...prev.variants, { name: "", price: "" }],
+      variants: [...prev.variants, { name: "", nameHindi: "", price: "" }],
     }));
   };
 
@@ -114,6 +125,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
           ...itemForm,
           variants: itemForm.variants.map((v) => ({
             name: v.name,
+            nameHindi: v.nameHindi || undefined,
             price: parseFloat(v.price),
           })),
         })
@@ -139,6 +151,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
           ...itemForm,
           variants: itemForm.variants.map((v) => ({
             name: v.name,
+            nameHindi: v.nameHindi || undefined,
             price: parseFloat(v.price),
           })),
         })
@@ -157,10 +170,12 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
   const resetFormAndClose = () => {
     setItemForm({
       name: "",
+      nameHindi: "",
       description: "",
+      descriptionHindi: "",
       categoryId: "",
       isAvailable: true,
-      variants: [{ name: "", price: "" }],
+      variants: [{ name: "", nameHindi: "", price: "" }],
     });
     setEditingItem(null);
     onOpenChange(false);
@@ -195,7 +210,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
           className="space-y-4"
         >
           <div>
-            <Label htmlFor="item-name">Name</Label>
+            <Label htmlFor="item-name">Name (English)</Label>
             <Input
               id="item-name"
               value={itemForm.name}
@@ -206,7 +221,18 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="item-description">Description</Label>
+            <Label htmlFor="item-name-hindi">Name (Hindi)</Label>
+            <Input
+              id="item-name-hindi"
+              value={itemForm.nameHindi}
+              onChange={(e) =>
+                setItemForm((prev) => ({ ...prev, nameHindi: e.target.value }))
+              }
+              placeholder="e.g. पनीर टिक्का"
+            />
+          </div>
+          <div>
+            <Label htmlFor="item-description">Description (English)</Label>
             <Textarea
               id="item-description"
               value={itemForm.description}
@@ -218,38 +244,67 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
               }
             />
           </div>
+          <div>
+            <Label htmlFor="item-description-hindi">Description (Hindi)</Label>
+            <Textarea
+              id="item-description-hindi"
+              value={itemForm.descriptionHindi}
+              onChange={(e) =>
+                setItemForm((prev) => ({
+                  ...prev,
+                  descriptionHindi: e.target.value,
+                }))
+              }
+              placeholder="e.g. मसालों में मैरीनेट किया हुआ और ग्रिल किया हुआ पनीर"
+            />
+          </div>
           <div className="space-y-2">
             <Label>Variants</Label>
             {itemForm.variants.map((variant, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Input
-                  placeholder="Variant name (e.g., Full)"
-                  value={variant.name}
-                  onChange={(e) =>
-                    handleVariantChange(index, "name", e.target.value)
-                  }
-                  required
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Price"
-                  value={variant.price}
-                  onChange={(e) =>
-                    handleVariantChange(index, "price", e.target.value)
-                  }
-                  required
-                />
-                {itemForm.variants.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeVariant(index)}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                )}
+              <div key={index} className="space-y-2 p-3 border rounded-md">
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Variant name (e.g., Full)"
+                      value={variant.name}
+                      onChange={(e) =>
+                        handleVariantChange(index, "name", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Hindi name (e.g., फुल)"
+                      value={variant.nameHindi}
+                      onChange={(e) =>
+                        handleVariantChange(index, "nameHindi", e.target.value)
+                      }
+                    />
+                  </div>
+                  <div className="w-32">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Price"
+                      value={variant.price}
+                      onChange={(e) =>
+                        handleVariantChange(index, "price", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                  {itemForm.variants.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeVariant(index)}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
             <Button type="button" variant="outline" onClick={addVariant}>

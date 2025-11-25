@@ -16,6 +16,8 @@ import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "../ui/card";
 import { VariantSelectionDialog } from "./VariantSelectionDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getLocalizedName } from "@/lib/utils";
 
 interface MenuCategory {
   id: string;
@@ -48,6 +50,7 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const { language } = useLanguage();
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
@@ -192,7 +195,9 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
     ? menuItems.filter(
         (item) =>
           item.categoryId === activeCategory &&
-          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+          getLocalizedName(item, language)
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase())
       )
     : [];
 
@@ -224,13 +229,19 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
       >
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Create Take-away Order</DialogTitle>
+            <DialogTitle>
+              {language === "hi"
+                ? "टेक-अवे ऑर्डर बनाएं"
+                : "Create Take-away Order"}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Menu List */}
             <div className="lg:col-span-2 flex flex-col border-b lg:border-b-0 lg:border-r pb-4 lg:pb-0 pr-0 lg:pr-4">
               <Input
-                placeholder="Search menu..."
+                placeholder={
+                  language === "hi" ? "मेनू खोजें..." : "Search menu..."
+                }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="mb-4"
@@ -246,7 +257,7 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                     className="whitespace-nowrap"
                     size="sm"
                   >
-                    {category.name}
+                    {getLocalizedName(category as any, language)}
                   </Button>
                 ))}
               </div>
@@ -255,9 +266,17 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                   {filteredItems.length === 0 ? (
                     <div className="col-span-2 text-center py-8 text-muted-foreground">
                       {menuItems.length === 0 ? (
-                        <p>No menu items available</p>
+                        <p>
+                          {language === "hi"
+                            ? "कोई मेनू आइटम उपलब्ध नहीं"
+                            : "No menu items available"}
+                        </p>
                       ) : (
-                        <p>No items found in this category</p>
+                        <p>
+                          {language === "hi"
+                            ? "इस श्रेणी में कोई आइटम नहीं मिला"
+                            : "No items found in this category"}
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -268,13 +287,18 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                         onClick={() => handleItemClick(item)}
                       >
                         <CardContent className="p-3">
-                          <p className="font-medium">{item.name}</p>
+                          <p className="font-medium">
+                            {getLocalizedName(item, language)}
+                          </p>
                           <p className="text-sm text-muted-foreground">
                             {getItemPriceRange(item)}
                           </p>
                           {item.variants.length > 1 && (
                             <p className="text-xs text-muted-foreground mt-1">
-                              {item.variants.length} variants available
+                              {item.variants.length}{" "}
+                              {language === "hi"
+                                ? "वैरिएंट उपलब्ध"
+                                : "variants available"}
                             </p>
                           )}
                         </CardContent>
@@ -286,12 +310,18 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
             </div>
             {/* Cart */}
             <div className="flex flex-col">
-              <h3 className="font-semibold mb-4">Order Items</h3>
+              <h3 className="font-semibold mb-4">
+                {language === "hi" ? "ऑर्डर आइटम्स" : "Order Items"}
+              </h3>
               <ScrollArea className="h-[300px] lg:h-[400px]">
                 {cart.size === 0 ? (
                   <div className="text-center text-muted-foreground pt-16">
                     <ShoppingCart className="mx-auto h-12 w-12 opacity-50" />
-                    <p>No items added yet</p>
+                    <p>
+                      {language === "hi"
+                        ? "अभी तक कोई आइटम नहीं जोड़ा गया"
+                        : "No items added yet"}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -310,14 +340,17 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <p className="font-medium">{item.name}</p>
+                              <p className="font-medium">
+                                {getLocalizedName(item, language)}
+                              </p>
                               <p className="text-sm">
-                                {variant.name} - ₹
+                                {getLocalizedName(variant, language)} - ₹
                                 {parseFloat(variant.price).toFixed(2)}
                               </p>
                               {cartItem.note && (
                                 <p className="text-sm text-muted-foreground italic">
-                                  Note: {cartItem.note}
+                                  {language === "hi" ? "नोट:" : "Note:"}{" "}
+                                  {cartItem.note}
                                 </p>
                               )}
                             </div>
@@ -330,10 +363,14 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                                   handleNoteEdit(
                                     cartKey,
                                     cartItem.note,
-                                    item.name
+                                    getLocalizedName(item, language)
                                   )
                                 }
-                                title="Add/Edit Note"
+                                title={
+                                  language === "hi"
+                                    ? "नोट जोड़ें/संपादित करें"
+                                    : "Add/Edit Note"
+                                }
                               >
                                 <MessageSquare className="h-4 w-4" />
                               </Button>
@@ -372,13 +409,21 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
           </div>
           <DialogFooter>
             <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2">
-              <Badge variant="secondary">Total Items: {totalItems}</Badge>
+              <Badge variant="secondary">
+                {language === "hi" ? "कुल आइटम:" : "Total Items:"} {totalItems}
+              </Badge>
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
                 className="w-full sm:w-auto"
               >
-                {isLoading ? "Creating..." : "Create Take-away Order"}
+                {isLoading
+                  ? language === "hi"
+                    ? "बन रहा है..."
+                    : "Creating..."
+                  : language === "hi"
+                  ? "टेक-अवे ऑर्डर बनाएं"
+                  : "Create Take-away Order"}
               </Button>
             </div>
           </DialogFooter>

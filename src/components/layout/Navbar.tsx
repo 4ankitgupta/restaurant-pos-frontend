@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useFeature } from "@/hooks/useFeature";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Home,
   ShoppingCart,
@@ -41,6 +42,7 @@ export const Navbar: React.FC = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { language, setLanguage } = useLanguage();
 
   // Feature flag checks
   const hasInventoryManagement = useFeature("inventory_management");
@@ -315,6 +317,27 @@ export const Navbar: React.FC = () => {
                     {user.role}
                   </div>
                 </div>
+                {/* Language Toggle */}
+                <div className="flex items-center rounded-md border">
+                  <button
+                    className={`px-2 py-1 text-xs rounded-l-md ${
+                      language === "en" ? "bg-muted font-semibold" : ""
+                    }`}
+                    onClick={() => setLanguage("en")}
+                    title="English"
+                  >
+                    EN
+                  </button>
+                  <button
+                    className={`px-2 py-1 text-xs rounded-r-md ${
+                      language === "hi" ? "bg-muted font-semibold" : ""
+                    }`}
+                    onClick={() => setLanguage("hi")}
+                    title="Hindi"
+                  >
+                    हि
+                  </button>
+                </div>
                 <Button variant="ghost" size="icon" onClick={handleRefresh}>
                   <RefreshCw className="h-4 w-4" />
                 </Button>
@@ -397,6 +420,34 @@ export const Navbar: React.FC = () => {
 
                       {/* Mobile Footer */}
                       <div className="p-4 border-t space-y-2">
+                        {/* Mobile Language Toggle */}
+                        <div className="flex items-center justify-between px-2">
+                          <span className="text-sm text-muted-foreground">
+                            Language
+                          </span>
+                          <div className="flex rounded-md border">
+                            <button
+                              className={`px-2 py-1 text-xs rounded-l-md ${
+                                language === "en"
+                                  ? "bg-muted font-semibold"
+                                  : ""
+                              }`}
+                              onClick={() => setLanguage("en")}
+                            >
+                              EN
+                            </button>
+                            <button
+                              className={`px-2 py-1 text-xs rounded-r-md ${
+                                language === "hi"
+                                  ? "bg-muted font-semibold"
+                                  : ""
+                              }`}
+                              onClick={() => setLanguage("hi")}
+                            >
+                              हि
+                            </button>
+                          </div>
+                        </div>
                         <Button
                           variant="ghost"
                           className="w-full justify-start gap-3"

@@ -32,6 +32,8 @@ import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import { APIMenuItem } from "@/types/restaurant";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getLocalizedName, getLocalizedText } from "@/lib/utils";
 import { MenuCategoryForm } from "../components/menu/MenuCategoryForm";
 import { MenuItemForm } from "../components/menu/MenuItemForm";
 
@@ -40,6 +42,7 @@ import { useRefresh } from "@/contexts/RefreshContext";
 interface MenuCategory {
   id: string;
   name: string;
+  nameHindi?: string;
   description: string | null;
   restaurantId: string;
 }
@@ -63,6 +66,7 @@ const Menu: React.FC = () => {
   }>();
   const { loading: deleteLoading, execute: executeDelete } = useApi();
   const { refreshKey } = useRefresh();
+  const { language } = useLanguage();
 
   useEffect(() => {
     fetchData();
@@ -123,7 +127,8 @@ const Menu: React.FC = () => {
   const getCategoryName = (categoryId: string | null) => {
     if (!categoryId) return "Uncategorized";
     const category = categories.find((c) => c.id === categoryId);
-    return category?.name || "Unknown Category";
+    if (!category) return "Unknown Category";
+    return getLocalizedName(category, language);
   };
 
   const loading = categoriesLoading || itemsLoading || deleteLoading;
@@ -196,7 +201,7 @@ const Menu: React.FC = () => {
                     className="rounded-r-none"
                     onClick={() => setSelectedCategory(category.id)}
                   >
-                    {category.name} ({itemCount})
+                    {getLocalizedName(category, language)} ({itemCount})
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -233,8 +238,9 @@ const Menu: React.FC = () => {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Delete Category</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete "{category.name}"?
-                              This will affect all menu items in this category.
+                              Are you sure you want to delete "
+                              {getLocalizedName(category, language)}"? This will
+                              affect all menu items in this category.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -262,7 +268,9 @@ const Menu: React.FC = () => {
           <Card key={item.id} className="relative">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{item.name}</CardTitle>
+                <CardTitle className="text-lg">
+                  {getLocalizedName(item, language)}
+                </CardTitle>
                 <div className="flex space-x-1">
                   <Button
                     variant="ghost"
@@ -310,7 +318,7 @@ const Menu: React.FC = () => {
               <div className="space-y-2">
                 {item.description && (
                   <p className="text-sm text-muted-foreground">
-                    {item.description}
+                    {getLocalizedText(item, "description", language)}
                   </p>
                 )}
                 <div className="flex items-center justify-between">
@@ -323,7 +331,9 @@ const Menu: React.FC = () => {
                       <div className="text-sm">
                         {item.variants.map((v) => (
                           <div key={v.id} className="">
-                            <span className="font-medium">{v.name}:</span>{" "}
+                            <span className="font-medium">
+                              {getLocalizedName(v as any, language)}:
+                            </span>{" "}
                             <span className="font-bold">
                               ₹{parseFloat(v.price).toFixed(2)}
                             </span>

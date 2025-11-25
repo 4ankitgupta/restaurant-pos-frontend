@@ -9,6 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { toast } from "@/hooks/use-toast";
 import { apiService } from "@/services/apiService";
+import { getLocalizedName } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { OrderItemStatus } from "@/types/restaurant";
 import { format, parseISO } from "date-fns";
 import { ChefHat, Clock, CheckCircle, Bike, Phone, MapPin } from "lucide-react";
@@ -18,6 +20,7 @@ import { Order, APIOrder } from "@/types/restaurant";
 const KitchenDisplay: React.FC = () => {
   const { orders: initialOrders, isConnected } = useWebSocket();
   const [orders, setOrders] = useState<APIOrder[]>(initialOrders);
+  const { language } = useLanguage();
   const { refreshKey } = useRefresh();
 
   useEffect(() => {
@@ -99,15 +102,17 @@ const KitchenDisplay: React.FC = () => {
             Kitchen Display
           </h1>
         </div>
-        <div className="flex items-center space-x-2">
-          <span
-            className={`w-3 h-3 rounded-full ${
-              isConnected ? "bg-green-500" : "bg-red-500"
-            }`}
-          ></span>
-          <span className="text-sm font-medium text-gray-600">
-            {isConnected ? "Connected" : "Disconnected"}
-          </span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <span
+              className={`w-3 h-3 rounded-full ${
+                isConnected ? "bg-green-500" : "bg-red-500"
+              }`}
+            ></span>
+            <span className="text-sm font-medium text-gray-600">
+              {isConnected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </div>
       </header>
       <main className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -132,7 +137,11 @@ const KitchenDisplay: React.FC = () => {
                         : order.table?.tableNumber
                         ? `Table ${order.table.tableNumber}`
                         : order.takeAway
-                        ? "Take Away"
+                        ? language === "hi"
+                          ? "टेक-अवे"
+                          : "Take Away"
+                        : language === "hi"
+                        ? "टेबल उपलब्ध नहीं"
                         : "Table N/A"}
                     </span>
                     {order.orderType === "DELIVERY_ZOMATO" && (
@@ -301,11 +310,14 @@ const KitchenDisplay: React.FC = () => {
                         <div className="flex flex-col">
                           <span className="font-semibold text-lg text-gray-800">
                             {item.quantity}x{" "}
-                            {item.menuItemVariant?.menuItem?.name || "..."}
+                            {getLocalizedName(
+                              item.menuItemVariant?.menuItem,
+                              language
+                            ) || "..."}
                           </span>
                           {item.menuItemVariant?.name && (
                             <span className="text-sm text-muted-foreground">
-                              {item.menuItemVariant.name}
+                              {getLocalizedName(item.menuItemVariant, language)}
                             </span>
                           )}
                           {item.note && (
