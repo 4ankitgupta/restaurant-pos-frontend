@@ -46,12 +46,17 @@
 .bill-logo-container {
   text-align: center;
   margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .bill-logo {
   max-width: 80px;
   max-height: 80px;
   object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }
 
 .restaurant-name {
@@ -125,4 +130,11 @@
   font-size: 14px;
   border-top: 1px dashed #000;
   padding-top: 4px;
+}
+
+.powered-by {
+  margin-top: 5px;
+  font-size: 9px;
+  font-style: italic;
+  opacity: 0.8;
 }

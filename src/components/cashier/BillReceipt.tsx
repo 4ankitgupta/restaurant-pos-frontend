@@ -11,6 +11,15 @@ interface BillReceiptProps {
 // Using React.forwardRef to allow the parent to hold a ref to this component
 export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
   ({ order }, ref) => {
+    // DEBUG: Log restaurant-related fields to diagnose missing bill data
+    console.log("BILL RECEIPT DEBUG", {
+      hasRestaurant: !!order.restaurant,
+      restaurant: order.restaurant,
+      phone: order.restaurant?.phone,
+      phone2: order.restaurant?.phone2,
+      gstin: order.restaurant?.gstin,
+      logoUrl: order.restaurant?.logoUrl,
+    });
     // Get restaurant details safely from the order relation
     const restaurant = order.restaurant;
 
@@ -121,6 +130,7 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
 
         <footer className="bill-footer">
           <p>Thank you for visiting!</p>
+          <p className="powered-by">Powered by rasoitrack.in</p>
         </footer>
       </div>
     );
