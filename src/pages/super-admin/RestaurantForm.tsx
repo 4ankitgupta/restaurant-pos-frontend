@@ -31,6 +31,8 @@ const createSchema = z
       .optional()
       .or(z.literal("")),
     phone: z.string().optional(),
+    phone2: z.string().optional(),
+    gstin: z.string().optional(),
     address: z.string().optional(),
     adminName: z.string().min(1, "Admin name is required"),
     adminEmail: z.string().email("Admin email is required"),
@@ -46,6 +48,8 @@ const editSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
   phone: z.string().optional(),
+  phone2: z.string().optional(),
+  gstin: z.string().optional(),
   address: z.string().optional(),
 });
 
@@ -66,6 +70,7 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
 }) => {
   const isEditMode = !!initialData;
   const validationSchema = isEditMode ? editSchema : createSchema;
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 
   const {
     register,
@@ -78,6 +83,8 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
       ...initialData,
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
+      phone2: initialData?.phone2 ?? "",
+      gstin: initialData?.gstin ?? "",
       address: initialData?.address ?? "",
       ...(isEditMode
         ? {}
@@ -95,6 +102,8 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
       ...initialData,
       email: initialData?.email ?? "",
       phone: initialData?.phone ?? "",
+      phone2: initialData?.phone2 ?? "",
+      gstin: initialData?.gstin ?? "",
       address: initialData?.address ?? "",
       ...(isEditMode
         ? {}
@@ -105,18 +114,24 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
             confirmPassword: "",
           }),
     });
+    setSelectedFile(null);
   }, [initialData, reset, isEditMode]);
 
   const onSubmit = async (data: FormData) => {
     try {
       if (isEditMode) {
         // Edit Mode - data is EditFormData
-        const editData: EditFormData = {
+        const editData: any = {
           name: data.name!,
           email: data.email || "",
           phone: data.phone,
+          phone2: (data as EditFormData).phone2,
+          gstin: (data as EditFormData).gstin,
           address: data.address,
         };
+        if (selectedFile) {
+          editData.logo = selectedFile;
+        }
         await superAdminApi.updateRestaurant(initialData!.id, editData);
         toast({
           title: "Success",
@@ -130,7 +145,10 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
           name: createData.name!,
           email: createData.email || "",
           phone: createData.phone,
+          phone2: createData.phone2,
+          gstin: createData.gstin,
           address: createData.address,
+          logo: selectedFile || undefined,
           adminName: createData.adminName!,
           adminEmail: createData.adminEmail!,
           adminPassword: createData.adminPassword!,
@@ -201,6 +219,30 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
               <p className="text-red-500 text-sm">{errors.phone.message}</p>
             )}
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone2">Alternate Phone (Optional)</Label>
+              <Input
+                id="phone2"
+                {...register("phone2")}
+                placeholder="Secondary contact"
+              />
+              {errors.phone2 && (
+                <p className="text-red-500 text-sm">{errors.phone2.message}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="gstin">GSTIN (Optional)</Label>
+              <Input
+                id="gstin"
+                {...register("gstin")}
+                placeholder="GST Number"
+              />
+              {errors.gstin && (
+                <p className="text-red-500 text-sm">{errors.gstin.message}</p>
+              )}
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="address">Restaurant Address (Optional)</Label>
             <Textarea
@@ -211,6 +253,27 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
             />
             {errors.address && (
               <p className="text-red-500 text-sm">{errors.address.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="logo">Restaurant Logo (Optional)</Label>
+            <Input
+              id="logo"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+              }}
+            />
+            {initialData?.logoUrl && !selectedFile && (
+              <p className="text-xs text-muted-foreground">
+                Current logo: {initialData.logoUrl}
+              </p>
+            )}
+            {selectedFile && (
+              <p className="text-xs text-muted-foreground">
+                Selected: {selectedFile.name}
+              </p>
             )}
           </div>
 

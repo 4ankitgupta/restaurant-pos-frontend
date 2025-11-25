@@ -22,6 +22,9 @@ export interface Restaurant {
   name: string;
   email: string | null; // UPDATED: Based on schema
   phone: string | null; // UPDATED: Based on schema
+  phone2?: string | null; // NEW: Secondary phone number
+  gstin?: string | null; // NEW: GSTIN number
+  logoUrl?: string | null; // NEW: Logo URL path
   address: string | null; // UPDATED: Based on schema
   isActive: boolean;
   featureFlags?: Record<string, boolean> | null; // Feature flags for granular control
@@ -168,15 +171,56 @@ class SuperAdminApiService {
     name: string;
     email?: string;
     phone?: string;
+    phone2?: string;
+    gstin?: string;
     address?: string;
+    logo?: File;
     adminName: string;
     adminEmail: string;
     adminPassword: string;
+    featureFlags?: Record<string, boolean>;
   }): Promise<Restaurant> {
-    return this.request("/restaurants", {
-      method: "POST",
-      body: JSON.stringify(data),
+    const formData = new FormData();
+
+    // Append all text fields
+    Object.keys(data).forEach((key) => {
+      if (
+        key !== "logo" &&
+        key !== "featureFlags" &&
+        (data as any)[key] !== undefined
+      ) {
+        formData.append(key, (data as any)[key]);
+      }
     });
+
+    // Append featureFlags as JSON string if provided
+    if (data.featureFlags) {
+      formData.append("featureFlags", JSON.stringify(data.featureFlags));
+    }
+
+    // Append file if exists
+    if (data.logo) {
+      formData.append("logo", data.logo);
+    }
+
+    // Use fetch directly to handle FormData (browser sets Content-Type with boundary)
+    const token = localStorage.getItem("adminToken");
+    const response = await fetch(`${this.baseURL}/restaurants`, {
+      method: "POST",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw {
+        code: response.status,
+        message: result.message || "Request failed",
+      } as SuperAdminApiError;
+    }
+    return result;
   }
 
   // NEW: Update Restaurant
@@ -186,14 +230,55 @@ class SuperAdminApiService {
       name?: string;
       email?: string;
       phone?: string;
+      phone2?: string;
+      gstin?: string;
       address?: string;
+      logo?: File;
       featureFlags?: Record<string, boolean>;
     }
   ): Promise<Restaurant> {
-    return this.request(`/restaurants/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
+    const formData = new FormData();
+
+    // Append all fields except logo and featureFlags
+    Object.keys(data).forEach((key) => {
+      if (
+        key !== "logo" &&
+        key !== "featureFlags" &&
+        (data as any)[key] !== undefined &&
+        (data as any)[key] !== null
+      ) {
+        formData.append(key, (data as any)[key]);
+      }
     });
+
+    // Append featureFlags as JSON string if provided
+    if (data.featureFlags) {
+      formData.append("featureFlags", JSON.stringify(data.featureFlags));
+    }
+
+    // Append file if exists
+    if (data.logo instanceof File) {
+      formData.append("logo", data.logo);
+    }
+
+    // Use fetch directly to handle FormData
+    const token = localStorage.getItem("adminToken");
+    const response = await fetch(`${this.baseURL}/restaurants/${id}`, {
+      method: "PATCH",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw {
+        code: response.status,
+        message: result.message || "Request failed",
+      } as SuperAdminApiError;
+    }
+    return result;
   }
 
   async updateRestaurantStatus(

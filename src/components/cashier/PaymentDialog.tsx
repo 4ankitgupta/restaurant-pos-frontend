@@ -52,12 +52,11 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const [tenderedAmount, setTenderedAmount] = useState<string>("");
   const [currentSplitPayment, setCurrentSplitPayment] = useState<number>(1);
 
-  // Calculate remaining amount to be paid
-  const remainingAmount = order?.totalAmount || 0;
+  // Calculate remaining amount to be paid (stable reference)
+  const remainingAmount = order ? Number(order.totalAmount) : 0;
 
-  // Get unpaid items
-  const unpaidItems =
-    order?.orderItems.filter((item) => item.paymentStatus === "UNPAID") || [];
+  // Get unpaid items (stable reference)
+  const unpaidItems = order?.orderItems.filter((item) => item.paymentStatus === "UNPAID") || [];
 
   // Calculate change
   const changeDue = tenderedAmount
@@ -69,27 +68,24 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
     if (!order) return;
 
     if (splitMode === "FULL") {
-      setAmountToPay(Number(remainingAmount));
+      const fullAmount = Number(order.totalAmount);
+      setAmountToPay(fullAmount);
       setSelectedItemIds([]);
     } else if (splitMode === "EQUAL") {
-      const perPersonAmount = Number(remainingAmount) / splitCount;
+      const perPersonAmount = Number(order.totalAmount) / splitCount;
       setAmountToPay(Number(perPersonAmount.toFixed(2)));
       setSelectedItemIds([]);
     } else if (splitMode === "ITEM") {
       // Calculate total of selected items
-      const selectedTotal = unpaidItems
+      const currentUnpaidItems = order.orderItems.filter(
+        (item) => item.paymentStatus === "UNPAID"
+      );
+      const selectedTotal = currentUnpaidItems
         .filter((item) => selectedItemIds.includes(item.id))
         .reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
       setAmountToPay(Number(selectedTotal.toFixed(2)));
     }
-  }, [
-    splitMode,
-    splitCount,
-    selectedItemIds,
-    order,
-    remainingAmount,
-    unpaidItems,
-  ]);
+  }, [splitMode, splitCount, selectedItemIds.join(','), order?.id, order?.totalAmount]);
 
   // Reset tendered amount when payment method changes
   useEffect(() => {

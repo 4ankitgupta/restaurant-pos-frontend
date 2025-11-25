@@ -43,10 +43,41 @@
   text-align: center;
 }
 
+.bill-logo-container {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.bill-logo {
+  max-width: 80px;
+  max-height: 80px;
+  object-fit: contain;
+}
+
 .restaurant-name {
   font-size: 16px;
   font-weight: bold;
   margin: 0;
+}
+
+.bill-address,
+.bill-contact {
+  font-size: 11px;
+  margin: 2px 0;
+}
+
+.bill-meta-grid {
+  margin-top: 10px;
+  font-size: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.bill-meta-grid p {
+  width: 48%;
+  margin: 2px 0;
+  text-align: left;
 }
 
 .bill-header p {

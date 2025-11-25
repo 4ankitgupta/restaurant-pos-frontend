@@ -82,6 +82,18 @@ export interface APITable {
   orderStatus?: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | null;
 }
 
+// Restaurant interface for order details
+export interface APIRestaurant {
+  id: string;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  phone2?: string | null;
+  gstin?: string | null;
+  logoUrl?: string | null;
+  address?: string | null;
+}
+
 // APIOrder now has updated structure with variants
 export interface APIOrder {
   id: string;
@@ -103,6 +115,7 @@ export interface APIOrder {
   customerName?: string | null;
   customerPhone?: string | null;
   deliveryAddress?: string | null;
+  restaurant?: APIRestaurant | null;
   table?: {
     id: string;
     tableNumber: string;
