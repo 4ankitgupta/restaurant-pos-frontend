@@ -17,9 +17,13 @@ import {
   Users,
   ListChecks,
   Receipt,
+  Send,
+  CheckCircle,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { APIOrder } from "@/types/restaurant";
+import { useToast } from "@/hooks/use-toast";
+import { API_BASE_URL } from "@/config/apiConfig";
 
 type PaymentMethod = "CASH" | "CARD" | "UPI" | "WALLET";
 type SplitMode = "FULL" | "EQUAL" | "ITEM";
@@ -44,6 +48,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   onProcessPayment,
   isLoading,
 }) => {
+  const { toast } = useToast();
   const [splitMode, setSplitMode] = useState<SplitMode>("FULL");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [splitCount, setSplitCount] = useState<number>(2);
@@ -51,6 +56,12 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const [amountToPay, setAmountToPay] = useState<number>(0);
   const [tenderedAmount, setTenderedAmount] = useState<string>("");
   const [currentSplitPayment, setCurrentSplitPayment] = useState<number>(1);
+
+  // WhatsApp sharing state
+  const [successMode, setSuccessMode] = useState<boolean>(false);
+  const [customerName, setCustomerName] = useState<string>("");
+  const [whatsappPhone, setWhatsappPhone] = useState<string>("+91");
+  const [sendingWhatsApp, setSendingWhatsApp] = useState<boolean>(false);
 
   // Calculate remaining amount to be paid (stable reference)
   const remainingAmount = order ? Number(order.totalAmount) : 0;
@@ -125,7 +136,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
     setTenderedAmount(amount.toString());
   };
 
-  const handleProcessPayment = () => {
+  const handleProcessPayment = async () => {
     const paymentData = {
       method: paymentMethod,
       amount: amountToPay,
@@ -139,13 +150,85 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         }),
     };
 
-    onProcessPayment(paymentData);
+    // Call the parent's payment handler
+    await onProcessPayment(paymentData);
 
     // For equal split, increment to next payment
     if (splitMode === "EQUAL" && currentSplitPayment < splitCount) {
       setCurrentSplitPayment((prev) => prev + 1);
       setTenderedAmount("");
+    } else {
+      // Payment completed - show WhatsApp sharing option
+      setSuccessMode(true);
     }
+  };
+
+  const handleSendWhatsApp = async () => {
+    if (!whatsappPhone || whatsappPhone.length < 10) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Please enter a valid WhatsApp number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSendingWhatsApp(true);
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/orders/${order?.id}/whatsapp`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            customerName: customerName || undefined,
+            customerPhone: whatsappPhone,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "✅ Bill Sent Successfully!",
+          description: result.data?.creditsRemaining
+            ? `Credits remaining: ${result.data.creditsRemaining}`
+            : "Bill sent via WhatsApp",
+        });
+        // Close dialog after successful send
+        setTimeout(() => {
+          handleClose();
+        }, 1500);
+      } else {
+        toast({
+          title: "Failed to Send Bill",
+          description: result.message || "Something went wrong",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("WhatsApp send error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to send bill via WhatsApp",
+        variant: "destructive",
+      });
+    } finally {
+      setSendingWhatsApp(false);
+    }
+  };
+
+  const handleClose = () => {
+    setSuccessMode(false);
+    setCustomerName("");
+    setWhatsappPhone("+91");
+    onOpenChange(false);
   };
 
   const isPaymentValid = () => {
@@ -158,6 +241,78 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   };
 
   if (!order) return null;
+
+  // Success Mode - Show WhatsApp sharing UI
+  if (successMode) {
+    return (
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-green-600">
+              <CheckCircle className="w-6 h-6" />
+              Payment Successful!
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <p className="text-center text-gray-600">
+              Would you like to send the bill to the customer via WhatsApp?
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="customerName">Customer Name (Optional)</Label>
+                <Input
+                  id="customerName"
+                  placeholder="Enter customer name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="whatsappPhone">WhatsApp Number *</Label>
+                <Input
+                  id="whatsappPhone"
+                  placeholder="+91 9876543210"
+                  value={whatsappPhone}
+                  onChange={(e) => setWhatsappPhone(e.target.value)}
+                  type="tel"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Include country code (e.g., +91 for India)
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="flex-1"
+              >
+                Skip
+              </Button>
+              <Button
+                onClick={handleSendWhatsApp}
+                disabled={sendingWhatsApp}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {sendingWhatsApp ? (
+                  "Sending..."
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 mr-2" />
+                    Send Bill
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

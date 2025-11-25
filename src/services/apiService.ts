@@ -800,6 +800,22 @@ class ApiService {
       `/reports/profit-and-loss?${params.toString()}`
     );
   };
+
+  // --- WhatsApp & Public Bill ---
+  async sendWhatsAppBill(
+    orderId: string,
+    data: { customerName?: string; customerPhone: string }
+  ) {
+    return this.request<ApiResponse<any>>(`/orders/${orderId}/whatsapp`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPublicBill(token: string) {
+    // Public endpoint - no auth required but using request() for consistency
+    return this.request<ApiResponse<APIOrder>>(`/public/bill/${token}`);
+  }
 }
 
 export const apiService = new ApiService();

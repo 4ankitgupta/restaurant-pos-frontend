@@ -39,6 +39,7 @@ import { ManageSubscriptions } from "./pages/super-admin/ManageSubscriptions";
 import { ManageAnnouncements } from "./pages/super-admin/ManageAnnouncements";
 import { ManageSettings } from "./pages/super-admin/ManageSettings";
 import { ManageRestaurantUsers } from "@/pages/super-admin/ManageRestaurantUsers";
+import PublicBillView from "./pages/PublicBillView";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,11 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Navigate to="/login" replace />} />
                   <Route path="/login" element={<Login />} />
+                  {/* Public Bill View - No authentication required */}
+                  <Route
+                    path="/view-bill/:token"
+                    element={<PublicBillView />}
+                  />
 
                   <Route
                     path="/"

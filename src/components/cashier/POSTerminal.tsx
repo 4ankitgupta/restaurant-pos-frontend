@@ -483,10 +483,10 @@ export const POSTerminal: React.FC = () => {
         description: `Order settled.${changeMessage}`,
       });
 
-      setPaymentOpen(false);
-      setPaymentOrder(null);
+      // Don't close dialog here - let PaymentDialog handle success flow with WhatsApp sharing
+      // The dialog will close itself after WhatsApp send or skip
+      // Instead, just refresh the data
       setCart(new Map());
-      // Refresh tables
       if (serviceType === "DINE_IN") {
         refreshTables();
       }
@@ -866,7 +866,13 @@ export const POSTerminal: React.FC = () => {
       {paymentOrder && (
         <PaymentDialog
           open={paymentOpen}
-          onOpenChange={setPaymentOpen}
+          onOpenChange={(open) => {
+            setPaymentOpen(open);
+            if (!open) {
+              // Clean up payment order when dialog closes
+              setPaymentOrder(null);
+            }
+          }}
           order={paymentOrder}
           onProcessPayment={handleProcessPayment}
           isLoading={payLoading}
