@@ -61,7 +61,7 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
 
           {/* Address */}
           {address && <p className="bill-address">{address}</p>}
-          
+
           {/* Contact - Only show if at least one phone exists */}
           {(phone || phone2) && (
             <p className="bill-contact">{formatPhoneNumbers()}</p>

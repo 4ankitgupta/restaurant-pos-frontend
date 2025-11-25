@@ -56,7 +56,8 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   const remainingAmount = order ? Number(order.totalAmount) : 0;
 
   // Get unpaid items (stable reference)
-  const unpaidItems = order?.orderItems.filter((item) => item.paymentStatus === "UNPAID") || [];
+  const unpaidItems =
+    order?.orderItems.filter((item) => item.paymentStatus === "UNPAID") || [];
 
   // Calculate change
   const changeDue = tenderedAmount
@@ -85,7 +86,13 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
         .reduce((sum, item) => sum + Number(item.price) * item.quantity, 0);
       setAmountToPay(Number(selectedTotal.toFixed(2)));
     }
-  }, [splitMode, splitCount, selectedItemIds.join(','), order?.id, order?.totalAmount]);
+  }, [
+    splitMode,
+    splitCount,
+    selectedItemIds.join(","),
+    order?.id,
+    order?.totalAmount,
+  ]);
 
   // Reset tendered amount when payment method changes
   useEffect(() => {
