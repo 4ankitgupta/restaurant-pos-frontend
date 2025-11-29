@@ -101,6 +101,20 @@ export interface APIRestaurant {
   address?: string | null;
 }
 
+// Payment types
+export type PaymentMethod = "CASH" | "CARD" | "UPI" | "WALLET";
+
+export interface APIPayment {
+  id: string;
+  amount: number;
+  tenderedAmount?: number | null;
+  changeAmount?: number | null;
+  paymentMethod: PaymentMethod;
+  status: "SUCCESS" | "FAILED" | "PENDING";
+  transactionId?: string | null;
+  createdAt: string;
+}
+
 // APIOrder now has updated structure with variants
 export interface APIOrder {
   id: string;
@@ -128,6 +142,7 @@ export interface APIOrder {
     tableNumber: string;
   } | null;
   userId: string | null;
+  payments?: APIPayment[];
   orderItems: Array<{
     id: string;
     quantity: number;

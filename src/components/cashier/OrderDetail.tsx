@@ -29,6 +29,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getLocalizedName } from "@/lib/utils";
 
+export interface OrderDetailRef {
+  printBill: () => void;
+  printKOT: () => void;
+}
+
 interface OrderDetailProps {
   order: APIOrder | null;
   onPay: () => void;
@@ -36,232 +41,291 @@ interface OrderDetailProps {
   onRefund: () => void;
 }
 
-export const OrderDetail: React.FC<OrderDetailProps> = ({
-  order,
-  onPay,
-  onAddItems,
-  onRefund,
-}) => {
-  const { user } = useAuth();
-  const { language } = useLanguage();
-  const billReceiptRef = useRef<HTMLDivElement>(null);
-  const kotReceiptRef = useRef<HTMLDivElement>(null);
+export const OrderDetail = React.forwardRef<OrderDetailRef, OrderDetailProps>(
+  ({ order, onPay, onAddItems, onRefund }, ref) => {
+    const { user } = useAuth();
+    const { language } = useLanguage();
+    const billReceiptRef = useRef<HTMLDivElement>(null);
+    const kotReceiptRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = useReactToPrint({
-    documentTitle: `Order-${order?.id?.substring(0, 8) || ""}`,
-    contentRef: billReceiptRef,
-  });
+    const handlePrint = useReactToPrint({
+      documentTitle: `Order-${order?.id?.substring(0, 8) || ""}`,
+      contentRef: billReceiptRef,
+    });
 
-  const handlePrintKOT = useReactToPrint({
-    documentTitle: `KOT-${order?.id?.substring(0, 8) || ""}`,
-    contentRef: kotReceiptRef,
-  });
+    const handlePrintKOT = useReactToPrint({
+      documentTitle: `KOT-${order?.id?.substring(0, 8) || ""}`,
+      contentRef: kotReceiptRef,
+    });
 
-  if (!order) {
-    return (
-      <Card className="h-full flex items-center justify-center">
-        <div className="text-center text-muted-foreground">
-          <Package className="h-16 w-16 mx-auto mb-4" />
-          <p>Select an order to view details</p>
-        </div>
-      </Card>
-    );
-  }
+    // Expose print functions to parent via ref
+    React.useImperativeHandle(ref, () => ({
+      printBill: () => {
+        handlePrint();
+      },
+      printKOT: () => {
+        handlePrintKOT();
+      },
+    }));
 
-  const getStatusVariant = (
-    status: OrderItemStatus
-  ): "secondary" | "warning" | "success" | "default" | "destructive" => {
-    switch (status) {
-      case "ORDERED":
-        return "secondary";
-      case "PREPARING":
-        return "warning";
-      case "PREPARED":
-        return "success";
-      case "SERVED":
-        return "default";
-      case "CANCELLED":
-        return "destructive";
-      default:
-        return "default";
+    if (!order) {
+      return (
+        <Card className="h-full flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <Package className="h-16 w-16 mx-auto mb-4" />
+            <p>Select an order to view details</p>
+          </div>
+        </Card>
+      );
     }
-  };
 
-  const isRefundable =
-    order.status === "COMPLETED" && order.paymentStatus === "PAID";
-  const isPayable =
-    order.paymentStatus === "UNPAID" || order.paymentStatus === "PARTIAL";
-  const canRefund = user?.role === "admin" || user?.role === "manager";
+    const getStatusVariant = (
+      status: OrderItemStatus
+    ): "secondary" | "warning" | "success" | "default" | "destructive" => {
+      switch (status) {
+        case "ORDERED":
+          return "secondary";
+        case "PREPARING":
+          return "warning";
+        case "PREPARED":
+          return "success";
+        case "SERVED":
+          return "default";
+        case "CANCELLED":
+          return "destructive";
+        default:
+          return "default";
+      }
+    };
 
-  // Check if there are any ordered items for KOT
-  const hasOrderedItems = order.orderItems.some(
-    (item) => item.status === "ORDERED" || item.status === "PENDING"
-  );
+    const isRefundable =
+      order.status === "COMPLETED" && order.paymentStatus === "PAID";
+    const isPayable =
+      order.paymentStatus === "UNPAID" || order.paymentStatus === "PARTIAL";
+    const canRefund = user?.role === "admin" || user?.role === "manager";
 
-  return (
-    <>
-      <Card className="h-full flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <span>
-                {order.orderType === "DELIVERY_ZOMATO" ||
-                order.orderType === "DELIVERY_SWIGGY" ||
-                order.orderType === "DELIVERY_OTHER"
-                  ? "Delivery"
-                  : order.takeAway
-                  ? "Take-away"
-                  : `Table ${order.table?.tableNumber || ""}`}
-              </span>
-              {order.orderType === "DELIVERY_ZOMATO" && (
-                <Badge
-                  variant="destructive"
-                  className="flex items-center gap-1"
-                >
-                  <Bike className="h-3 w-3" />
-                  Zomato
-                </Badge>
-              )}
-              {order.orderType === "DELIVERY_SWIGGY" && (
-                <Badge
-                  variant="default"
-                  className="flex items-center gap-1 bg-orange-500"
-                >
-                  <Bike className="h-3 w-3" />
-                  Swiggy
-                </Badge>
-              )}
-              {order.orderType === "DELIVERY_OTHER" && (
-                <Badge variant="secondary" className="flex items-center gap-1">
-                  <Bike className="h-3 w-3" />
-                  Delivery
-                </Badge>
-              )}
-            </div>
-            <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
-          </CardTitle>
+    // Check if there are any ordered items for KOT
+    const hasOrderedItems = order.orderItems.some(
+      (item) => item.status === "ORDERED" || item.status === "PENDING"
+    );
 
-          {/* Customer Info for Delivery Orders */}
-          {(order.orderType === "DELIVERY_ZOMATO" ||
-            order.orderType === "DELIVERY_SWIGGY" ||
-            order.orderType === "DELIVERY_OTHER") && (
-            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {order.customerName && (
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">Customer:</span>
-                  <span>{order.customerName}</span>
-                </div>
-              )}
-              {order.customerPhone && (
-                <div className="flex items-center gap-2">
-                  <Phone className="h-3 w-3" />
-                  <span>{order.customerPhone}</span>
-                </div>
-              )}
-              {order.deliveryAddress && (
-                <div className="flex items-start gap-2">
-                  <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                  <span>{order.deliveryAddress}</span>
-                </div>
-              )}
-            </div>
-          )}
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
-          <ScrollArea className="h-full">
-            <div className="p-6 space-y-4">
-              {order.orderItems.map((item) => (
-                <div key={item.id} className="flex items-start justify-between">
-                  <div>
-                    <p className="font-medium">
-                      {item.quantity}x{" "}
-                      {getLocalizedName(
-                        item.menuItemVariant?.menuItem as any,
-                        language
-                      )}{" "}
-                      ({getLocalizedName(item.menuItemVariant as any, language)}
-                      )
-                    </p>
-                    {item.note && (
-                      <p className="text-sm text-muted-foreground italic">
-                        Note: {item.note}
+    return (
+      <>
+        <Card className="h-full flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span>
+                  {order.orderType === "DELIVERY_ZOMATO" ||
+                  order.orderType === "DELIVERY_SWIGGY" ||
+                  order.orderType === "DELIVERY_OTHER"
+                    ? "Delivery"
+                    : order.takeAway
+                    ? "Take-away"
+                    : `Table ${order.table?.tableNumber || ""}`}
+                </span>
+                {order.orderType === "DELIVERY_ZOMATO" && (
+                  <Badge
+                    variant="destructive"
+                    className="flex items-center gap-1"
+                  >
+                    <Bike className="h-3 w-3" />
+                    Zomato
+                  </Badge>
+                )}
+                {order.orderType === "DELIVERY_SWIGGY" && (
+                  <Badge
+                    variant="default"
+                    className="flex items-center gap-1 bg-orange-500"
+                  >
+                    <Bike className="h-3 w-3" />
+                    Swiggy
+                  </Badge>
+                )}
+                {order.orderType === "DELIVERY_OTHER" && (
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    <Bike className="h-3 w-3" />
+                    Delivery
+                  </Badge>
+                )}
+              </div>
+              <Badge variant="outline">#{order.id.substring(0, 8)}</Badge>
+            </CardTitle>
+
+            {/* Customer Info for Delivery Orders */}
+            {(order.orderType === "DELIVERY_ZOMATO" ||
+              order.orderType === "DELIVERY_SWIGGY" ||
+              order.orderType === "DELIVERY_OTHER") && (
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                {order.customerName && (
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Customer:</span>
+                    <span>{order.customerName}</span>
+                  </div>
+                )}
+                {order.customerPhone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3 w-3" />
+                    <span>{order.customerPhone}</span>
+                  </div>
+                )}
+                {order.deliveryAddress && (
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>{order.deliveryAddress}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="flex-1 overflow-hidden p-0 min-h-0">
+            <ScrollArea className="h-full">
+              <div className="p-6 space-y-4">
+                {order.orderItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-start justify-between"
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {item.quantity}x{" "}
+                        {getLocalizedName(
+                          item.menuItemVariant?.menuItem as any,
+                          language
+                        )}{" "}
+                        (
+                        {getLocalizedName(
+                          item.menuItemVariant as any,
+                          language
+                        )}
+                        )
                       </p>
+                      {item.note && (
+                        <p className="text-sm text-muted-foreground italic">
+                          Note: {item.note}
+                        </p>
+                      )}
+                      <p className="text-sm text-muted-foreground">
+                        @ ₹{Number(item.price).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        ₹{(item.quantity * Number(item.price)).toFixed(2)}
+                      </p>
+                      <Badge
+                        variant={getStatusVariant(item.status)}
+                        className="mt-1"
+                      >
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+          <CardFooter className="flex-col items-stretch space-y-4 p-4 border-t">
+            <div className="space-y-2 text-lg">
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+              </div>
+
+              {/* Payment Information */}
+              {order.payments && order.payments.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-2 text-sm bg-muted/30 p-3 rounded-md">
+                    <p className="font-semibold text-base">Payment Details:</p>
+                    {order.payments.map((payment, index) => (
+                      <div key={payment.id} className="flex justify-between">
+                        <span className="text-muted-foreground">
+                          {order.payments!.length > 1
+                            ? `Payment ${index + 1}: `
+                            : ""}
+                          <Badge variant="outline" className="ml-1">
+                            {payment.paymentMethod}
+                          </Badge>
+                        </span>
+                        <span className="font-medium">
+                          ₹{Number(payment.amount).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                    {order.payments.some((p) => p.changeAmount) && (
+                      <div className="flex justify-between text-green-600">
+                        <span>Change Returned</span>
+                        <span className="font-medium">
+                          ₹
+                          {order.payments
+                            .reduce(
+                              (sum, p) => sum + (Number(p.changeAmount) || 0),
+                              0
+                            )
+                            .toFixed(2)}
+                        </span>
+                      </div>
                     )}
-                    <p className="text-sm text-muted-foreground">
-                      @ ₹{Number(item.price).toFixed(2)}
-                    </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold">
-                      ₹{(item.quantity * Number(item.price)).toFixed(2)}
-                    </p>
-                    <Badge
-                      variant={getStatusVariant(item.status)}
-                      className="mt-1"
-                    >
-                      {item.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                </>
+              )}
+
+              <Separator />
+              <div className="flex justify-between text-primary font-bold">
+                <span>Amount Due</span>
+                <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+              </div>
             </div>
-          </ScrollArea>
-        </CardContent>
-        <CardFooter className="flex-col items-stretch space-y-4 p-4 border-t">
-          <div className="space-y-2 text-lg">
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>₹{Number(order.totalAmount).toFixed(2)}</span>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                onClick={onAddItems}
+                disabled={
+                  order.status === "COMPLETED" && order.paymentStatus === "PAID"
+                }
+              >
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Items
+              </Button>
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="mr-2 h-4 w-4" /> Print Bill
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handlePrintKOT}
+                disabled={!hasOrderedItems}
+              >
+                <Printer className="mr-2 h-4 w-4" /> Print KOT
+              </Button>
             </div>
-            <Separator />
-            <div className="flex justify-between text-primary font-bold">
-              <span>Amount Due</span>
-              <span>₹{Number(order.totalAmount).toFixed(2)}</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <Button
-              variant="outline"
-              onClick={onAddItems}
-              disabled={
-                order.status === "COMPLETED" && order.paymentStatus === "PAID"
-              }
-            >
-              <PlusCircle className="mr-2 h-4 w-4" /> Add Items
-            </Button>
-            <Button variant="outline" onClick={handlePrint}>
-              <Printer className="mr-2 h-4 w-4" /> Print Bill
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handlePrintKOT}
-              disabled={!hasOrderedItems}
-            >
-              <Printer className="mr-2 h-4 w-4" /> Print KOT
-            </Button>
-          </div>
-          {(order.paymentStatus === "UNPAID" ||
-            order.paymentStatus === "PARTIAL") && (
-            <Button size="lg" onClick={onPay}>
-              <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
-            </Button>
-          )}
-          {order.status === "COMPLETED" &&
-            order.paymentStatus === "PAID" &&
-            (user?.role === "admin" || user?.role === "manager") && (
-              <Button size="lg" variant="destructive" onClick={onRefund}>
-                <RefreshCw className="mr-2 h-4 w-4" /> Refund Order
+            {(order.paymentStatus === "UNPAID" ||
+              order.paymentStatus === "PARTIAL") && (
+              <Button size="lg" onClick={onPay}>
+                <CreditCard className="mr-2 h-4 w-4" /> Proceed to Payment
               </Button>
             )}
-        </CardFooter>
-      </Card>
-      {/* Hidden receipt containers for printing */}
-      <div style={{ display: "none" }}>
-        <BillReceipt order={order} ref={billReceiptRef} />
-      </div>
-      <div style={{ display: "none" }}>
-        <KOTReceipt order={order} ref={kotReceiptRef} />
-      </div>
-    </>
-  );
-};
+            {order.status === "COMPLETED" &&
+              order.paymentStatus === "PAID" &&
+              (user?.role === "admin" || user?.role === "manager") && (
+                <Button size="lg" variant="destructive" onClick={onRefund}>
+                  <RefreshCw className="mr-2 h-4 w-4" /> Refund Order
+                </Button>
+              )}
+          </CardFooter>
+        </Card>
+        {/* Hidden receipt containers for printing */}
+        <div style={{ display: "none" }}>
+          <BillReceipt order={order} ref={billReceiptRef} />
+        </div>
+        <div style={{ display: "none" }}>
+          <KOTReceipt order={order} ref={kotReceiptRef} />
+        </div>
+      </>
+    );
+  }
+);
+
+OrderDetail.displayName = "OrderDetail";

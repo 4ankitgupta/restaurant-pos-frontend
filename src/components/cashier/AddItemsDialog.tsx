@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -232,6 +233,9 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
         <DialogContent className="max-w-4xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Add Items to Order</DialogTitle>
+            <DialogDescription>
+              Browse menu items and add them to the current order
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Menu List */}

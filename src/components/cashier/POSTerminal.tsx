@@ -17,6 +17,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { VariantSelectionDialog } from "./VariantSelectionDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
 import { BillReceipt } from "./BillReceipt";
@@ -38,11 +55,13 @@ import {
   CheckCircle2,
   History,
   Receipt,
+  RefreshCw,
 } from "lucide-react";
 import { PaymentDialog } from "./PaymentDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { getLocalizedName } from "@/lib/utils";
 
 // Local types
@@ -79,6 +98,7 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   // --- FIXED: Destructure lastTableUpdate correctly from context ---
   const { orders: wsOrders, lastTableUpdate } = useWebSocket();
   const { language } = useLanguage();
+  const { user } = useAuth();
 
   // Mode and context
   const [serviceType, setServiceType] = useState<ServiceType>("DINE_IN");
@@ -109,6 +129,8 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] =
     useState<APIOrder | null>(null);
+  const [historyDetailOpen, setHistoryDetailOpen] = useState(false);
+  const [refundConfirmOpen, setRefundConfirmOpen] = useState(false);
 
   // Print bill ref
   const billRef = useRef<HTMLDivElement>(null);
@@ -124,6 +146,15 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
     documentTitle: `KOT-${currentOrder?.id.substring(0, 8) || "order"}`,
   });
 
+  // Print history order bill ref
+  const historyBillRef = useRef<HTMLDivElement>(null);
+  const handlePrintHistoryBill = useReactToPrint({
+    contentRef: historyBillRef,
+    documentTitle: `Bill-${
+      selectedHistoryOrder?.id.substring(0, 8) || "order"
+    }`,
+  });
+
   // APIs
   const { execute: execMenu } = useApi<{ data: APIMenuItem[] }>();
   const { execute: execCats } = useApi<{ data: MenuCategory[] }>();
@@ -134,6 +165,7 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   const { loading: addItemsLoading, execute: execAddItems } = useApi<{
     data: APIOrder;
   }>();
+  const { loading: refundLoading, execute: execRefund } = useApi();
 
   // Initial fetch
   useEffect(() => {
@@ -529,6 +561,10 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
         description: `Order settled.${changeMessage}`,
       });
 
+      // Fetch updated order with payment info
+      const updatedOrder = await apiService.getOrderDetails(paymentOrder.id);
+      setPaymentOrder(updatedOrder.data);
+
       // Don't close dialog here - let PaymentDialog handle success flow with WhatsApp sharing
       // The dialog will close itself after WhatsApp send or skip
       // Instead, just refresh the data
@@ -543,6 +579,34 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
       toast({ title: "Error", description: message, variant: "destructive" });
     }
   };
+
+  const handleRefund = async () => {
+    if (!selectedHistoryOrder) return;
+    try {
+      await execRefund(() => apiService.refundPayment(selectedHistoryOrder.id));
+      toast({
+        title: "Refund Processed",
+        description: "The order has been refunded successfully.",
+      });
+      setRefundConfirmOpen(false);
+      setHistoryDetailOpen(false);
+      setSelectedHistoryOrder(null);
+      // Optionally refresh completed orders
+    } catch (e: any) {
+      const message = e?.message || "Could not process refund";
+      toast({
+        title: "Refund Failed",
+        description: message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isRefundable =
+    selectedHistoryOrder?.status === "COMPLETED" &&
+    selectedHistoryOrder?.paymentStatus === "PAID";
+
+  const canRefund = user?.role === "manager" || user?.role === "admin";
 
   return (
     <div className="flex flex-col gap-3 h-[calc(100vh-110px)]">
@@ -585,6 +649,7 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                   onSelectOrder={(order) => {
                     setSelectedHistoryOrder(order);
                     setHistoryOpen(false);
+                    setHistoryDetailOpen(true);
                   }}
                   selectedOrderId={selectedHistoryOrder?.id}
                 />
@@ -976,19 +1041,213 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
           order={paymentOrder}
           onProcessPayment={handleProcessPayment}
           isLoading={payLoading}
+          onPrintBill={handlePrint}
         />
       )}
 
+      {/* History Order Detail Dialog */}
+      <Dialog open={historyDetailOpen} onOpenChange={setHistoryDetailOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Order Details #{selectedHistoryOrder?.id.substring(0, 8)}
+            </DialogTitle>
+            <DialogDescription>
+              View order details and print bill
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedHistoryOrder && (
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4">
+                {/* Order Info */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Table:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedHistoryOrder.table?.tableNumber || "Takeaway"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className="ml-2">
+                      <Badge variant="default">
+                        {selectedHistoryOrder.status}
+                      </Badge>
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Order Type:</span>
+                    <span className="ml-2 font-medium">
+                      {selectedHistoryOrder.orderType}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Payment:</span>
+                    <span className="ml-2">
+                      <Badge
+                        variant={
+                          selectedHistoryOrder.paymentStatus === "PAID"
+                            ? "default"
+                            : "secondary"
+                        }
+                      >
+                        {selectedHistoryOrder.paymentStatus}
+                      </Badge>
+                    </span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Order Items */}
+                <div>
+                  <h4 className="font-semibold mb-3">Items</h4>
+                  <div className="space-y-2">
+                    {selectedHistoryOrder.orderItems?.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-start p-2 bg-muted/30 rounded"
+                      >
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {item.quantity}x{" "}
+                            {getLocalizedName(
+                              item.menuItemVariant?.menuItem as any,
+                              language
+                            ) || "Unknown Item"}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {getLocalizedName(
+                              item.menuItemVariant as any,
+                              language
+                            )}
+                          </div>
+                          {item.note && (
+                            <div className="text-xs italic text-muted-foreground mt-1">
+                              Note: {item.note}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="font-medium">
+                            ₹{(Number(item.price) * item.quantity).toFixed(2)}
+                          </div>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {item.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Payment Info */}
+                {selectedHistoryOrder.payments &&
+                  selectedHistoryOrder.payments.length > 0 && (
+                    <>
+                      <div>
+                        <h4 className="font-semibold mb-3">Payment Details</h4>
+                        <div className="space-y-2">
+                          {selectedHistoryOrder.payments.map((payment) => (
+                            <div
+                              key={payment.id}
+                              className="flex justify-between items-center p-2 bg-muted/30 rounded"
+                            >
+                              <div>
+                                <Badge variant="outline">
+                                  {payment.method}
+                                </Badge>
+                              </div>
+                              <div className="font-medium">
+                                ₹{Number(payment.amount).toFixed(2)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+
+                {/* Total */}
+                <div className="flex justify-between items-center text-lg font-bold">
+                  <span>Total Amount</span>
+                  <span>
+                    ₹{Number(selectedHistoryOrder.totalAmount).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 pt-4 border-t">
+            <Button
+              onClick={handlePrintHistoryBill}
+              variant="outline"
+              className="flex-1"
+            >
+              <Receipt className="h-4 w-4 mr-2" />
+              Print Bill
+            </Button>
+            {canRefund && isRefundable && (
+              <Button
+                onClick={() => setRefundConfirmOpen(true)}
+                variant="destructive"
+                className="flex-1"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refund
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Confirmation Dialog */}
+      <AlertDialog open={refundConfirmOpen} onOpenChange={setRefundConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Refund</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to refund this order? This action cannot be
+              undone. Order Total: ₹
+              {Number(selectedHistoryOrder?.totalAmount || 0).toFixed(2)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRefund}
+              disabled={refundLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {refundLoading ? "Processing..." : "Confirm Refund"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Hidden print containers for bill and KOT receipts */}
-      {currentOrder && (
+      {(currentOrder || paymentOrder) && (
         <>
           <div className="hidden">
-            <BillReceipt ref={billRef} order={currentOrder} />
+            <BillReceipt ref={billRef} order={currentOrder || paymentOrder!} />
           </div>
           <div className="hidden">
-            <KOTReceipt ref={kotRef} order={currentOrder} />
+            <KOTReceipt ref={kotRef} order={currentOrder || paymentOrder!} />
           </div>
         </>
+      )}
+
+      {/* Hidden print container for history order */}
+      {selectedHistoryOrder && (
+        <div className="hidden">
+          <BillReceipt ref={historyBillRef} order={selectedHistoryOrder} />
+        </div>
       )}
     </div>
   );

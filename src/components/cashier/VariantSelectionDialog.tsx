@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -48,11 +49,11 @@ export const VariantSelectionDialog: React.FC<VariantSelectionDialogProps> = ({
           <DialogTitle className="text-lg sm:text-xl">
             {item ? getLocalizedName(item as any, language) : ""}
           </DialogTitle>
-          {item?.description && (
-            <p className="text-sm text-muted-foreground">
-              {getLocalizedText(item, "description", language)}
-            </p>
-          )}
+          <DialogDescription>
+            {item?.description
+              ? getLocalizedText(item, "description", language)
+              : "Select variant and add notes"}
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">

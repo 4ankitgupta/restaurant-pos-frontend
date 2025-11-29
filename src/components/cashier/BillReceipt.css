@@ -175,6 +175,24 @@
   margin-top: 5px;
 }
 
+.bill-payment-info {
+  margin-top: 6px;
+}
+
+.bill-payment-info .payment-header {
+  font-weight: bold;
+  font-size: 11px;
+  margin-bottom: 3px;
+  text-align: center;
+}
+
+.bill-payment-info .payment-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 3px 0;
+  font-size: 11px;
+}
+
 .bill-footer {
   margin-top: 8px;
 }

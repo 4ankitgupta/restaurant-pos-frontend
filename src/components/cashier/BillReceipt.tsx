@@ -88,17 +88,22 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
               </tr>
             </thead>
             <tbody>
-              {printableItems.map((item) => (
-                <tr key={item.id}>
-                  <td>
-                    {item.menuItemVariant.menuItem.name} (
-                    {item.menuItemVariant.name})
-                  </td>
-                  <td>{item.quantity}</td>
-                  <td>{Number(item.price).toFixed(2)}</td>
-                  <td>{(item.quantity * Number(item.price)).toFixed(2)}</td>
-                </tr>
-              ))}
+              {printableItems.map((item) => {
+                // Handle legacy orders without menuItemVariant
+                const itemName = item.menuItemVariant?.menuItem?.name || "Item";
+                const variantName = item.menuItemVariant?.name || "Standard";
+
+                return (
+                  <tr key={item.id}>
+                    <td>
+                      {itemName} ({variantName})
+                    </td>
+                    <td>{item.quantity}</td>
+                    <td>{Number(item.price).toFixed(2)}</td>
+                    <td>{(item.quantity * Number(item.price)).toFixed(2)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>
@@ -118,6 +123,22 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
         </section>
 
         <Separator />
+
+        {/* Payment Information */}
+        {order.payments && order.payments.length > 0 && (
+          <>
+            <section className="bill-payment-info">
+              <div className="payment-row">
+                <span>Mode of Payment:</span>
+                <span>
+                  {order.payments.map((p) => p.paymentMethod).join(", ")}
+                </span>
+              </div>
+            </section>
+
+            <Separator />
+          </>
+        )}
 
         <footer className="bill-footer">
           <p>Thank you for visiting!</p>

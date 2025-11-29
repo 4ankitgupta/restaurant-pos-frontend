@@ -3,6 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,7 @@ interface PaymentDialogProps {
     orderItemIds?: string[];
   }) => void;
   isLoading: boolean;
+  onPrintBill?: () => void;
 }
 
 export const PaymentDialog: React.FC<PaymentDialogProps> = ({
@@ -47,6 +49,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
   order,
   onProcessPayment,
   isLoading,
+  onPrintBill,
 }) => {
   const { toast } = useToast();
   const [splitMode, setSplitMode] = useState<SplitMode>("FULL");
@@ -252,11 +255,42 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
               <CheckCircle className="w-6 h-6" />
               Payment Successful!
             </DialogTitle>
+            <DialogDescription>
+              Print the bill or send it via WhatsApp to the customer
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Print Bill Button */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm font-medium text-blue-900 mb-3 text-center">
+                Would you like to print the bill?
+              </p>
+              <Button
+                onClick={() => {
+                  if (onPrintBill) {
+                    onPrintBill();
+                  }
+                }}
+                className="w-full bg-blue-600 hover:bg-blue-700"
+                size="lg"
+              >
+                <Receipt className="w-5 h-5 mr-2" />
+                Print Bill Now
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+
             <p className="text-center text-gray-600">
-              Would you like to send the bill to the customer via WhatsApp?
+              Send the bill to customer via WhatsApp
             </p>
 
             <div className="space-y-3">
@@ -319,6 +353,9 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Process Payment</DialogTitle>
+          <DialogDescription>
+            Select payment method and complete the transaction
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs

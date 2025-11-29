@@ -1,9 +1,19 @@
-import React, { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { useSuperAdminAuth } from '@/contexts/SuperAdminAuthContext';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Outlet, NavLink } from "react-router-dom";
+import { useSuperAdminAuth } from "@/contexts/SuperAdminAuthContext";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Store,
@@ -15,20 +25,27 @@ import {
   Shield,
   Menu,
   X,
-} from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
+} from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const navItems = [
-  { to: '/super-admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/super-admin/restaurants', icon: Store, label: 'Restaurants' },
-  { to: '/super-admin/plans', icon: Package, label: 'Plans' },
-  { to: '/super-admin/subscriptions', icon: CreditCard, label: 'Subscriptions' },
-  { to: '/super-admin/announcements', icon: Bell, label: 'Announcements' },
-  { to: '/super-admin/settings', icon: Settings, label: 'Settings' },
+  { to: "/super-admin", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/super-admin/restaurants", icon: Store, label: "Restaurants" },
+  { to: "/super-admin/plans", icon: Package, label: "Plans" },
+  {
+    to: "/super-admin/subscriptions",
+    icon: CreditCard,
+    label: "Subscriptions",
+  },
+  { to: "/super-admin/announcements", icon: Bell, label: "Announcements" },
+  { to: "/super-admin/settings", icon: Settings, label: "Settings" },
 ];
 
-const NavContent: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => {
-  const { logout, admin } = useSuperAdminAuth();
+const NavContent: React.FC<{
+  onItemClick?: () => void;
+  onLogoutClick?: () => void;
+}> = ({ onItemClick, onLogoutClick }) => {
+  const { admin } = useSuperAdminAuth();
 
   return (
     <div className="flex flex-col h-full">
@@ -40,7 +57,9 @@ const NavContent: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
           </div>
           <div className="flex-1 min-w-0">
             <h1 className="font-semibold text-lg">Super Admin</h1>
-            <p className="text-xs text-muted-foreground truncate">{admin?.email}</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {admin?.email}
+            </p>
           </div>
         </div>
       </div>
@@ -55,10 +74,10 @@ const NavContent: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
             onClick={onItemClick}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors',
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
                 isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )
             }
           >
@@ -73,7 +92,7 @@ const NavContent: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
-          onClick={logout}
+          onClick={onLogoutClick}
         >
           <LogOut className="w-5 h-5" />
           Logout
@@ -86,6 +105,18 @@ const NavContent: React.FC<{ onItemClick?: () => void }> = ({ onItemClick }) => 
 export const SuperAdminLayout: React.FC = () => {
   const isMobile = useIsMobile();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { logout } = useSuperAdminAuth();
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+    setMobileNavOpen(false);
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setShowLogoutDialog(false);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,7 +138,10 @@ export const SuperAdminLayout: React.FC = () => {
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0">
-                  <NavContent onItemClick={() => setMobileNavOpen(false)} />
+                  <NavContent
+                    onItemClick={() => setMobileNavOpen(false)}
+                    onLogoutClick={handleLogoutClick}
+                  />
                 </SheetContent>
               </Sheet>
             </div>
@@ -122,7 +156,7 @@ export const SuperAdminLayout: React.FC = () => {
         <>
           {/* Desktop Sidebar */}
           <aside className="fixed left-0 top-0 h-full w-64 border-r bg-card">
-            <NavContent />
+            <NavContent onLogoutClick={handleLogoutClick} />
           </aside>
 
           {/* Desktop Main Content */}
@@ -133,6 +167,25 @@ export const SuperAdminLayout: React.FC = () => {
           </main>
         </>
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout? You will need to sign in again to
+              access the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLogout}>
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

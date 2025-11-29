@@ -1,5 +1,5 @@
 // src/pages/Cashier.tsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { APIOrder, APIMenuItem } from "@/types/restaurant";
 import { useApi } from "@/hooks/useApi";
 import { apiService } from "@/services/apiService";
@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { OrderList } from "@/components/cashier/OrderList";
-import { OrderDetail } from "@/components/cashier/OrderDetail";
+import { OrderDetail, OrderDetailRef } from "@/components/cashier/OrderDetail";
 import { PaymentDialog } from "@/components/cashier/PaymentDialog";
 import { AddItemsDialog } from "@/components/cashier/AddItemsDialog";
 import { POSTerminal } from "@/components/cashier/POSTerminal";
@@ -70,10 +70,15 @@ const Cashier = () => {
   const [isAddItemsOpen, setAddItemsOpen] = useState(false);
   const [isTakeawayOpen, setTakeawayOpen] = useState(false);
   const [isRefundConfirmOpen, setRefundConfirmOpen] = useState(false);
+  const [paymentSuccessOrder, setPaymentSuccessOrder] =
+    useState<APIOrder | null>(null);
 
   // Data states
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [menuCategories, setMenuCategories] = useState<MenuCategory[]>([]);
+
+  // Ref for OrderDetail to access print function
+  const orderDetailRef = useRef<OrderDetailRef>(null);
 
   const loadOrders = async () => {
     try {
@@ -290,9 +295,10 @@ const Cashier = () => {
 
           {/* Right Column: Order Details / POS */}
           <div className="md:col-span-2 h-full flex flex-col min-h-0">
-            {selectedOrder ? (
+            {selectedOrder || paymentSuccessOrder ? (
               <OrderDetail
-                order={selectedOrder}
+                ref={orderDetailRef}
+                order={selectedOrder || paymentSuccessOrder!}
                 onPay={() => setPaymentOpen(true)}
                 onAddItems={() => setAddItemsOpen(true)}
                 onRefund={() => setRefundConfirmOpen(true)}
@@ -355,11 +361,12 @@ const Cashier = () => {
           </Tabs>
         </div>
 
-        {/* Right Column: Order Details */}
+        {/* Right Column: Order Details / POS */}
         <div className="md:col-span-2 h-full flex flex-col min-h-0">
-          {selectedOrder ? (
+          {selectedOrder || paymentSuccessOrder ? (
             <OrderDetail
-              order={selectedOrder}
+              ref={orderDetailRef}
+              order={selectedOrder || paymentSuccessOrder!}
               onPay={() => setPaymentOpen(true)}
               onAddItems={() => setAddItemsOpen(true)}
               onRefund={() => setRefundConfirmOpen(true)}
@@ -392,22 +399,29 @@ const Cashier = () => {
       {renderContent()}
 
       {/* Dialogs */}
-      {selectedOrder && (
+      {(selectedOrder || paymentSuccessOrder) && (
         <PaymentDialog
           open={isPaymentOpen}
-          onOpenChange={setPaymentOpen}
-          order={selectedOrder}
+          onOpenChange={(open) => {
+            setPaymentOpen(open);
+            if (!open) {
+              setPaymentSuccessOrder(null);
+            }
+          }}
+          order={selectedOrder || paymentSuccessOrder!}
+          onPrintBill={() => orderDetailRef.current?.printBill()}
           onProcessPayment={async (paymentData) => {
             try {
-              await processRefund(() =>
+              const response = await processRefund(() =>
                 apiService.createPayment({
-                  orderId: selectedOrder.id,
+                  orderId: selectedOrder!.id,
                   amount: paymentData.amount,
                   paymentMethod: paymentData.method,
                   tenderedAmount: paymentData.tenderedAmount,
                   orderItemIds: paymentData.orderItemIds,
                 })
               );
+
               toast({
                 title: "Success",
                 description: paymentData.tenderedAmount
@@ -416,8 +430,17 @@ const Cashier = () => {
                     ).toFixed(2)}`
                   : "Payment successful.",
               });
-              setPaymentOpen(false);
-              setSelectedOrder(null);
+
+              // Fetch updated order with payment info
+              const updatedOrder = await apiService.getOrderDetails(
+                selectedOrder!.id
+              );
+              setPaymentSuccessOrder(updatedOrder.data);
+              setSelectedOrder(updatedOrder.data);
+
+              // Keep dialog open in success mode - don't close it
+              // setPaymentOpen(false) is removed - dialog stays open
+
               loadOrders();
             } catch (error) {
               toast({

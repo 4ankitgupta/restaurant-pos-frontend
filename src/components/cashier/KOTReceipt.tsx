@@ -90,30 +90,37 @@ export const KOTReceipt = React.forwardRef<HTMLDivElement, KOTReceiptProps>(
               </tr>
             </thead>
             <tbody>
-              {orderedItems.map((item) => (
-                <React.Fragment key={item.id}>
-                  <tr>
-                    <td className="item-name">
-                      {getLocalizedName(
-                        item.menuItemVariant.menuItem,
-                        language
-                      )}
-                      <br />
-                      <span className="variant-name">
-                        ({getLocalizedName(item.menuItemVariant, language)})
-                      </span>
-                    </td>
-                    <td className="item-qty">{item.quantity}</td>
-                  </tr>
-                  {item.note && (
+              {orderedItems.map((item) => {
+                // Handle legacy orders without menuItemVariant
+                const menuItem = item.menuItemVariant?.menuItem;
+                const variant = item.menuItemVariant;
+                const itemName = menuItem
+                  ? getLocalizedName(menuItem, language)
+                  : "Item";
+                const variantName = variant
+                  ? getLocalizedName(variant, language)
+                  : "Standard";
+
+                return (
+                  <React.Fragment key={item.id}>
                     <tr>
-                      <td colSpan={2} className="item-note">
-                        <strong>{t.note}</strong> {item.note}
+                      <td className="item-name">
+                        {itemName}
+                        <br />
+                        <span className="variant-name">({variantName})</span>
                       </td>
+                      <td className="item-qty">{item.quantity}</td>
                     </tr>
-                  )}
-                </React.Fragment>
-              ))}
+                    {item.note && (
+                      <tr>
+                        <td colSpan={2} className="item-note">
+                          <strong>{t.note}</strong> {item.note}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
         </section>

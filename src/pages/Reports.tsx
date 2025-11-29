@@ -17,6 +17,7 @@ import SalesByHourReport from "@/components/reports/SalesByHourReport";
 import TaxComplianceReport from "@/components/reports/TaxComplianceReport";
 import SalesByEmployeeReport from "@/components/reports/SalesByEmployeeReport";
 import DiscountAnalysisReport from "@/components/reports/DiscountAnalysisReport";
+import AttendanceSummaryReport from "@/components/reports/AttendanceSummaryReport";
 import {
   TrendingUp,
   DollarSign,
@@ -195,6 +196,16 @@ const allReports: ReportItem[] = [
     icon: Users,
     roles: ["manager", "admin"],
     component: SalesByEmployeeReport,
+    category: "staff",
+    priority: "high",
+  },
+  {
+    value: "attendance-log",
+    label: "Attendance Log",
+    description: "Employee attendance tracking and working hours",
+    icon: Clock,
+    roles: ["manager", "admin"],
+    component: AttendanceSummaryReport,
     category: "staff",
     priority: "high",
   },
