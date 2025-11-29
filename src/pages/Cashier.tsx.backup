@@ -41,15 +41,13 @@ const Cashier = () => {
   const { orders: wsOrders } = useWebSocket();
   const { refreshKey } = useRefresh();
   const location = useLocation();
-
+  
   // Get cashier layout mode from feature flags
-  const cashierLayoutMode =
-    (user?.restaurant?.featureFlags?.cashier_layout_mode as string) || "both";
-
+  const cashierLayoutMode = (user?.restaurant?.featureFlags?.cashier_layout_mode as string) || "both";
+  
   // Determine if we should show POS mode
   // For backward compatibility, still check URL path
-  const isPOSMode =
-    location.pathname === "/pos" || cashierLayoutMode === "pos_only";
+  const isPOSMode = location.pathname === "/pos" || cashierLayoutMode === "pos_only";
 
   const { execute: fetchOrders, loading: ordersLoading } = useApi<{
     data: APIOrder[];
@@ -316,80 +314,9 @@ const Cashier = () => {
       );
     }
 
-    // Show manage orders view (default for "both" mode)
+    // Show manage orders view with toggle option
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-        {/* Left Column: Order Lists */}
-        <div className="md:col-span-1 h-full flex flex-col min-h-0">
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as TabValue)}
-            className="h-full flex flex-col"
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active">
-                Active ({activeOrders.length})
-              </TabsTrigger>
-              <TabsTrigger value="completed">
-                Completed ({completedOrders.length})
-              </TabsTrigger>
-            </TabsList>
-            <div className="flex-1 min-h-0 mt-2">
-              <TabsContent value="active" className="h-full m-0">
-                <OrderList
-                  orders={activeOrders}
-                  title="Active Orders"
-                  onSelectOrder={setSelectedOrder}
-                  selectedOrderId={selectedOrder?.id}
-                />
-              </TabsContent>
-              <TabsContent value="completed" className="h-full m-0">
-                <OrderList
-                  orders={completedOrders}
-                  title="Completed Orders"
-                  onSelectOrder={setSelectedOrder}
-                  selectedOrderId={selectedOrder?.id}
-                />
-              </TabsContent>
-            </div>
-          </Tabs>
-        </div>
-
-        {/* Right Column: Order Details */}
-        <div className="md:col-span-2 h-full flex flex-col min-h-0">
-          {selectedOrder ? (
-            <OrderDetail
-              order={selectedOrder}
-              onPay={() => setPaymentOpen(true)}
-              onAddItems={() => setAddItemsOpen(true)}
-              onRefund={() => setRefundConfirmOpen(true)}
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center border rounded-lg bg-muted/10 text-muted-foreground">
-              Select an order to view details
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  return (
-    <div className="h-[calc(100vh-4rem)] p-4 gap-4 flex flex-col">
-      {cashierLayoutMode !== "pos_only" && !isPOSMode && (
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Cashier Dashboard</h1>
-            <div className="flex gap-2">
-              <Button onClick={() => setTakeawayOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" /> New Takeaway
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {renderContent()}
 
       {/* Dialogs */}
       {selectedOrder && (

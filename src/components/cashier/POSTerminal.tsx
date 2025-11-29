@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { APIMenuItem, APITable, APIOrder } from "@/types/restaurant";
 import { useApi } from "@/hooks/useApi";
 import { apiService } from "@/services/apiService";
@@ -9,9 +9,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { VariantSelectionDialog } from "./VariantSelectionDialog";
 import { EditNoteDialog } from "./EditNoteDialog";
+import { BillReceipt } from "./BillReceipt";
+import { KOTReceipt } from "./KOTReceipt";
+import { OrderList } from "./OrderList";
+import "./KOTReceipt.css";
 import { toast } from "@/hooks/use-toast";
+import { useReactToPrint } from "react-to-print";
 import {
   ShoppingCart,
   LayoutGrid,
@@ -23,6 +36,8 @@ import {
   ChefHat,
   Clock,
   CheckCircle2,
+  History,
+  Receipt,
 } from "lucide-react";
 import { PaymentDialog } from "./PaymentDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
@@ -47,7 +62,13 @@ interface CartItem {
   note?: string;
 }
 
-export const POSTerminal: React.FC = () => {
+interface POSTerminalProps {
+  completedOrders?: APIOrder[];
+}
+
+export const POSTerminal: React.FC<POSTerminalProps> = ({
+  completedOrders = [],
+}) => {
   // Data
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -83,6 +104,25 @@ export const POSTerminal: React.FC = () => {
   // Payment dialog state for Express (Settle & Print)
   const [paymentOrder, setPaymentOrder] = useState<APIOrder | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+
+  // History sheet state
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [selectedHistoryOrder, setSelectedHistoryOrder] =
+    useState<APIOrder | null>(null);
+
+  // Print bill ref
+  const billRef = useRef<HTMLDivElement>(null);
+  const handlePrint = useReactToPrint({
+    contentRef: billRef,
+    documentTitle: `Bill-${currentOrder?.id.substring(0, 8) || "order"}`,
+  });
+
+  // Print KOT ref
+  const kotRef = useRef<HTMLDivElement>(null);
+  const handlePrintKOT = useReactToPrint({
+    contentRef: kotRef,
+    documentTitle: `KOT-${currentOrder?.id.substring(0, 8) || "order"}`,
+  });
 
   // APIs
   const { execute: execMenu } = useApi<{ data: APIMenuItem[] }>();
@@ -222,6 +262,12 @@ export const POSTerminal: React.FC = () => {
     ? parseFloat(String(currentOrder.totalAmount))
     : 0;
   const grandTotal = orderTotal + cartTotal;
+
+  // Check if there are any ordered items for KOT
+  const hasOrderedItems =
+    currentOrder?.orderItems?.some(
+      (item) => item.status === "ORDERED" || item.status === "PENDING"
+    ) || false;
 
   // Helpers
   const getItemPriceRange = (item: APIMenuItem) => {
@@ -517,24 +563,54 @@ export const POSTerminal: React.FC = () => {
           )}
         </div>
 
-        <Tabs
-          value={serviceType}
-          onValueChange={(v) => {
-            setServiceType(v as ServiceType);
-            setSelectedTable(null);
-            setCurrentOrder(null);
-            setCart(new Map());
-          }}
-        >
-          <TabsList>
-            <TabsTrigger value="DINE_IN">
-              <Utensils className="h-4 w-4 mr-1" /> Dine-In
-            </TabsTrigger>
-            <TabsTrigger value="TAKEAWAY">
-              <LayoutGrid className="h-4 w-4 mr-1" /> Takeaway
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2">
+          <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm">
+                <History className="h-4 w-4 mr-1" />
+                History ({completedOrders.length})
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-xl">
+              <SheetHeader>
+                <SheetTitle>Completed Orders Today</SheetTitle>
+                <SheetDescription>
+                  View all completed orders from today
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6 h-[calc(100vh-200px)]">
+                <OrderList
+                  orders={completedOrders}
+                  title="Completed Orders"
+                  onSelectOrder={(order) => {
+                    setSelectedHistoryOrder(order);
+                    setHistoryOpen(false);
+                  }}
+                  selectedOrderId={selectedHistoryOrder?.id}
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+
+          <Tabs
+            value={serviceType}
+            onValueChange={(v) => {
+              setServiceType(v as ServiceType);
+              setSelectedTable(null);
+              setCurrentOrder(null);
+              setCart(new Map());
+            }}
+          >
+            <TabsList>
+              <TabsTrigger value="DINE_IN">
+                <Utensils className="h-4 w-4 mr-1" /> Dine-In
+              </TabsTrigger>
+              <TabsTrigger value="TAKEAWAY">
+                <LayoutGrid className="h-4 w-4 mr-1" /> Takeaway
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0">
@@ -810,24 +886,48 @@ export const POSTerminal: React.FC = () => {
           <Separator className="my-3" />
 
           {/* Actions */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              onClick={sendToKitchen}
-              disabled={kotLoading}
-              variant="outline"
-              className="border-primary/20 hover:bg-primary/5 hover:text-primary"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {kotLoading ? "Sending..." : "To Kitchen"}
-            </Button>
-            <Button
-              onClick={settleAndPrint}
-              disabled={kotLoading || addItemsLoading}
-              className="bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              {kotLoading || addItemsLoading ? "..." : "Settle"}
-            </Button>
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={sendToKitchen}
+                disabled={kotLoading}
+                variant="outline"
+                className="border-primary/20 hover:bg-primary/5 hover:text-primary"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {kotLoading ? "Sending..." : "To Kitchen"}
+              </Button>
+              <Button
+                onClick={settleAndPrint}
+                disabled={kotLoading || addItemsLoading}
+                className="bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {kotLoading || addItemsLoading ? "..." : "Settle"}
+              </Button>
+            </div>
+            {currentOrder && (
+              <>
+                <Button
+                  onClick={handlePrint}
+                  variant="secondary"
+                  className="w-full"
+                  disabled={!currentOrder}
+                >
+                  <Receipt className="h-4 w-4 mr-2" />
+                  Print Bill
+                </Button>
+                <Button
+                  onClick={handlePrintKOT}
+                  variant="secondary"
+                  className="w-full"
+                  disabled={!hasOrderedItems}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print KOT
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -877,6 +977,18 @@ export const POSTerminal: React.FC = () => {
           onProcessPayment={handleProcessPayment}
           isLoading={payLoading}
         />
+      )}
+
+      {/* Hidden print containers for bill and KOT receipts */}
+      {currentOrder && (
+        <>
+          <div className="hidden">
+            <BillReceipt ref={billRef} order={currentOrder} />
+          </div>
+          <div className="hidden">
+            <KOTReceipt ref={kotRef} order={currentOrder} />
+          </div>
+        </>
       )}
     </div>
   );

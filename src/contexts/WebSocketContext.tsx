@@ -179,7 +179,6 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
         websocketUrl = `${wsProtocol}//${wsHost}?token=${token}`;
       }
 
-      console.log(`Connecting to WebSocket at: ${websocketUrl}`);
       const newWs = new WebSocket(websocketUrl);
 
       newWs.onopen = async () => {

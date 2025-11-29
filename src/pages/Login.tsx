@@ -21,10 +21,27 @@ const Login: React.FC = () => {
     try {
       await login(email, password);
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (user.role === "waiter") navigate("/tables");
-      else if (user.role === "chef") navigate("/kitchen");
-      else if (user.role === "cashier") navigate("/pos");
-      else navigate("/dashboard");
+
+      if (user.role === "waiter") {
+        navigate("/tables");
+      } else if (user.role === "chef") {
+        navigate("/kitchen");
+      } else if (user.role === "cashier") {
+        // Check cashier layout mode to redirect to appropriate page
+        const cashierLayoutMode =
+          user?.restaurant?.featureFlags?.cashier_layout_mode || "both";
+
+        if (cashierLayoutMode === "manage_orders") {
+          navigate("/cashier");
+        } else if (cashierLayoutMode === "pos_only") {
+          navigate("/pos");
+        } else {
+          // Default to pos for "both" mode
+          navigate("/pos");
+        }
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error) {
       console.error("Login failed:", error);
     } finally {

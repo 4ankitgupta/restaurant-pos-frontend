@@ -8,6 +8,7 @@ import { WebSocketProvider } from "@/contexts/WebSocketContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { FeatureProtectedRoute } from "@/components/auth/FeatureProtectedRoute";
+import { CashierModeProtectedRoute } from "@/components/auth/CashierModeProtectedRoute";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import WaiterOrderManagement from "./pages/WaiterOrderManagement";
@@ -85,7 +86,9 @@ const App = () => (
                         <ProtectedRoute
                           allowedRoles={["admin", "cashier", "manager"]}
                         >
-                          <Cashier />
+                          <CashierModeProtectedRoute requiredMode="manage_orders">
+                            <Cashier />
+                          </CashierModeProtectedRoute>
                         </ProtectedRoute>
                       }
                     />
@@ -95,7 +98,9 @@ const App = () => (
                         <ProtectedRoute
                           allowedRoles={["admin", "cashier", "manager"]}
                         >
-                          <Cashier />
+                          <CashierModeProtectedRoute requiredMode="pos_only">
+                            <Cashier />
+                          </CashierModeProtectedRoute>
                         </ProtectedRoute>
                       }
                     />

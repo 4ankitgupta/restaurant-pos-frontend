@@ -201,10 +201,33 @@ export const Navbar: React.FC = () => {
 
         return managerCategories;
       case "cashier":
-        return [
-          { icon: ShoppingCart, label: "POS", path: "/pos" },
-          { icon: Coins, label: "Manage Orders", path: "/cashier" },
-        ];
+        // Get cashier layout mode to determine which tabs to show
+        const cashierLayoutMode =
+          (user?.restaurant?.featureFlags?.cashier_layout_mode as string) ||
+          "both";
+
+        const cashierNavItems = [];
+
+        if (cashierLayoutMode === "pos_only" || cashierLayoutMode === "both") {
+          cashierNavItems.push({
+            icon: ShoppingCart,
+            label: "POS",
+            path: "/pos",
+          });
+        }
+
+        if (
+          cashierLayoutMode === "manage_orders" ||
+          cashierLayoutMode === "both"
+        ) {
+          cashierNavItems.push({
+            icon: Coins,
+            label: "Manage Orders",
+            path: "/cashier",
+          });
+        }
+
+        return cashierNavItems;
       case "waiter":
         return [{ icon: Armchair, label: "Tables", path: "/tables" }];
       case "chef":
@@ -219,12 +242,40 @@ export const Navbar: React.FC = () => {
     cat.items ? cat.items : cat.path ? [cat as any] : []
   );
 
+  // Get home path based on user role
+  const getHomePath = () => {
+    if (!user) return "/dashboard";
+
+    switch (user.role) {
+      case "admin":
+      case "manager":
+        return "/dashboard";
+      case "waiter":
+        return "/tables";
+      case "chef":
+        return "/kitchen";
+      case "cashier":
+        const cashierLayoutMode =
+          (user?.restaurant?.featureFlags?.cashier_layout_mode as string) ||
+          "both";
+        if (cashierLayoutMode === "manage_orders") {
+          return "/cashier";
+        } else if (cashierLayoutMode === "pos_only") {
+          return "/pos";
+        } else {
+          return "/pos";
+        }
+      default:
+        return "/dashboard";
+    }
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border shadow-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
-            <Link to="/dashboard" className="flex items-center space-x-2">
+            <Link to={getHomePath()} className="flex items-center space-x-2">
               <div className="flex flex-col items-center justify-center">
                 <img
                   src="/logo.png"

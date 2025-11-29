@@ -27,7 +27,7 @@ export interface Restaurant {
   logoUrl?: string | null; // NEW: Logo URL path
   address: string | null; // UPDATED: Based on schema
   isActive: boolean;
-  featureFlags?: Record<string, boolean> | null; // Feature flags for granular control
+  featureFlags?: Record<string, boolean | string> | null; // Feature flags for granular control (supports both boolean and string values like cashier_layout_mode)
   subscriptionId?: string;
   subscription?: Subscription;
   createdAt: string;
@@ -234,7 +234,7 @@ class SuperAdminApiService {
       gstin?: string;
       address?: string;
       logo?: File;
-      featureFlags?: Record<string, boolean>;
+      featureFlags?: Record<string, boolean | string>;
     }
   ): Promise<Restaurant> {
     const formData = new FormData();

@@ -1,0 +1,167 @@
+/* src/components/cashier/KOTReceipt.css */
+/* Optimized for 80mm thermal printer - KOT format */
+
+/* These styles apply ONLY during printing */
+@media print {
+  /* Reset page margins and set size for 80mm thermal paper */
+  @page {
+    size: 80mm auto; /* 80mm width, auto height */
+    margin: 0;
+  }
+
+  /* Hide everything except the KOT */
+  body * {
+    visibility: hidden;
+  }
+
+  .kot-receipt,
+  .kot-receipt * {
+    visibility: visible;
+  }
+
+  /* Position KOT at top-left with no margins */
+  .kot-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 2mm 3mm;
+  }
+
+  /* Hide any shadows or colors for clean thermal print */
+  .kot-receipt * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
+
+/* General styling for the KOT component */
+.kot-receipt {
+  width: 80mm; /* Exact 80mm thermal paper width */
+  max-width: 80mm;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #000;
+  background: #fff;
+  padding: 3mm;
+  box-sizing: border-box;
+}
+
+.kot-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.kot-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.restaurant-name {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 4px 0 8px 0;
+  text-transform: uppercase;
+}
+
+.kot-meta {
+  text-align: center;
+  font-size: 11px;
+  margin: 8px 0;
+}
+
+.kot-meta p {
+  margin: 2px 0;
+  line-height: 1.5;
+}
+
+.kot-separator {
+  text-align: center;
+  overflow: hidden;
+  margin: 8px 0;
+  border: none;
+  font-size: 10px;
+  letter-spacing: -1px;
+}
+
+.kot-items table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.kot-items th {
+  padding: 5px 2px;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #000;
+  font-size: 12px;
+}
+
+.kot-items td {
+  padding: 6px 2px;
+  text-align: left;
+  vertical-align: top;
+}
+
+/* Item name column */
+.kot-items .item-name {
+  width: 70%;
+  text-align: left;
+  word-wrap: break-word;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.kot-items .variant-name {
+  font-weight: normal;
+  font-size: 11px;
+  color: #333;
+}
+
+/* Qty column */
+.kot-items .item-qty {
+  width: 30%;
+  text-align: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Item note row */
+.kot-items .item-note {
+  padding: 2px 2px 8px 2px;
+  font-size: 11px;
+  font-style: italic;
+  background-color: #f9f9f9;
+  border-left: 3px solid #000;
+  padding-left: 8px;
+}
+
+.kot-items .item-note strong {
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.kot-footer {
+  text-align: center;
+  margin-top: 10px;
+}
+
+.kot-instruction {
+  font-size: 14px;
+  font-weight: bold;
+  margin: 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.kot-count {
+  font-size: 12px;
+  font-weight: bold;
+  margin: 6px 0;
+}

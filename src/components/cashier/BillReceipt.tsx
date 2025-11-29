@@ -11,15 +11,6 @@ interface BillReceiptProps {
 // Using React.forwardRef to allow the parent to hold a ref to this component
 export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
   ({ order }, ref) => {
-    // DEBUG: Log restaurant-related fields to diagnose missing bill data
-    console.log("BILL RECEIPT DEBUG", {
-      hasRestaurant: !!order.restaurant,
-      restaurant: order.restaurant,
-      phone: order.restaurant?.phone,
-      phone2: order.restaurant?.phone2,
-      gstin: order.restaurant?.gstin,
-      logoUrl: order.restaurant?.logoUrl,
-    });
     // Get restaurant details safely from the order relation
     const restaurant = order.restaurant;
 
@@ -78,9 +69,9 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
 
           <div className="bill-meta-grid">
             <p>Date: {orderDate}</p>
-            {gstin && <p>GSTIN: {gstin}</p>}
             <p>Order: #{orderId}</p>
             <p>Table: {tableNumber}</p>
+            {gstin && <p>GSTIN: {gstin}</p>}
           </div>
         </header>
 
@@ -137,7 +128,7 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
   }
 );
 
-// Simple separator component
+// Simple separator component - optimized for 80mm width
 const Separator = () => (
-  <div className="bill-separator">--------------------</div>
+  <div className="bill-separator">========================================</div>
 );

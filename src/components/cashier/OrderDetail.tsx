@@ -2,6 +2,8 @@ import React, { useRef } from "react";
 import { useReactToPrint } from "react-to-print";
 import { APIOrder, OrderItemStatus } from "@/types/restaurant";
 import { BillReceipt } from "./BillReceipt";
+import { KOTReceipt } from "./KOTReceipt";
+import "./KOTReceipt.css";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -43,10 +45,16 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const { user } = useAuth();
   const { language } = useLanguage();
   const billReceiptRef = useRef<HTMLDivElement>(null);
+  const kotReceiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = useReactToPrint({
     documentTitle: `Order-${order?.id?.substring(0, 8) || ""}`,
     contentRef: billReceiptRef,
+  });
+
+  const handlePrintKOT = useReactToPrint({
+    documentTitle: `KOT-${order?.id?.substring(0, 8) || ""}`,
+    contentRef: kotReceiptRef,
   });
 
   if (!order) {
@@ -84,6 +92,11 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
   const isPayable =
     order.paymentStatus === "UNPAID" || order.paymentStatus === "PARTIAL";
   const canRefund = user?.role === "admin" || user?.role === "manager";
+
+  // Check if there are any ordered items for KOT
+  const hasOrderedItems = order.orderItems.some(
+    (item) => item.status === "ORDERED" || item.status === "PENDING"
+  );
 
   return (
     <>
@@ -206,7 +219,7 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
               <span>₹{Number(order.totalAmount).toFixed(2)}</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <Button
               variant="outline"
               onClick={onAddItems}
@@ -218,6 +231,13 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             </Button>
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" /> Print Bill
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handlePrintKOT}
+              disabled={!hasOrderedItems}
+            >
+              <Printer className="mr-2 h-4 w-4" /> Print KOT
             </Button>
           </div>
           {(order.paymentStatus === "UNPAID" ||
@@ -235,9 +255,12 @@ export const OrderDetail: React.FC<OrderDetailProps> = ({
             )}
         </CardFooter>
       </Card>
-      {/* Hidden receipt container for printing */}
+      {/* Hidden receipt containers for printing */}
       <div style={{ display: "none" }}>
         <BillReceipt order={order} ref={billReceiptRef} />
+      </div>
+      <div style={{ display: "none" }}>
+        <KOTReceipt order={order} ref={kotReceiptRef} />
       </div>
     </>
   );

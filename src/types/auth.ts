@@ -9,6 +9,19 @@ export const BACKEND_ROLES = {
   KITCHEN_STAFF: "chef",
 } as const;
 
+// Cashier layout mode options
+export type CashierLayoutMode = "manage_orders" | "pos_only" | "both";
+
+// Feature flags interface
+export interface FeatureFlags extends Record<string, boolean | string> {
+  ai_chat?: boolean;
+  inventory_management?: boolean;
+  reports?: boolean;
+  attendance?: boolean;
+  advanced_ordering?: boolean;
+  cashier_layout_mode?: CashierLayoutMode;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -18,7 +31,7 @@ export interface User {
   restaurant?: {
     id: string;
     name: string;
-    featureFlags: Record<string, boolean>;
+    featureFlags: FeatureFlags;
   };
 }
 
