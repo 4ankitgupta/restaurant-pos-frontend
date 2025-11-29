@@ -5,7 +5,7 @@ import { useApi } from "@/hooks/useApi";
 import { apiService } from "@/services/apiService";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import { OrderList } from "@/components/cashier/OrderList";
 import { OrderDetail, OrderDetailRef } from "@/components/cashier/OrderDetail";
 import { PaymentDialog } from "@/components/cashier/PaymentDialog";
@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRefresh } from "@/contexts/RefreshContext";
 import { useWebSocket } from "@/contexts/WebSocketContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface MenuCategory {
   id: string;
@@ -41,6 +42,10 @@ const Cashier = () => {
   const { orders: wsOrders } = useWebSocket();
   const { refreshKey } = useRefresh();
   const location = useLocation();
+  const isMobile = useIsMobile();
+
+  // Mobile navigation state - track if we're in detail view
+  const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   // Get cashier layout mode from feature flags
   const cashierLayoutMode =
@@ -242,23 +247,89 @@ const Cashier = () => {
     }
   };
 
+  // Handler for order selection with mobile navigation
+  const handleSelectOrder = (order: APIOrder) => {
+    setSelectedOrder(order);
+    if (isMobile) {
+      setMobileShowDetail(true);
+    }
+  };
+
+  // Handler for back navigation on mobile
+  const handleBackToList = () => {
+    setMobileShowDetail(false);
+  };
+
   // Determine what to render based on cashier layout mode
   const renderContent = () => {
     if (cashierLayoutMode === "pos_only") {
       // Only show POS Terminal
       return (
         <div className="flex-1 overflow-hidden">
-          <POSTerminal completedOrders={completedOrders} />
+          <POSTerminal
+            completedOrders={completedOrders}
+            activeOrders={activeOrders}
+          />
         </div>
       );
     }
 
     if (cashierLayoutMode === "manage_orders") {
       // Only show Manage Orders view
+      return renderManageOrdersView();
+    }
+
+    // Default: "both" mode - use URL-based routing or tabs
+    if (isPOSMode) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-          {/* Left Column: Order Lists */}
-          <div className="md:col-span-1 h-full flex flex-col min-h-0">
+        <div className="flex-1 overflow-hidden">
+          <POSTerminal
+            completedOrders={completedOrders}
+            activeOrders={activeOrders}
+          />
+        </div>
+      );
+    }
+
+    // Show manage orders view (default for "both" mode)
+    return renderManageOrdersView();
+  };
+
+  // Manage Orders View with Mobile Master-Detail Pattern
+  const renderManageOrdersView = () => {
+    // Mobile: Show either list or detail, not both
+    if (isMobile) {
+      if (mobileShowDetail && (selectedOrder || paymentSuccessOrder)) {
+        return (
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* Back button header */}
+            <div className="pb-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleBackToList}
+                className="mb-2"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Orders
+              </Button>
+            </div>
+            {/* Full screen detail view */}
+            <div className="flex-1 min-h-0">
+              <OrderDetail
+                ref={orderDetailRef}
+                order={selectedOrder || paymentSuccessOrder!}
+                onPay={() => setPaymentOpen(true)}
+                onAddItems={() => setAddItemsOpen(true)}
+                onRefund={() => setRefundConfirmOpen(true)}
+              />
+            </div>
+          </div>
+        );
+      } else {
+        // Show list view
+        return (
+          <div className="flex-1 flex flex-col min-h-0">
             <Tabs
               value={activeTab}
               onValueChange={(v) => setActiveTab(v as TabValue)}
@@ -277,7 +348,7 @@ const Cashier = () => {
                   <OrderList
                     orders={activeOrders}
                     title="Active Orders"
-                    onSelectOrder={setSelectedOrder}
+                    onSelectOrder={handleSelectOrder}
                     selectedOrderId={selectedOrder?.id}
                   />
                 </TabsContent>
@@ -285,44 +356,18 @@ const Cashier = () => {
                   <OrderList
                     orders={completedOrders}
                     title="Completed Orders"
-                    onSelectOrder={setSelectedOrder}
+                    onSelectOrder={handleSelectOrder}
                     selectedOrderId={selectedOrder?.id}
                   />
                 </TabsContent>
               </div>
             </Tabs>
           </div>
-
-          {/* Right Column: Order Details / POS */}
-          <div className="md:col-span-2 h-full flex flex-col min-h-0">
-            {selectedOrder || paymentSuccessOrder ? (
-              <OrderDetail
-                ref={orderDetailRef}
-                order={selectedOrder || paymentSuccessOrder!}
-                onPay={() => setPaymentOpen(true)}
-                onAddItems={() => setAddItemsOpen(true)}
-                onRefund={() => setRefundConfirmOpen(true)}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center border rounded-lg bg-muted/10 text-muted-foreground">
-                Select an order to view details
-              </div>
-            )}
-          </div>
-        </div>
-      );
+        );
+      }
     }
 
-    // Default: "both" mode - use URL-based routing or tabs
-    if (isPOSMode) {
-      return (
-        <div className="flex-1 overflow-hidden">
-          <POSTerminal completedOrders={completedOrders} />
-        </div>
-      );
-    }
-
-    // Show manage orders view (default for "both" mode)
+    // Desktop: Show side-by-side grid layout
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
         {/* Left Column: Order Lists */}
@@ -345,7 +390,7 @@ const Cashier = () => {
                 <OrderList
                   orders={activeOrders}
                   title="Active Orders"
-                  onSelectOrder={setSelectedOrder}
+                  onSelectOrder={handleSelectOrder}
                   selectedOrderId={selectedOrder?.id}
                 />
               </TabsContent>
@@ -353,7 +398,7 @@ const Cashier = () => {
                 <OrderList
                   orders={completedOrders}
                   title="Completed Orders"
-                  onSelectOrder={setSelectedOrder}
+                  onSelectOrder={handleSelectOrder}
                   selectedOrderId={selectedOrder?.id}
                 />
               </TabsContent>
@@ -361,7 +406,7 @@ const Cashier = () => {
           </Tabs>
         </div>
 
-        {/* Right Column: Order Details / POS */}
+        {/* Right Column: Order Details */}
         <div className="md:col-span-2 h-full flex flex-col min-h-0">
           {selectedOrder || paymentSuccessOrder ? (
             <OrderDetail
@@ -386,7 +431,7 @@ const Cashier = () => {
       {cashierLayoutMode !== "pos_only" && !isPOSMode && (
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">Cashier Dashboard</h1>
+            <h1 className="text-2xl font-bold">Cashier Station</h1>
             <div className="flex gap-2">
               <Button onClick={() => setTakeawayOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" /> New Takeaway

@@ -63,6 +63,7 @@ import { useWebSocket } from "@/contexts/WebSocketContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLocalizedName } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Local types
 interface MenuCategory {
@@ -83,11 +84,16 @@ interface CartItem {
 
 interface POSTerminalProps {
   completedOrders?: APIOrder[];
+  activeOrders?: APIOrder[];
 }
 
 export const POSTerminal: React.FC<POSTerminalProps> = ({
   completedOrders = [],
+  activeOrders = [],
 }) => {
+  // Mobile detection
+  const isMobile = useIsMobile();
+
   // Data
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -99,6 +105,9 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   const { orders: wsOrders, lastTableUpdate } = useWebSocket();
   const { language } = useLanguage();
   const { user } = useAuth();
+
+  // Mobile-specific: Cart drawer state
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
 
   // Mode and context
   const [serviceType, setServiceType] = useState<ServiceType>("DINE_IN");
@@ -130,6 +139,9 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   const [selectedHistoryOrder, setSelectedHistoryOrder] =
     useState<APIOrder | null>(null);
   const [historyDetailOpen, setHistoryDetailOpen] = useState(false);
+
+  // Active takeaway orders sheet state
+  const [activeTakeawayOpen, setActiveTakeawayOpen] = useState(false);
   const [refundConfirmOpen, setRefundConfirmOpen] = useState(false);
 
   // Print bill ref
@@ -154,6 +166,11 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
       selectedHistoryOrder?.id.substring(0, 8) || "order"
     }`,
   });
+
+  // Filter active takeaway orders (check both orderType and takeAway fields)
+  const activeTakeawayOrders = activeOrders.filter(
+    (order) => order.orderType === "TAKE_AWAY" || order.takeAway === true
+  );
 
   // APIs
   const { execute: execMenu } = useApi<{ data: APIMenuItem[] }>();
@@ -431,8 +448,20 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
           });
           return;
         }
-        const res = await execKOT(() => apiService.createTakeawayOrder(items));
-        order = (res as any)?.data ?? (res as any);
+
+        if (order) {
+          // Add items to existing takeaway order
+          const res = await execAddItems(() =>
+            apiService.addItemsToCashierOrder(order!.id, items)
+          );
+          order = res.data;
+        } else {
+          // Create new takeaway order
+          const res = await execKOT(() =>
+            apiService.createTakeawayOrder(items)
+          );
+          order = (res as any)?.data ?? (res as any);
+        }
       } else {
         // DINE_IN
         if (!selectedTable) {
@@ -611,28 +640,72 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   return (
     <div className="flex flex-col gap-3 h-[calc(100vh-110px)]">
       {/* Header with mode */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold">Cashier Station</h1>
-          <Badge variant="secondary" className="uppercase">
-            POS Mode
+      <div className="flex items-center justify-between gap-2 md:gap-3">
+        <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+          <h1 className="text-lg md:text-2xl font-bold">Cashier Station</h1>
+          <Badge variant="secondary" className="uppercase text-xs md:text-sm">
+            POS
           </Badge>
           {serviceType === "DINE_IN" && selectedTable && (
-            <Badge>Table {selectedTable.tableNumber}</Badge>
+            <Badge className="text-xs md:text-sm">
+              Table {selectedTable.tableNumber}
+            </Badge>
           )}
-          {currentOrder && (
-            <Badge variant="outline">
+          {currentOrder && !isMobile && (
+            <Badge variant="outline" className="text-xs md:text-sm">
               Order #{currentOrder.id.slice(0, 6)}
             </Badge>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
+          {serviceType === "TAKEAWAY" && activeTakeawayOrders.length > 0 && (
+            <Sheet
+              open={activeTakeawayOpen}
+              onOpenChange={setActiveTakeawayOpen}
+            >
+              <SheetTrigger asChild>
+                <Button variant="default" size={isMobile ? "sm" : "sm"}>
+                  <ShoppingCart className="h-4 w-4 md:mr-1" />
+                  <span className="hidden md:inline">
+                    Active ({activeTakeawayOrders.length})
+                  </span>
+                  <span className="md:hidden">
+                    ({activeTakeawayOrders.length})
+                  </span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-xl">
+                <SheetHeader>
+                  <SheetTitle>Active Takeaway Orders</SheetTitle>
+                  <SheetDescription>
+                    View and manage active takeaway orders
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="mt-6 h-[calc(100vh-200px)]">
+                  <OrderList
+                    orders={activeTakeawayOrders}
+                    title="Active Takeaway Orders"
+                    onSelectOrder={(order) => {
+                      setCurrentOrder(order);
+                      setCart(new Map());
+                      setActiveTakeawayOpen(false);
+                    }}
+                    selectedOrderId={currentOrder?.id}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
+
           <Sheet open={historyOpen} onOpenChange={setHistoryOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm">
-                <History className="h-4 w-4 mr-1" />
-                History ({completedOrders.length})
+              <Button variant="outline" size={isMobile ? "sm" : "sm"}>
+                <History className="h-4 w-4 md:mr-1" />
+                <span className="hidden md:inline">
+                  History ({completedOrders.length})
+                </span>
+                <span className="md:hidden">({completedOrders.length})</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-xl">
@@ -666,26 +739,42 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
               setCart(new Map());
             }}
           >
-            <TabsList>
-              <TabsTrigger value="DINE_IN">
-                <Utensils className="h-4 w-4 mr-1" /> Dine-In
+            <TabsList className="h-9">
+              <TabsTrigger value="DINE_IN" className="text-xs md:text-sm">
+                <Utensils className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                <span className="hidden md:inline">Dine-In</span>
               </TabsTrigger>
-              <TabsTrigger value="TAKEAWAY">
-                <LayoutGrid className="h-4 w-4 mr-1" /> Takeaway
+              <TabsTrigger value="TAKEAWAY" className="text-xs md:text-sm">
+                <LayoutGrid className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                <span className="hidden md:inline">Takeaway</span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1 min-h-0">
-        {/* Left workspace */}
-        <div className="lg:col-span-2 border rounded-md p-3 flex flex-col min-h-0 bg-background">
+      <div
+        className={`flex-1 min-h-0 ${
+          isMobile ? "flex flex-col" : "grid grid-cols-1 lg:grid-cols-3 gap-3"
+        }`}
+      >
+        {/* Left workspace - Menu/Table area */}
+        <div
+          className={`${
+            isMobile
+              ? "flex-1 flex flex-col min-h-0"
+              : "lg:col-span-2 border rounded-md p-3 flex flex-col min-h-0 bg-background"
+          }`}
+        >
           {serviceType === "DINE_IN" && !selectedTable ? (
             // Floor plan
-            <div className="flex flex-col h-full">
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-muted-foreground">
+            <div className={`flex flex-col h-full ${isMobile ? "" : ""}`}>
+              <div
+                className={`flex justify-between items-center ${
+                  isMobile ? "mb-2" : "mb-2"
+                }`}
+              >
+                <h3 className="font-semibold text-muted-foreground text-sm md:text-base">
                   Select Table
                 </h3>
                 <Button variant="ghost" size="sm" onClick={refreshTables}>
@@ -693,11 +782,11 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                 </Button>
               </div>
               <ScrollArea className="flex-1">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-1">
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3 p-1">
                   {tables.map((t) => (
                     <button
                       key={t.id}
-                      className={`rounded-lg p-4 border text-left transition-all hover:scale-105 ${
+                      className={`rounded-lg p-3 md:p-4 border text-left transition-all active:scale-95 md:hover:scale-105 ${
                         t.status === "Occupied"
                           ? "bg-red-50 border-red-200 text-red-700 shadow-sm"
                           : t.status === "Available"
@@ -706,9 +795,11 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                       }`}
                       onClick={() => handleTableClick(t)}
                     >
-                      <div className="text-sm opacity-70">Table</div>
-                      <div className="text-2xl font-bold">{t.tableNumber}</div>
-                      <div className="mt-2 flex items-center gap-1">
+                      <div className="text-xs md:text-sm opacity-70">Table</div>
+                      <div className="text-xl md:text-2xl font-bold">
+                        {t.tableNumber}
+                      </div>
+                      <div className="mt-1 md:mt-2 flex items-center gap-1">
                         <span
                           className={`h-2 w-2 rounded-full ${
                             t.status === "Occupied"
@@ -716,7 +807,9 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                               : "bg-emerald-500"
                           }`}
                         ></span>
-                        <span className="text-xs font-medium">{t.status}</span>
+                        <span className="text-[10px] md:text-xs font-medium">
+                          {t.status}
+                        </span>
                       </div>
                     </button>
                   ))}
@@ -725,7 +818,7 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
             </div>
           ) : (
             // Menu grid
-            <div className="flex flex-col gap-3 min-h-0 h-full">
+            <div className="flex flex-col gap-2 md:gap-3 min-h-0 h-full">
               <div className="flex items-center gap-2">
                 {serviceType === "DINE_IN" && selectedTable && (
                   <Button
@@ -737,23 +830,32 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                       setCart(new Map());
                     }}
                   >
-                    <ArrowLeft className="h-4 w-4 mr-1" /> Tables
+                    <ArrowLeft className="h-4 w-4 md:mr-1" />
+                    <span className="hidden md:inline">Tables</span>
                   </Button>
                 )}
                 <Input
                   placeholder="Search menu..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 h-9"
                 />
               </div>
-              <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+
+              {/* Sticky Category Navigation on Mobile */}
+              <div
+                className={`flex gap-2 overflow-x-auto pb-1 scrollbar-hide ${
+                  isMobile
+                    ? "sticky top-0 bg-background z-10 -mx-4 px-4 py-2 border-b"
+                    : ""
+                }`}
+              >
                 {categories.map((cat) => (
                   <Button
                     key={cat.id}
                     variant={activeCategory === cat.id ? "default" : "outline"}
                     size="sm"
-                    className="whitespace-nowrap"
+                    className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
                     onClick={() => setActiveCategory(cat.id)}
                   >
                     {getLocalizedName(cat as any, language)}
@@ -761,25 +863,41 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                 ))}
               </div>
 
-              <ScrollArea className="flex-1 -mr-3 pr-3">
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-4">
+              <ScrollArea
+                className={`flex-1 ${isMobile ? "-mx-4 px-4" : "-mr-3 pr-3"}`}
+              >
+                <div
+                  className={`grid gap-2 md:gap-3 ${
+                    isMobile
+                      ? "grid-cols-2 pb-24"
+                      : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 pb-4"
+                  }`}
+                >
                   {filteredItems.map((item) => (
                     <Card
                       key={item.id}
-                      className="cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors"
+                      className="cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95"
                       onClick={() => handleItemClick(item)}
                     >
-                      <CardContent className="p-3">
-                        <p className="font-medium line-clamp-2 min-h-[2.5rem] leading-tight">
+                      <CardContent className={`${isMobile ? "p-2" : "p-3"}`}>
+                        <p
+                          className={`font-medium line-clamp-2 leading-tight ${
+                            isMobile ? "text-sm min-h-[2rem]" : "min-h-[2.5rem]"
+                          }`}
+                        >
                           {getLocalizedName(item as any, language)}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1 font-mono">
+                        <p
+                          className={`text-muted-foreground mt-1 font-mono ${
+                            isMobile ? "text-xs" : "text-sm"
+                          }`}
+                        >
                           {getItemPriceRange(item)}
                         </p>
                         {item.variants.length > 1 && (
                           <Badge
                             variant="secondary"
-                            className="mt-2 text-[10px] h-5"
+                            className="mt-1 md:mt-2 text-[9px] md:text-[10px] h-4 md:h-5"
                           >
                             {item.variants.length} options
                           </Badge>
@@ -793,209 +911,478 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
           )}
         </div>
 
-        {/* Right cart */}
-        <div className="border rounded-md p-3 flex flex-col min-h-0 bg-background">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Current Order</h3>
-            <Badge variant="secondary">Total: ₹{grandTotal.toFixed(2)}</Badge>
-          </div>
-          <Separator className="my-3" />
+        {/* Right cart - Desktop sidebar / Mobile bottom drawer */}
+        {!isMobile ? (
+          // Desktop: Sidebar cart
+          <div className="border rounded-md p-3 flex flex-col min-h-0 bg-background">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Current Order</h3>
+              <Badge variant="secondary">Total: ₹{grandTotal.toFixed(2)}</Badge>
+            </div>
+            <Separator className="my-3" />
 
-          <ScrollArea className="flex-1 -mr-3 pr-3">
-            <div className="space-y-4">
-              {/* SECTION 1: EXISTING ITEMS (Already sent to kitchen) */}
-              {currentOrder &&
-                currentOrder.orderItems &&
-                currentOrder.orderItems.length > 0 && (
-                  <div className="space-y-2">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
-                      Kitchen / Served
-                    </div>
-                    {currentOrder.orderItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex flex-col p-2 rounded-md bg-secondary/30 text-sm border border-transparent hover:border-border transition-colors"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="font-medium flex items-center gap-2">
-                              {item.quantity}x{" "}
-                              {getLocalizedName(
-                                item.menuItemVariant?.menuItem as any,
-                                language
-                              ) || "Unknown Item"}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {getLocalizedName(
-                                item.menuItemVariant as any,
-                                language
+            <ScrollArea className="flex-1 -mr-3 pr-3">
+              <div className="space-y-4">
+                {/* SECTION 1: EXISTING ITEMS (Already sent to kitchen) */}
+                {currentOrder &&
+                  currentOrder.orderItems &&
+                  currentOrder.orderItems.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                        Kitchen / Served
+                      </div>
+                      {currentOrder.orderItems.map((item) => (
+                        <div
+                          key={item.id}
+                          className="flex flex-col p-2 rounded-md bg-secondary/30 text-sm border border-transparent hover:border-border transition-colors"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-medium flex items-center gap-2">
+                                {item.quantity}x{" "}
+                                {getLocalizedName(
+                                  item.menuItemVariant?.menuItem as any,
+                                  language
+                                ) || "Unknown Item"}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {getLocalizedName(
+                                  item.menuItemVariant as any,
+                                  language
+                                )}
+                              </div>
+                              {item.note && (
+                                <div className="text-xs italic text-muted-foreground">
+                                  "{item.note}"
+                                </div>
                               )}
                             </div>
-                            {item.note && (
-                              <div className="text-xs italic text-muted-foreground">
-                                "{item.note}"
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col items-end gap-1">
-                            <span className="font-mono">
-                              ₹{Number(item.price) * item.quantity}
-                            </span>
-                            {getStatusBadge(item.status)}
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="font-mono">
+                                ₹{Number(item.price) * item.quantity}
+                              </span>
+                              {getStatusBadge(item.status)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                    <Separator />
+                      ))}
+                      <Separator />
+                    </div>
+                  )}
+
+                {/* SECTION 2: NEW ITEMS (Local Cart) */}
+                {cart.size > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wider pl-1 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                      New to Add
+                    </div>
+                    {Array.from(cart.values()).map((c) => {
+                      const item = menuItems.find(
+                        (mi) => mi.id === c.menuItemId
+                      );
+                      const variant = item?.variants.find(
+                        (v) => v.id === c.variantId
+                      );
+                      if (!item || !variant) return null;
+                      return (
+                        <div
+                          key={c.key}
+                          className="flex flex-col p-3 rounded-md bg-background border border-primary/20 shadow-sm"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {getLocalizedName(item as any, language)}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {getLocalizedName(variant as any, language)}
+                              </p>
+                            </div>
+                            <p className="font-medium text-sm">
+                              ₹
+                              {(parseFloat(variant.price) * c.quantity).toFixed(
+                                2
+                              )}
+                            </p>
+                          </div>
+
+                          {c.note && (
+                            <p className="text-xs text-amber-600 mt-1 italic bg-amber-50 p-1 rounded w-fit">
+                              "{c.note}"
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between mt-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 text-xs"
+                              onClick={() =>
+                                setEditingNote({
+                                  cartKey: c.key,
+                                  initialNote: c.note,
+                                  itemName: item.name,
+                                })
+                              }
+                            >
+                              {c.note ? "Edit Note" : "+ Note"}
+                            </Button>
+                            <div className="flex items-center bg-secondary rounded-md">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={() =>
+                                  handleQuantityChange(c.key, "remove")
+                                }
+                              >
+                                -
+                              </Button>
+                              <span className="w-8 text-center text-sm font-medium">
+                                {c.quantity}
+                              </span>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 rounded-none"
+                                onClick={() =>
+                                  handleQuantityChange(c.key, "add")
+                                }
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-              {/* SECTION 2: NEW ITEMS (Local Cart) */}
-              {cart.size > 0 && (
-                <div className="space-y-2">
-                  <div className="text-xs font-semibold text-primary uppercase tracking-wider pl-1 flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-                    New to Add
+                {/* EMPTY STATE */}
+                {!currentOrder && cart.size === 0 && (
+                  <div className="text-center text-muted-foreground pt-12 flex flex-col items-center opacity-50">
+                    <div className="bg-muted p-4 rounded-full mb-3">
+                      <ShoppingCart className="h-8 w-8" />
+                    </div>
+                    <p>Cart is empty</p>
                   </div>
-                  {Array.from(cart.values()).map((c) => {
-                    const item = menuItems.find((mi) => mi.id === c.menuItemId);
-                    const variant = item?.variants.find(
-                      (v) => v.id === c.variantId
-                    );
-                    if (!item || !variant) return null;
-                    return (
-                      <div
-                        key={c.key}
-                        className="flex flex-col p-3 rounded-md bg-background border border-primary/20 shadow-sm"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium text-sm">
-                              {getLocalizedName(item as any, language)}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {getLocalizedName(variant as any, language)}
-                            </p>
-                          </div>
-                          <p className="font-medium text-sm">
-                            ₹
-                            {(parseFloat(variant.price) * c.quantity).toFixed(
-                              2
-                            )}
-                          </p>
-                        </div>
+                )}
+              </div>
+            </ScrollArea>
 
-                        {c.note && (
-                          <p className="text-xs text-amber-600 mt-1 italic bg-amber-50 p-1 rounded w-fit">
-                            "{c.note}"
-                          </p>
-                        )}
+            <Separator className="my-3" />
 
-                        <div className="flex items-center justify-between mt-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 text-xs"
-                            onClick={() =>
-                              setEditingNote({
-                                cartKey: c.key,
-                                initialNote: c.note,
-                                itemName: item.name,
-                              })
-                            }
-                          >
-                            {c.note ? "Edit Note" : "+ Note"}
-                          </Button>
-                          <div className="flex items-center bg-secondary rounded-md">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-none"
-                              onClick={() =>
-                                handleQuantityChange(c.key, "remove")
-                              }
-                            >
-                              -
-                            </Button>
-                            <span className="w-8 text-center text-sm font-medium">
-                              {c.quantity}
-                            </span>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 rounded-none"
-                              onClick={() => handleQuantityChange(c.key, "add")}
-                            >
-                              +
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* EMPTY STATE */}
-              {!currentOrder && cart.size === 0 && (
-                <div className="text-center text-muted-foreground pt-12 flex flex-col items-center opacity-50">
-                  <div className="bg-muted p-4 rounded-full mb-3">
-                    <ShoppingCart className="h-8 w-8" />
-                  </div>
-                  <p>Cart is empty</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-
-          <Separator className="my-3" />
-
-          {/* Actions */}
-          <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                onClick={sendToKitchen}
-                disabled={kotLoading}
-                variant="outline"
-                className="border-primary/20 hover:bg-primary/5 hover:text-primary"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                {kotLoading ? "Sending..." : "To Kitchen"}
-              </Button>
-              <Button
-                onClick={settleAndPrint}
-                disabled={kotLoading || addItemsLoading}
-                className="bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                {kotLoading || addItemsLoading ? "..." : "Settle"}
-              </Button>
-            </div>
-            {currentOrder && (
-              <>
+            {/* Actions */}
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <Button
-                  onClick={handlePrint}
-                  variant="secondary"
-                  className="w-full"
-                  disabled={!currentOrder}
+                  onClick={sendToKitchen}
+                  disabled={kotLoading}
+                  variant="outline"
+                  className="border-primary/20 hover:bg-primary/5 hover:text-primary"
                 >
-                  <Receipt className="h-4 w-4 mr-2" />
-                  Print Bill
+                  <Send className="h-4 w-4 mr-2" />
+                  {kotLoading ? "Sending..." : "To Kitchen"}
                 </Button>
                 <Button
-                  onClick={handlePrintKOT}
-                  variant="secondary"
-                  className="w-full"
-                  disabled={!hasOrderedItems}
+                  onClick={settleAndPrint}
+                  disabled={kotLoading || addItemsLoading}
+                  className="bg-primary text-primary-foreground shadow-md hover:shadow-lg transition-all"
                 >
                   <Printer className="h-4 w-4 mr-2" />
-                  Print KOT
+                  {kotLoading || addItemsLoading ? "..." : "Settle"}
                 </Button>
-              </>
-            )}
+              </div>
+              {currentOrder && (
+                <>
+                  <Button
+                    onClick={handlePrint}
+                    variant="secondary"
+                    className="w-full"
+                    disabled={!currentOrder}
+                  >
+                    <Receipt className="h-4 w-4 mr-2" />
+                    Print Bill
+                  </Button>
+                  <Button
+                    onClick={handlePrintKOT}
+                    variant="secondary"
+                    className="w-full"
+                    disabled={!hasOrderedItems}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print KOT
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
+
+      {/* Mobile: Sticky Bottom Cart Footer + Drawer */}
+      {isMobile && (serviceType === "TAKEAWAY" || selectedTable) && (
+        <>
+          {/* Sticky Footer Bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-lg z-50 p-3 safe-area-bottom">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">
+                  Total Items
+                </span>
+                <span className="text-lg font-bold">
+                  {(currentOrder?.orderItems?.length || 0) + cart.size}
+                </span>
+              </div>
+              <div className="flex flex-col items-end flex-1">
+                <span className="text-xs text-muted-foreground">
+                  Total Amount
+                </span>
+                <span className="text-xl font-bold text-primary">
+                  ₹{grandTotal.toFixed(2)}
+                </span>
+              </div>
+              <Button
+                size="lg"
+                onClick={() => setCartDrawerOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                <span>View Cart</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Cart Drawer */}
+          <Sheet open={cartDrawerOpen} onOpenChange={setCartDrawerOpen}>
+            <SheetContent side="bottom" className="h-[85vh] flex flex-col p-0">
+              <SheetHeader className="p-4 border-b">
+                <SheetTitle>Current Order</SheetTitle>
+                <div className="flex items-center justify-between pt-2">
+                  <Badge variant="secondary">
+                    {(currentOrder?.orderItems?.length || 0) + cart.size} items
+                  </Badge>
+                  <span className="text-xl font-bold">
+                    ₹{grandTotal.toFixed(2)}
+                  </span>
+                </div>
+              </SheetHeader>
+
+              <ScrollArea className="flex-1 px-4">
+                <div className="space-y-4 py-4">
+                  {/* SECTION 1: EXISTING ITEMS (Already sent to kitchen) */}
+                  {currentOrder &&
+                    currentOrder.orderItems &&
+                    currentOrder.orderItems.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider pl-1">
+                          Kitchen / Served
+                        </div>
+                        {currentOrder.orderItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex flex-col p-3 rounded-md bg-secondary/30 text-sm border"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  {item.quantity}x{" "}
+                                  {getLocalizedName(
+                                    item.menuItemVariant?.menuItem as any,
+                                    language
+                                  ) || "Unknown Item"}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {getLocalizedName(
+                                    item.menuItemVariant as any,
+                                    language
+                                  )}
+                                </div>
+                                {item.note && (
+                                  <div className="text-xs italic text-muted-foreground mt-1">
+                                    "{item.note}"
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <span className="font-mono font-semibold">
+                                  ₹
+                                  {(Number(item.price) * item.quantity).toFixed(
+                                    2
+                                  )}
+                                </span>
+                                {getStatusBadge(item.status)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        <Separator />
+                      </div>
+                    )}
+
+                  {/* SECTION 2: NEW ITEMS (Local Cart) */}
+                  {cart.size > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-xs font-semibold text-primary uppercase tracking-wider pl-1 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+                        New to Add
+                      </div>
+                      {Array.from(cart.values()).map((c) => {
+                        const item = menuItems.find(
+                          (mi) => mi.id === c.menuItemId
+                        );
+                        const variant = item?.variants.find(
+                          (v) => v.id === c.variantId
+                        );
+                        if (!item || !variant) return null;
+                        return (
+                          <div
+                            key={c.key}
+                            className="flex flex-col p-3 rounded-md bg-background border border-primary/20 shadow-sm"
+                          >
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="font-medium text-sm">
+                                  {getLocalizedName(item as any, language)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {getLocalizedName(variant as any, language)}
+                                </p>
+                              </div>
+                              <p className="font-medium text-sm">
+                                ₹
+                                {(
+                                  parseFloat(variant.price) * c.quantity
+                                ).toFixed(2)}
+                              </p>
+                            </div>
+
+                            {c.note && (
+                              <p className="text-xs text-amber-600 mt-1 italic bg-amber-50 p-1 rounded w-fit">
+                                "{c.note}"
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-between mt-2">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 text-xs"
+                                onClick={() =>
+                                  setEditingNote({
+                                    cartKey: c.key,
+                                    initialNote: c.note,
+                                    itemName: item.name,
+                                  })
+                                }
+                              >
+                                {c.note ? "Edit Note" : "+ Note"}
+                              </Button>
+                              <div className="flex items-center bg-secondary rounded-md">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-none"
+                                  onClick={() =>
+                                    handleQuantityChange(c.key, "remove")
+                                  }
+                                >
+                                  -
+                                </Button>
+                                <span className="w-10 text-center text-sm font-medium">
+                                  {c.quantity}
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8 rounded-none"
+                                  onClick={() =>
+                                    handleQuantityChange(c.key, "add")
+                                  }
+                                >
+                                  +
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* EMPTY STATE */}
+                  {!currentOrder && cart.size === 0 && (
+                    <div className="text-center text-muted-foreground pt-12 flex flex-col items-center opacity-50">
+                      <div className="bg-muted p-4 rounded-full mb-3">
+                        <ShoppingCart className="h-8 w-8" />
+                      </div>
+                      <p>Cart is empty</p>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Action Buttons at Bottom */}
+              <div className="p-4 border-t bg-background space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    onClick={() => {
+                      sendToKitchen();
+                      setCartDrawerOpen(false);
+                    }}
+                    disabled={kotLoading}
+                    variant="outline"
+                    className="border-primary/20"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    {kotLoading ? "Sending..." : "To Kitchen"}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      settleAndPrint();
+                      setCartDrawerOpen(false);
+                    }}
+                    disabled={kotLoading || addItemsLoading}
+                    className="bg-primary"
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Settle
+                  </Button>
+                </div>
+                {currentOrder && (
+                  <>
+                    <Button
+                      onClick={() => {
+                        handlePrint();
+                        setCartDrawerOpen(false);
+                      }}
+                      variant="secondary"
+                      className="w-full"
+                    >
+                      <Receipt className="h-4 w-4 mr-2" />
+                      Print Bill
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        handlePrintKOT();
+                        setCartDrawerOpen(false);
+                      }}
+                      variant="secondary"
+                      className="w-full"
+                      disabled={!hasOrderedItems}
+                    >
+                      <Printer className="h-4 w-4 mr-2" />
+                      Print KOT
+                    </Button>
+                  </>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </>
+      )}
 
       {/* Variant & Note dialogs */}
       <VariantSelectionDialog
@@ -1158,7 +1545,7 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                             >
                               <div>
                                 <Badge variant="outline">
-                                  {payment.method}
+                                  {payment.paymentMethod}
                                 </Badge>
                               </div>
                               <div className="font-medium">

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Bike } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface OrderListProps {
   orders: APIOrder[];
@@ -18,6 +19,8 @@ export const OrderList: React.FC<OrderListProps> = ({
   onSelectOrder,
   selectedOrderId,
 }) => {
+  const isMobile = useIsMobile();
+
   const getPaymentStatusVariant = (
     status: APIOrder["paymentStatus"]
   ): "destructive" | "warning" | "success" | "default" => {
@@ -37,33 +40,41 @@ export const OrderList: React.FC<OrderListProps> = ({
 
   return (
     <Card className="h-full flex flex-col">
-      <CardContent className="p-0 flex-1 min-h-0">
+      <CardContent className={`p-0 flex-1 min-h-0 ${isMobile ? "" : ""}`}>
         <ScrollArea className="h-full">
-          <div className="p-4 space-y-3">
+          <div className={`space-y-2 ${isMobile ? "p-2" : "p-4 space-y-3"}`}>
             {orders.map((order) => (
               <div
                 key={order.id}
                 onClick={() => onSelectOrder(order)}
-                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`rounded-lg cursor-pointer transition-all active:scale-[0.98] ${
+                  isMobile ? "p-3 min-h-[100px]" : "p-3"
+                } ${
                   selectedOrderId === order.id
-                    ? "bg-primary/10 border-primary"
-                    : "bg-muted/50 hover:bg-muted"
+                    ? "bg-primary/10 border-primary shadow-sm"
+                    : "bg-muted/50 hover:bg-muted active:bg-muted"
                 } border`}
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex flex-col gap-1">
-                    <div className="font-bold flex items-center gap-2">
-                      {order.orderType === "DELIVERY_ZOMATO" ||
-                      order.orderType === "DELIVERY_SWIGGY" ||
-                      order.orderType === "DELIVERY_OTHER"
-                        ? "Delivery"
-                        : order.takeAway
-                        ? "Take-away"
-                        : `Table ${order.table?.tableNumber || ""}`}
+                <div className="flex justify-between items-start gap-2">
+                  <div className="flex flex-col gap-1 flex-1 min-w-0">
+                    <div
+                      className={`font-bold flex items-center gap-2 flex-wrap ${
+                        isMobile ? "text-base" : ""
+                      }`}
+                    >
+                      <span className="truncate">
+                        {order.orderType === "DELIVERY_ZOMATO" ||
+                        order.orderType === "DELIVERY_SWIGGY" ||
+                        order.orderType === "DELIVERY_OTHER"
+                          ? "Delivery"
+                          : order.takeAway
+                          ? "Take-away"
+                          : `Table ${order.table?.tableNumber || ""}`}
+                      </span>
                       {order.orderType === "DELIVERY_ZOMATO" && (
                         <Badge
                           variant="destructive"
-                          className="flex items-center gap-1 text-xs"
+                          className="flex items-center gap-1 text-[10px] h-5 shrink-0"
                         >
                           <Bike className="h-2.5 w-2.5" />
                           Zomato
@@ -72,7 +83,7 @@ export const OrderList: React.FC<OrderListProps> = ({
                       {order.orderType === "DELIVERY_SWIGGY" && (
                         <Badge
                           variant="default"
-                          className="flex items-center gap-1 text-xs bg-orange-500"
+                          className="flex items-center gap-1 text-[10px] h-5 bg-orange-500 shrink-0"
                         >
                           <Bike className="h-2.5 w-2.5" />
                           Swiggy
@@ -81,7 +92,7 @@ export const OrderList: React.FC<OrderListProps> = ({
                       {order.orderType === "DELIVERY_OTHER" && (
                         <Badge
                           variant="secondary"
-                          className="flex items-center gap-1 text-xs"
+                          className="flex items-center gap-1 text-[10px] h-5 shrink-0"
                         >
                           <Bike className="h-2.5 w-2.5" />
                           Delivery
@@ -89,23 +100,40 @@ export const OrderList: React.FC<OrderListProps> = ({
                       )}
                     </div>
                     {order.customerName && (
-                      <div className="text-xs text-muted-foreground">
+                      <div
+                        className={`text-muted-foreground truncate ${
+                          isMobile ? "text-xs" : "text-xs"
+                        }`}
+                      >
                         {order.customerName}
                       </div>
                     )}
                   </div>
-                  <Badge variant={getPaymentStatusVariant(order.paymentStatus)}>
+                  <Badge
+                    variant={getPaymentStatusVariant(order.paymentStatus)}
+                    className={`shrink-0 ${
+                      isMobile ? "text-[10px] h-5" : "text-xs"
+                    }`}
+                  >
                     {order.paymentStatus}
                   </Badge>
                 </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  ID: #{order.id.substring(0, 8)}...
-                </div>
-                <div className="flex justify-between items-end mt-2">
-                  <div className="text-sm text-muted-foreground">
+                {!isMobile && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    ID: #{order.id.substring(0, 8)}...
+                  </div>
+                )}
+                <div className="flex justify-between items-end mt-2 gap-2">
+                  <div
+                    className={`text-muted-foreground ${
+                      isMobile ? "text-xs" : "text-sm"
+                    }`}
+                  >
                     {format(new Date(order.createdAt), "p")}
                   </div>
-                  <div className="font-bold text-lg">
+                  <div
+                    className={`font-bold ${isMobile ? "text-lg" : "text-lg"}`}
+                  >
                     ₹{Number(order.totalAmount).toFixed(2)}
                   </div>
                 </div>

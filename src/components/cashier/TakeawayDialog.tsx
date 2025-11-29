@@ -227,26 +227,26 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
           onOpenChange(isOpen);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90vh]">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] flex flex-col p-0">
+          <DialogHeader className="px-4 pt-4 md:px-6 md:pt-6">
             <DialogTitle>
               {language === "hi"
                 ? "टेक-अवे ऑर्डर बनाएं"
                 : "Create Take-away Order"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0 px-4 md:px-6">
             {/* Menu List */}
-            <div className="lg:col-span-2 flex flex-col border-b lg:border-b-0 lg:border-r pb-4 lg:pb-0 pr-0 lg:pr-4">
+            <div className="lg:col-span-2 flex flex-col border-b lg:border-b-0 lg:border-r pb-4 lg:pb-0 pr-0 lg:pr-4 min-h-0">
               <Input
                 placeholder={
                   language === "hi" ? "मेनू खोजें..." : "Search menu..."
                 }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="mb-4"
+                className="mb-3 h-9"
               />
-              <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+              <div className="flex space-x-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
                 {categories.map((category) => (
                   <Button
                     key={category.id}
@@ -254,14 +254,14 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
                       activeCategory === category.id ? "default" : "outline"
                     }
                     onClick={() => setActiveCategory(category.id)}
-                    className="whitespace-nowrap"
+                    className="whitespace-nowrap h-8"
                     size="sm"
                   >
                     {getLocalizedName(category as any, language)}
                   </Button>
                 ))}
               </div>
-              <ScrollArea className="h-[300px] lg:h-[400px]">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredItems.length === 0 ? (
                     <div className="col-span-2 text-center py-8 text-muted-foreground">
@@ -309,11 +309,11 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
               </ScrollArea>
             </div>
             {/* Cart */}
-            <div className="flex flex-col">
-              <h3 className="font-semibold mb-4">
+            <div className="flex flex-col min-h-0">
+              <h3 className="font-semibold mb-3 text-sm md:text-base">
                 {language === "hi" ? "ऑर्डर आइटम्स" : "Order Items"}
               </h3>
-              <ScrollArea className="h-[300px] lg:h-[400px]">
+              <ScrollArea className="flex-1 min-h-0">
                 {cart.size === 0 ? (
                   <div className="text-center text-muted-foreground pt-16">
                     <ShoppingCart className="mx-auto h-12 w-12 opacity-50" />
@@ -407,15 +407,15 @@ export const TakeawayDialog: React.FC<TakeawayDialogProps> = ({
               </ScrollArea>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-4 pb-4 pt-3 md:px-6 md:pb-6 border-t mt-auto">
             <div className="flex flex-col sm:flex-row items-center justify-between w-full gap-2">
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-xs md:text-sm">
                 {language === "hi" ? "कुल आइटम:" : "Total Items:"} {totalItems}
               </Badge>
               <Button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto h-10 md:h-11"
               >
                 {isLoading
                   ? language === "hi"
