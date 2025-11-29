@@ -234,6 +234,15 @@ const WaiterOrderManagement: React.FC = () => {
       setCart([...cart, newItem]);
     }
 
+    toast({
+      title: "Added to order",
+      description: `${getLocalizedName(
+        menuItem,
+        language
+      )} - ${getLocalizedName(variant as any, language)}`,
+      duration: 1000,
+    });
+
     setVariantDialogOpen(false);
     setSelectedItemId(null);
   };
@@ -427,6 +436,14 @@ const WaiterOrderManagement: React.FC = () => {
     return localized.includes(searchTerm.toLowerCase());
   });
 
+  const getItemQuantityInCart = (menuItemId: string): number => {
+    return cart
+      .filter(
+        (cartItem) => cartItem.menuItemVariant?.menuItem.id === menuItemId
+      )
+      .reduce((total, cartItem) => total + cartItem.quantity, 0);
+  };
+
   const canCompleteOrder =
     currentOrder &&
     currentOrder.orderItems &&
@@ -573,33 +590,44 @@ const WaiterOrderManagement: React.FC = () => {
         {/* Menu Items Grid */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {currentItems.map((item) => (
-              <Card
-                key={item.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  !item.isAvailable ? "opacity-50" : ""
-                }`}
-                onClick={() => item.isAvailable && addToCart(item)}
-              >
-                <CardContent className="p-4">
-                  <h3 className="font-semibold text-sm line-clamp-2 mb-2">
-                    {getLocalizedName(item, language)}
-                  </h3>
-                  <p className="text-lg font-bold text-primary">
-                    {item.variants.length === 1
-                      ? `₹${parseFloat(item.variants[0].price).toFixed(2)}`
-                      : `From ₹${Math.min(
-                          ...item.variants.map((v) => parseFloat(v.price))
-                        ).toFixed(2)}`}
-                  </p>
-                  {!item.isAvailable && (
-                    <Badge variant="secondary" className="mt-2 text-xs">
-                      Unavailable
+            {currentItems.map((item) => {
+              const quantityInCart = getItemQuantityInCart(item.id);
+              return (
+                <Card
+                  key={item.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg relative ${
+                    !item.isAvailable ? "opacity-50" : ""
+                  }`}
+                  onClick={() => item.isAvailable && addToCart(item)}
+                >
+                  {quantityInCart > 0 && (
+                    <Badge
+                      variant="default"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full flex items-center justify-center p-0 text-xs font-bold z-10"
+                    >
+                      {quantityInCart}
                     </Badge>
                   )}
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-sm line-clamp-2 mb-2">
+                      {getLocalizedName(item, language)}
+                    </h3>
+                    <p className="text-lg font-bold text-primary">
+                      {item.variants.length === 1
+                        ? `₹${parseFloat(item.variants[0].price).toFixed(2)}`
+                        : `From ₹${Math.min(
+                            ...item.variants.map((v) => parseFloat(v.price))
+                          ).toFixed(2)}`}
+                    </p>
+                    {!item.isAvailable && (
+                      <Badge variant="secondary" className="mt-2 text-xs">
+                        Unavailable
+                      </Badge>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
 
@@ -859,58 +887,17 @@ const WaiterOrderManagement: React.FC = () => {
             className="absolute right-0 top-16 bottom-0 w-full max-w-sm bg-card border-l flex flex-col shadow-2xl animate-slide-in-right"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Order Header */}
-            {/* <div className="p-4 border-b space-y-3">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Current Order</h2>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setCart([])}
-                    disabled={cart.length === 0}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsOrderPanelOpen(false)}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {currentOrder && (
-                <div className="grid grid-cols-4 gap-2 text-center">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Pending</div>
-                    <div className="font-bold text-secondary">
-                      {orderSummary.pending}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">
-                      Preparing
-                    </div>
-                    <div className="font-bold text-warning">
-                      {orderSummary.preparing}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Ready</div>
-                    <div className="font-bold text-success">
-                      {orderSummary.ready}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground">Served</div>
-                    <div className="font-bold">{orderSummary.served}</div>
-                  </div>
-                </div>
-              )}
-            </div> */}
+            {/* Mobile Panel Header */}
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-lg font-bold">Current Order</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsOrderPanelOpen(false)}
+              >
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">

@@ -331,14 +331,14 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
               <Receipt className="h-4 w-4" />
               Full Bill
             </TabsTrigger>
-            <TabsTrigger value="EQUAL" className="flex items-center gap-2">
+            {/* <TabsTrigger value="EQUAL" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Split Equally
             </TabsTrigger>
             <TabsTrigger value="ITEM" className="flex items-center gap-2">
               <ListChecks className="h-4 w-4" />
               Split by Item
-            </TabsTrigger>
+            </TabsTrigger> */}
           </TabsList>
 
           <TabsContent value="FULL" className="space-y-4">
@@ -352,6 +352,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
             </div>
           </TabsContent>
 
+          {/*
           <TabsContent value="EQUAL" className="space-y-4">
             <div className="space-y-4">
               <div className="flex items-center gap-4">
@@ -437,6 +438,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
               </p>
             </div>
           </TabsContent>
+          */}
         </Tabs>
 
         {/* Payment Method Selection */}
@@ -492,7 +494,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label>Cash Received (Tendered)</Label>
               <Input
                 type="number"
@@ -501,10 +503,10 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
                 placeholder="Enter amount received"
                 className="text-xl font-bold"
               />
-            </div>
+            </div> */}
 
             {/* Quick Denomination Buttons */}
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label className="text-xs text-muted-foreground">
                 Quick Select
               </Label>
@@ -529,10 +531,10 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
                   Exact Amount
                 </Button>
               </div>
-            </div>
+            </div> */}
 
             {/* Change Display */}
-            {tenderedAmount && Number(tenderedAmount) >= amountToPay && (
+            {/* {tenderedAmount && Number(tenderedAmount) >= amountToPay && (
               <div className="p-4 bg-green-50 dark:bg-green-950 border-2 border-green-500 rounded-lg text-center">
                 <p className="text-sm text-muted-foreground mb-1">
                   Change to Return
@@ -551,6 +553,7 @@ export const PaymentDialog: React.FC<PaymentDialogProps> = ({
                 </p>
               </div>
             )}
+            */}
           </div>
         )}
 
