@@ -30,6 +30,7 @@ export const EditNoteDialog: React.FC<EditNoteDialogProps> = ({
   const [note, setNote] = useState(initialNote);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const lastResultIndexRef = useRef<number>(0);
 
   useEffect(() => {
     // Check if browser supports Speech Recognition
@@ -43,15 +44,17 @@ export const EditNoteDialog: React.FC<EditNoteDialogProps> = ({
       recognitionRef.current.lang = "en-US";
 
       recognitionRef.current.onresult = (event: any) => {
-        let interimTranscript = "";
         let finalTranscript = "";
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
+        // Only process results from the last processed index onwards
+        for (
+          let i = lastResultIndexRef.current;
+          i < event.results.length;
+          i++
+        ) {
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + " ";
-          } else {
-            interimTranscript += transcript;
+            finalTranscript += event.results[i][0].transcript + " ";
+            lastResultIndexRef.current = i + 1;
           }
         }
 
@@ -95,7 +98,9 @@ export const EditNoteDialog: React.FC<EditNoteDialogProps> = ({
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
+      lastResultIndexRef.current = 0;
     } else {
+      lastResultIndexRef.current = 0;
       recognitionRef.current.start();
       setIsListening(true);
       toast({

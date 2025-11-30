@@ -71,6 +71,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   // --- Speech Recognition State ---
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const lastResultIndexRef = useRef<number>(0);
   // ---
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -101,15 +102,17 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
         recognition.lang = "en-US";
 
         recognition.onresult = (event: any) => {
-          let interimTranscript = "";
           let finalTranscript = "";
 
-          for (let i = event.resultIndex; i < event.results.length; i++) {
-            const transcript = event.results[i][0].transcript;
+          // Only process results from the last processed index onwards
+          for (
+            let i = lastResultIndexRef.current;
+            i < event.results.length;
+            i++
+          ) {
             if (event.results[i].isFinal) {
-              finalTranscript += transcript + " ";
-            } else {
-              interimTranscript += transcript;
+              finalTranscript += event.results[i][0].transcript + " ";
+              lastResultIndexRef.current = i + 1;
             }
           }
 
@@ -301,6 +304,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
+      lastResultIndexRef.current = 0;
     } else {
       try {
         // Check current permission state
@@ -335,6 +339,9 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
 
         // Stop the stream immediately as we only needed it for permission
         stream.getTracks().forEach((track) => track.stop());
+
+        // Reset the result index before starting
+        lastResultIndexRef.current = 0;
 
         // Now start speech recognition
         recognitionRef.current.start();
