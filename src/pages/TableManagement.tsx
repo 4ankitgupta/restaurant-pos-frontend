@@ -237,8 +237,18 @@ const TableManagement: React.FC = () => {
         apiService.seatTable(selectedTable.id, partySize)
       );
       await loadTables();
-      setSelectedTable(null);
-      setIsSheetOpen(false);
+
+      // Update the selected table to show the new occupied state
+      const updatedTables = await fetchTables(() => apiService.getTables());
+      if (updatedTables) {
+        const updatedTable = updatedTables.data.find(
+          (t) => t.id === selectedTable.id
+        );
+        if (updatedTable) {
+          setSelectedTable(updatedTable);
+        }
+      }
+      // Keep the sheet open to show "Take / View Order" button
     } catch (error) {
       console.error("Failed to seat customers:", error);
     }

@@ -39,7 +39,7 @@ export function TableSheet({
     if (partySize) {
       onSeatCustomers(parseInt(partySize));
       setPartySize("");
-      onOpenChange(false);
+      // Don't close the sheet - let it stay open to show "Take / View Order"
     }
   };
 
