@@ -139,29 +139,6 @@ const Login: React.FC = () => {
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-
-            {/* Quick Demo Access */}
-            <div className="mt-6">
-              <div className="flex items-center justify-center">
-                <span className="text-sm text-gray-500 font-medium">
-                  Quick Demo Access
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                {demoCredentials.map((demo, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => quickLogin(demo.email)}
-                    className="text-xs border-gray-300 hover:border-orange-500 hover:text-orange-600 transition-colors bg-white/70"
-                  >
-                    {demo.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </CardContent>
         </Card>
 

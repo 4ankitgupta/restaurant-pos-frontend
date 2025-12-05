@@ -199,142 +199,155 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
           Add Menu Item
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {editingItem ? "Edit Menu Item" : "Add New Menu Item"}
           </DialogTitle>
         </DialogHeader>
         <form
           onSubmit={editingItem ? handleUpdateItem : handleCreateItem}
-          className="space-y-4"
+          className="flex flex-col gap-4 overflow-hidden"
         >
-          <div>
-            <Label htmlFor="item-name">Name (English)</Label>
-            <Input
-              id="item-name"
-              value={itemForm.name}
-              onChange={(e) =>
-                setItemForm((prev) => ({ ...prev, name: e.target.value }))
-              }
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="item-name-hindi">Name (Hindi)</Label>
-            <Input
-              id="item-name-hindi"
-              value={itemForm.nameHindi}
-              onChange={(e) =>
-                setItemForm((prev) => ({ ...prev, nameHindi: e.target.value }))
-              }
-              placeholder="e.g. पनीर टिक्का"
-            />
-          </div>
-          <div>
-            <Label htmlFor="item-description">Description (English)</Label>
-            <Textarea
-              id="item-description"
-              value={itemForm.description}
-              onChange={(e) =>
-                setItemForm((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-            />
-          </div>
-          <div>
-            <Label htmlFor="item-description-hindi">Description (Hindi)</Label>
-            <Textarea
-              id="item-description-hindi"
-              value={itemForm.descriptionHindi}
-              onChange={(e) =>
-                setItemForm((prev) => ({
-                  ...prev,
-                  descriptionHindi: e.target.value,
-                }))
-              }
-              placeholder="e.g. मसालों में मैरीनेट किया हुआ और ग्रिल किया हुआ पनीर"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Variants</Label>
-            {itemForm.variants.map((variant, index) => (
-              <div key={index} className="space-y-2 p-3 border rounded-md">
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Variant name (e.g., Full)"
-                      value={variant.name}
-                      onChange={(e) =>
-                        handleVariantChange(index, "name", e.target.value)
-                      }
-                      required
-                    />
+          <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            <div>
+              <Label htmlFor="item-name">Name (English)</Label>
+              <Input
+                id="item-name"
+                value={itemForm.name}
+                onChange={(e) =>
+                  setItemForm((prev) => ({ ...prev, name: e.target.value }))
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="item-name-hindi">Name (Hindi)</Label>
+              <Input
+                id="item-name-hindi"
+                value={itemForm.nameHindi}
+                onChange={(e) =>
+                  setItemForm((prev) => ({
+                    ...prev,
+                    nameHindi: e.target.value,
+                  }))
+                }
+                placeholder="e.g. पनीर टिक्का"
+              />
+            </div>
+            <div>
+              <Label htmlFor="item-description">Description (English)</Label>
+              <Textarea
+                id="item-description"
+                value={itemForm.description}
+                onChange={(e) =>
+                  setItemForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="item-description-hindi">
+                Description (Hindi)
+              </Label>
+              <Textarea
+                id="item-description-hindi"
+                value={itemForm.descriptionHindi}
+                onChange={(e) =>
+                  setItemForm((prev) => ({
+                    ...prev,
+                    descriptionHindi: e.target.value,
+                  }))
+                }
+                placeholder="e.g. मसालों में मैरीनेट किया हुआ और ग्रिल किया हुआ पनीर"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Variants</Label>
+              {itemForm.variants.map((variant, index) => (
+                <div key={index} className="space-y-2 p-3 border rounded-md">
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Variant name (e.g., Full)"
+                        value={variant.name}
+                        onChange={(e) =>
+                          handleVariantChange(index, "name", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Hindi name (e.g., फुल)"
+                        value={variant.nameHindi}
+                        onChange={(e) =>
+                          handleVariantChange(
+                            index,
+                            "nameHindi",
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Price"
+                        value={variant.price}
+                        onChange={(e) =>
+                          handleVariantChange(index, "price", e.target.value)
+                        }
+                        required
+                      />
+                    </div>
+                    {itemForm.variants.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removeVariant(index)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <div className="flex-1">
-                    <Input
-                      placeholder="Hindi name (e.g., फुल)"
-                      value={variant.nameHindi}
-                      onChange={(e) =>
-                        handleVariantChange(index, "nameHindi", e.target.value)
-                      }
-                    />
-                  </div>
-                  <div className="w-32">
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="Price"
-                      value={variant.price}
-                      onChange={(e) =>
-                        handleVariantChange(index, "price", e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-                  {itemForm.variants.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeVariant(index)}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                  )}
                 </div>
-              </div>
-            ))}
-            <Button type="button" variant="outline" onClick={addVariant}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Variant
+              ))}
+              <Button type="button" variant="outline" onClick={addVariant}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Variant
+              </Button>
+            </div>
+            <div>
+              <Label htmlFor="item-category">Category</Label>
+              <Select
+                value={itemForm.categoryId}
+                onValueChange={(value) =>
+                  setItemForm((prev) => ({ ...prev, categoryId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex-shrink-0 pt-4 border-t">
+            <Button type="submit" disabled={loading} className="w-full">
+              {editingItem ? "Update Item" : "Create Item"}
             </Button>
           </div>
-          <div>
-            <Label htmlFor="item-category">Category</Label>
-            <Select
-              value={itemForm.categoryId}
-              onValueChange={(value) =>
-                setItemForm((prev) => ({ ...prev, categoryId: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button type="submit" disabled={loading}>
-            {editingItem ? "Update Item" : "Create Item"}
-          </Button>
         </form>
       </DialogContent>
     </Dialog>

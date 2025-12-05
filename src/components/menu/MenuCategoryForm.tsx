@@ -79,13 +79,16 @@ export const MenuCategoryForm: React.FC<MenuCategoryFormProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {editingCategory ? "Edit Category" : "Add New Category"}
           </DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4 overflow-hidden"
+        >
           <div>
             <Label htmlFor="category-name">Name (English)</Label>
             <Input

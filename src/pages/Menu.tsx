@@ -134,234 +134,257 @@ const Menu: React.FC = () => {
   const loading = categoriesLoading || itemsLoading || deleteLoading;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Menu Management</h1>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => setIsCategoryFormOpen(true)}>
-            <Tag className="h-4 w-4 mr-2" />
-            Add Category
-          </Button>
-          {/* <Button onClick={() => setIsItemFormOpen(true)}>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="flex-shrink-0 p-4 sm:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold">Menu Management</h1>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsCategoryFormOpen(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <Tag className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Category</span>
+            </Button>
+            {/* <Button onClick={() => setIsItemFormOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Add Menu Item
           </Button> */}
 
-          <MenuCategoryForm
-            open={isCategoryFormOpen}
-            onOpenChange={(open) => {
-              if (!open) setEditingCategory(null);
-              setIsCategoryFormOpen(open);
-            }}
-            onSuccess={fetchData}
-            editingCategory={editingCategory}
-          />
-          <MenuItemForm
-            open={isItemFormOpen}
-            onOpenChange={(open) => {
-              if (!open) setEditingItem(null);
-              setIsItemFormOpen(open);
-            }}
-            onSuccess={fetchData}
-            categories={categories}
-            editingItem={editingItem}
-            setEditingItem={setEditingItem}
-          />
-        </div>
-      </div>
-
-      {/* Categories Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Categories</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button
-              variant={selectedCategory === "all" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedCategory("all")}
-            >
-              All Items ({menuItems.length})
-            </Button>
-            {categories.map((category) => {
-              const itemCount = menuItems.filter(
-                (item) => item.categoryId === category.id
-              ).length;
-              return (
-                <div
-                  key={category.id}
-                  className="flex items-center rounded-md ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
-                >
-                  <Button
-                    variant={
-                      selectedCategory === category.id ? "default" : "outline"
-                    }
-                    size="sm"
-                    className="rounded-r-none"
-                    onClick={() => setSelectedCategory(category.id)}
-                  >
-                    {getLocalizedName(category, language)} ({itemCount})
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant={
-                          selectedCategory === category.id
-                            ? "default"
-                            : "outline"
-                        }
-                        size="sm"
-                        className="px-2 rounded-l-none border-l"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => startEditCategory(category)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </DropdownMenuItem>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Category</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete "
-                              {getLocalizedName(category, language)}"? This will
-                              affect all menu items in this category.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDeleteCategory(category.id)}
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              );
-            })}
+            <MenuCategoryForm
+              open={isCategoryFormOpen}
+              onOpenChange={(open) => {
+                if (!open) setEditingCategory(null);
+                setIsCategoryFormOpen(open);
+              }}
+              onSuccess={fetchData}
+              editingCategory={editingCategory}
+            />
+            <MenuItemForm
+              open={isItemFormOpen}
+              onOpenChange={(open) => {
+                if (!open) setEditingItem(null);
+                setIsItemFormOpen(open);
+              }}
+              onSuccess={fetchData}
+              categories={categories}
+              editingItem={editingItem}
+              setEditingItem={setEditingItem}
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Menu Items Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filteredItems.map((item) => (
-          <Card key={item.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">
-                  {getLocalizedName(item, language)}
-                </CardTitle>
-                <div className="flex space-x-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => startEditItem(item)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Menu Item</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{item.name}"?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteItem(item.id)}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <Badge variant="outline">
-                  {getCategoryName(item.categoryId)}
-                </Badge>
-                <Badge variant={item.isAvailable ? "default" : "destructive"}>
-                  {item.isAvailable ? "Available" : "Unavailable"}
-                </Badge>
-              </div>
-            </CardHeader>
-
-            <CardContent>
-              <div className="space-y-2">
-                {item.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {getLocalizedText(item, "description", language)}
-                  </p>
-                )}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center flex-col">
-                    {item.variants.length === 1 ? (
-                      <span className="text-lg font-bold text-primary">
-                        ₹{parseFloat(item.variants[0].price).toFixed(2)}
-                      </span>
-                    ) : (
-                      <div className="text-sm">
-                        {item.variants.map((v) => (
-                          <div key={v.id} className="">
-                            <span className="font-medium">
-                              {getLocalizedName(v as any, language)}:
-                            </span>{" "}
-                            <span className="font-bold">
-                              ₹{parseFloat(v.price).toFixed(2)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredItems.length === 0 && !loading && (
+        {/* Categories Section */}
         <Card>
-          <CardContent className="text-center py-8">
-            <Utensils className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Menu Items</h3>
-            <p className="text-muted-foreground">
-              {selectedCategory === "all"
-                ? "No menu items found. Add some items to get started."
-                : "No items in this category. Try selecting a different category."}
-            </p>
+          <CardHeader>
+            <CardTitle>Categories</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex overflow-x-auto gap-2 pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+              <Button
+                variant={selectedCategory === "all" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedCategory("all")}
+                className="whitespace-nowrap flex-shrink-0"
+              >
+                All Items ({menuItems.length})
+              </Button>
+              {categories.map((category) => {
+                const itemCount = menuItems.filter(
+                  (item) => item.categoryId === category.id
+                ).length;
+                return (
+                  <div
+                    key={category.id}
+                    className="flex items-center rounded-md ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 flex-shrink-0"
+                  >
+                    <Button
+                      variant={
+                        selectedCategory === category.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      className="rounded-r-none whitespace-nowrap"
+                      onClick={() => setSelectedCategory(category.id)}
+                    >
+                      {getLocalizedName(category, language)} ({itemCount})
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant={
+                            selectedCategory === category.id
+                              ? "default"
+                              : "outline"
+                          }
+                          size="sm"
+                          className="px-2 rounded-l-none border-l"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => startEditCategory(category)}
+                        >
+                          <Edit className="mr-2 h-4 w-4" />
+                          <span>Edit</span>
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onSelect={(e) => e.preventDefault()}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>Delete</span>
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete Category
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "
+                                {getLocalizedName(category, language)}"? This
+                                will affect all menu items in this category.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() =>
+                                  handleDeleteCategory(category.id)
+                                }
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+
+      {/* Menu Items Grid - Scrollable */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filteredItems.map((item) => (
+            <Card key={item.id} className="relative flex flex-col">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base sm:text-lg line-clamp-2 flex-1">
+                    {getLocalizedName(item, language)}
+                  </CardTitle>
+                  <div className="flex gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditItem(item)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Menu Item</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{item.name}"?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <Badge variant="outline" className="text-xs">
+                    {getCategoryName(item.categoryId)}
+                  </Badge>
+                  <Badge
+                    variant={item.isAvailable ? "default" : "destructive"}
+                    className="text-xs"
+                  >
+                    {item.isAvailable ? "Available" : "Unavailable"}
+                  </Badge>
+                </div>
+              </CardHeader>
+
+              <CardContent className="flex-1">
+                <div className="space-y-2">
+                  {item.description && (
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
+                      {getLocalizedText(item, "description", language)}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center flex-col w-full">
+                      {item.variants.length === 1 ? (
+                        <span className="text-base sm:text-lg font-bold text-primary">
+                          ₹{parseFloat(item.variants[0].price).toFixed(2)}
+                        </span>
+                      ) : (
+                        <div className="text-xs sm:text-sm w-full">
+                          {item.variants.map((v) => (
+                            <div key={v.id} className="">
+                              <span className="font-medium">
+                                {getLocalizedName(v as any, language)}:
+                              </span>{" "}
+                              <span className="font-bold">
+                                ₹{parseFloat(v.price).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredItems.length === 0 && !loading && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Utensils className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-base sm:text-lg font-semibold mb-2">
+                No Menu Items
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {selectedCategory === "all"
+                  ? "No menu items found. Add some items to get started."
+                  : "No items in this category. Try selecting a different category."}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 };

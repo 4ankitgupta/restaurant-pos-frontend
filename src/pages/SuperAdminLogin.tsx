@@ -63,7 +63,9 @@ export default function SuperAdminLogin() {
           <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
             <Shield className="w-7 h-7 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Super Admin Portal</CardTitle>
+          <CardTitle className="text-2xl text-center">
+            Super Admin Portal
+          </CardTitle>
           <CardDescription className="text-center">
             Enter your credentials to access the platform dashboard
           </CardDescription>
@@ -103,20 +105,6 @@ export default function SuperAdminLogin() {
                   disabled={isLoading}
                 />
               </div>
-
-              {/* Demo Credentials Button */}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setEmail("superadmin@rasoitrack.com");
-                  setPassword("superadmin123");
-                }}
-                disabled={isLoading}
-                className="w-full"
-              >
-                Use Demo Credentials
-              </Button>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
