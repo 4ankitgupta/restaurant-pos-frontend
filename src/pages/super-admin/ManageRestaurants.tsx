@@ -36,6 +36,7 @@ import { RestaurantForm } from "./RestaurantForm";
 import { FeatureFlagsDialog } from "./FeatureFlagsDialog";
 import { ZomatoConfigDialog } from "./ZomatoConfigDialog";
 import { WhatsAppConfigDialog } from "./WhatsAppConfigDialog";
+import { MenuManagement, MenuManagementCompact } from "./MenuManagement";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const ManageRestaurants: React.FC = () => {
@@ -287,6 +288,14 @@ export const ManageRestaurants: React.FC = () => {
                       Users
                     </Button>
                   </div>
+                  <div className="mt-2">
+                    <MenuManagement
+                      restaurantId={restaurant.id}
+                      restaurantName={restaurant.name}
+                      size="sm"
+                      variant="outline"
+                    />
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -436,6 +445,10 @@ export const ManageRestaurants: React.FC = () => {
                       >
                         <Users className="w-4 h-4" />
                       </Button>
+                      <MenuManagementCompact
+                        restaurantId={restaurant.id}
+                        restaurantName={restaurant.name}
+                      />
                       <Button
                         size="sm"
                         variant="ghost"
