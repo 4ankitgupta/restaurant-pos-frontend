@@ -23,6 +23,8 @@ export interface APIMenuItem {
   description: string | null;
   descriptionHindi?: string | null;
   isAvailable: boolean;
+  isFavorite?: boolean;
+  sortOrder?: number;
   restaurantId: string;
   categoryId: string | null;
   variants: Array<{
@@ -30,6 +32,7 @@ export interface APIMenuItem {
     name: string;
     nameHindi?: string;
     price: string;
+    sortOrder?: number;
   }>;
 }
 

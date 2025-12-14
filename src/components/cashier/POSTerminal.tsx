@@ -56,6 +56,7 @@ import {
   History,
   Receipt,
   RefreshCw,
+  Star,
 } from "lucide-react";
 import { PaymentDialog } from "./PaymentDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
@@ -254,15 +255,22 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   }, [serviceType, refreshKey]);
 
   useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].id);
+    if (!activeCategory) {
+      setActiveCategory("favorites");
     }
-  }, [categories, activeCategory]);
+  }, [activeCategory]);
 
   // Derived
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
-      if (activeCategory && item.categoryId !== activeCategory) return false;
+      // Filter by favorites or category
+      if (activeCategory === "favorites") {
+        if (!item.isFavorite) return false;
+      } else if (activeCategory && item.categoryId !== activeCategory) {
+        return false;
+      }
+
+      // Filter by search term
       const localized = getLocalizedName(item as any, language).toLowerCase();
       return localized.includes(searchTerm.toLowerCase());
     });
@@ -850,6 +858,18 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                     : ""
                 }`}
               >
+                <Button
+                  key="favorites"
+                  variant={
+                    activeCategory === "favorites" ? "default" : "outline"
+                  }
+                  size="sm"
+                  className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
+                  onClick={() => setActiveCategory("favorites")}
+                >
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  Favorites
+                </Button>
                 {categories.map((cat) => (
                   <Button
                     key={cat.id}
@@ -876,9 +896,14 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                   {filteredItems.map((item) => (
                     <Card
                       key={item.id}
-                      className="cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95"
+                      className={`cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95 relative ${
+                        item.isFavorite ? "border-2 border-yellow-400" : ""
+                      }`}
                       onClick={() => handleItemClick(item)}
                     >
+                      {item.isFavorite && (
+                        <Star className="absolute top-1 right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      )}
                       <CardContent className={`${isMobile ? "p-2" : "p-3"}`}>
                         <p
                           className={`font-medium line-clamp-2 leading-tight ${

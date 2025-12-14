@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Star } from "lucide-react";
 import { APIMenuItem } from "@/types/restaurant";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getLocalizedName } from "@/lib/utils";
@@ -34,13 +34,18 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
   const isMobile = useIsMobile();
   const { language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>(
-    categories.length > 0 ? categories[0].id : ""
-  );
+  const [activeCategory, setActiveCategory] = useState<string>("favorites");
 
   const filteredItems = useMemo(() => {
     return menuItems.filter((item) => {
-      if (activeCategory && item.categoryId !== activeCategory) return false;
+      // Filter by favorites tab
+      if (activeCategory === "favorites") {
+        if (!item.isFavorite) return false;
+      } else if (activeCategory && item.categoryId !== activeCategory) {
+        return false;
+      }
+
+      // Filter by search term
       const localized = getLocalizedName(item as any, language).toLowerCase();
       return localized.includes(searchTerm.toLowerCase());
     });
@@ -80,6 +85,16 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
             : ""
         }`}
       >
+        <Button
+          key="favorites"
+          variant={activeCategory === "favorites" ? "default" : "outline"}
+          size="sm"
+          className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
+          onClick={() => setActiveCategory("favorites")}
+        >
+          <Star className="h-3 w-3 md:h-4 md:w-4 mr-1 fill-current" />
+          Favorites
+        </Button>
         {categories.map((cat) => (
           <Button
             key={cat.id}
@@ -106,14 +121,19 @@ export const MenuGrid: React.FC<MenuGridProps> = ({
           {filteredItems.map((item) => (
             <Card
               key={item.id}
-              className="cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95"
+              className={`cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95 ${
+                item.isFavorite ? "border-yellow-400 border-2" : ""
+              }`}
               onClick={() => onItemClick(item)}
             >
-              <CardContent className={`${isMobile ? "p-2" : "p-3"}`}>
+              <CardContent className={`${isMobile ? "p-2" : "p-3"} relative`}>
+                {item.isFavorite && (
+                  <Star className="absolute top-1 right-1 h-3 w-3 md:h-4 md:w-4 text-yellow-500 fill-yellow-500" />
+                )}
                 <p
                   className={`font-medium line-clamp-2 leading-tight ${
                     isMobile ? "text-sm min-h-[2rem]" : "min-h-[2.5rem]"
-                  }`}
+                  } ${item.isFavorite ? "pr-4" : ""}`}
                 >
                   {getLocalizedName(item as any, language)}
                 </p>

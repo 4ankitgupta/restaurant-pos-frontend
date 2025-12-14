@@ -27,6 +27,9 @@ import {
   Tag,
   DollarSign,
   MoreHorizontal,
+  ChevronUp,
+  ChevronDown,
+  Star,
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
@@ -106,6 +109,106 @@ const Menu: React.FC = () => {
       fetchData();
     } catch (error) {
       console.error("Failed to delete category:", error);
+    }
+  };
+
+  const handleMoveCategoryUp = async (index: number) => {
+    if (index === 0) return;
+    const newOrder = [...categories];
+    [newOrder[index - 1], newOrder[index]] = [
+      newOrder[index],
+      newOrder[index - 1],
+    ];
+    setCategories(newOrder);
+    try {
+      await apiService.reorderCategories(newOrder.map((c) => c.id));
+      toast({ title: "Success", description: "Category order updated" });
+    } catch (error) {
+      console.error("Failed to reorder categories:", error);
+      fetchData(); // Revert on error
+    }
+  };
+
+  const handleMoveCategoryDown = async (index: number) => {
+    if (index === categories.length - 1) return;
+    const newOrder = [...categories];
+    [newOrder[index], newOrder[index + 1]] = [
+      newOrder[index + 1],
+      newOrder[index],
+    ];
+    setCategories(newOrder);
+    try {
+      await apiService.reorderCategories(newOrder.map((c) => c.id));
+      toast({ title: "Success", description: "Category order updated" });
+    } catch (error) {
+      console.error("Failed to reorder categories:", error);
+      fetchData(); // Revert on error
+    }
+  };
+
+  const handleMoveItemUp = async (index: number) => {
+    if (index === 0) return;
+
+    const item1Id = filteredItems[index - 1].id;
+    const item2Id = filteredItems[index].id;
+
+    // Create new array with swapped items
+    const newMenuItems = menuItems.map((item) => {
+      if (item.id === item1Id) return { ...filteredItems[index] };
+      if (item.id === item2Id) return { ...filteredItems[index - 1] };
+      return item;
+    });
+
+    setMenuItems(newMenuItems);
+
+    // Get the new order for the filtered category
+    const reorderedFilteredItems = [...filteredItems];
+    [reorderedFilteredItems[index - 1], reorderedFilteredItems[index]] = [
+      reorderedFilteredItems[index],
+      reorderedFilteredItems[index - 1],
+    ];
+
+    try {
+      await apiService.reorderMenuItems(
+        reorderedFilteredItems.map((i) => i.id)
+      );
+      toast({ title: "Success", description: "Item order updated" });
+    } catch (error) {
+      console.error("Failed to reorder items:", error);
+      fetchData();
+    }
+  };
+
+  const handleMoveItemDown = async (index: number) => {
+    if (index === filteredItems.length - 1) return;
+
+    const item1Id = filteredItems[index].id;
+    const item2Id = filteredItems[index + 1].id;
+
+    // Create new array with swapped items
+    const newMenuItems = menuItems.map((item) => {
+      if (item.id === item1Id) return { ...filteredItems[index + 1] };
+      if (item.id === item2Id) return { ...filteredItems[index] };
+      return item;
+    });
+
+    setMenuItems(newMenuItems);
+
+    // Get the new order for the filtered category
+    const reorderedFilteredItems = [...filteredItems];
+    [reorderedFilteredItems[index], reorderedFilteredItems[index + 1]] = [
+      reorderedFilteredItems[index + 1],
+      reorderedFilteredItems[index],
+    ];
+
+    try {
+      await apiService.reorderMenuItems(
+        reorderedFilteredItems.map((i) => i.id)
+      );
+      toast({ title: "Success", description: "Item order updated" });
+    } catch (error) {
+      console.error("Failed to reorder items:", error);
+      fetchData();
     }
   };
 
@@ -190,7 +293,7 @@ const Menu: React.FC = () => {
               >
                 All Items ({menuItems.length})
               </Button>
-              {categories.map((category) => {
+              {categories.map((category, index) => {
                 const itemCount = menuItems.filter(
                   (item) => item.categoryId === category.id
                 ).length;
@@ -199,6 +302,26 @@ const Menu: React.FC = () => {
                     key={category.id}
                     className="flex items-center rounded-md ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 flex-shrink-0"
                   >
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 px-1 py-0"
+                        onClick={() => handleMoveCategoryUp(index)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 px-1 py-0"
+                        onClick={() => handleMoveCategoryDown(index)}
+                        disabled={index === categories.length - 1}
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </div>
                     <Button
                       variant={
                         selectedCategory === category.id ? "default" : "outline"
@@ -276,13 +399,38 @@ const Menu: React.FC = () => {
       {/* Menu Items Grid - Scrollable */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredItems.map((item) => (
+          {filteredItems.map((item, index) => (
             <Card key={item.id} className="relative flex flex-col">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base sm:text-lg line-clamp-2 flex-1">
-                    {getLocalizedName(item, language)}
-                  </CardTitle>
+                  <div className="flex items-start gap-1">
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 px-1 py-0"
+                        onClick={() => handleMoveItemUp(index)}
+                        disabled={index === 0}
+                      >
+                        <ChevronUp className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 px-1 py-0"
+                        onClick={() => handleMoveItemDown(index)}
+                        disabled={index === filteredItems.length - 1}
+                      >
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    <CardTitle className="text-base sm:text-lg line-clamp-2 flex-1">
+                      {item.isFavorite && (
+                        <Star className="h-4 w-4 inline-block mr-1 text-yellow-500 fill-yellow-500" />
+                      )}
+                      {getLocalizedName(item, language)}
+                    </CardTitle>
+                  </div>
                   <div className="flex gap-1 flex-shrink-0">
                     <Button
                       variant="ghost"

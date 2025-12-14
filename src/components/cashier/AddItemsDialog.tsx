@@ -11,7 +11,7 @@ import { APIMenuItem } from "@/types/restaurant";
 import { useState, useEffect } from "react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
-import { Plus, Minus, ShoppingCart, MessageSquare } from "lucide-react";
+import { Plus, Minus, ShoppingCart, MessageSquare, Star } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent } from "../ui/card";
@@ -54,16 +54,10 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
 }) => {
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [activeCategory, setActiveCategory] = useState<string>("favorites");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
   const { language } = useLanguage();
-
-  useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].id);
-    }
-  }, [categories, activeCategory]);
 
   const handleItemClick = (menuItem: APIMenuItem) => {
     // If there's no variant, inform user (cannot add without a variant id)
@@ -169,7 +163,14 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
 
   const filteredItems = menuItems
     ? menuItems.filter((item) => {
-        if (item.categoryId !== activeCategory) return false;
+        // Filter by favorites or category
+        if (activeCategory === "favorites") {
+          if (!item.isFavorite) return false;
+        } else if (item.categoryId !== activeCategory) {
+          return false;
+        }
+
+        // Filter by search term
         const localized = getLocalizedName(item as any, language).toLowerCase();
         return localized.includes(searchTerm.toLowerCase());
       })
@@ -247,6 +248,18 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                 className="mb-3 h-9"
               />
               <div className="flex space-x-2 mb-3 overflow-x-auto pb-2 scrollbar-hide">
+                <Button
+                  key="favorites"
+                  variant={
+                    activeCategory === "favorites" ? "default" : "outline"
+                  }
+                  onClick={() => setActiveCategory("favorites")}
+                  className="whitespace-nowrap h-8"
+                  size="sm"
+                >
+                  <Star className="h-3 w-3 mr-1 fill-current" />
+                  Favorites
+                </Button>
                 {categories.map((category) => (
                   <Button
                     key={category.id}
@@ -275,11 +288,20 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                     filteredItems.map((item) => (
                       <Card
                         key={item.id}
-                        className="cursor-pointer hover:bg-accent/50"
+                        className={`cursor-pointer hover:bg-accent/50 ${
+                          item.isFavorite ? "border-yellow-400 border-2" : ""
+                        }`}
                         onClick={() => handleItemClick(item)}
                       >
-                        <CardContent className="p-3">
-                          <p className="font-medium">
+                        <CardContent className="p-3 relative">
+                          {item.isFavorite && (
+                            <Star className="absolute top-2 right-2 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                          )}
+                          <p
+                            className={`font-medium ${
+                              item.isFavorite ? "pr-6" : ""
+                            }`}
+                          >
                             {getLocalizedName(item as any, language)}
                           </p>
                           <p className="text-sm text-muted-foreground">

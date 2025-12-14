@@ -22,6 +22,7 @@ import {
   MessageSquare,
   MoreVertical,
   Bike,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLocalizedName } from "@/lib/utils";
@@ -162,10 +163,10 @@ const WaiterOrderManagement: React.FC = () => {
   }, [executeCategories, executeMenu]);
 
   useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].id);
+    if (!activeCategory) {
+      setActiveCategory("favorites");
     }
-  }, [categories, activeCategory]);
+  }, [activeCategory]);
 
   useEffect(() => {
     if (currentOrder?.orderItems) {
@@ -431,7 +432,14 @@ const WaiterOrderManagement: React.FC = () => {
   };
 
   const currentItems = menuItems.filter((item) => {
-    if (item.categoryId !== activeCategory) return false;
+    // Filter by favorites or category
+    if (activeCategory === "favorites") {
+      if (!item.isFavorite) return false;
+    } else if (item.categoryId !== activeCategory) {
+      return false;
+    }
+
+    // Filter by search term
     const localized = getLocalizedName(item as any, language).toLowerCase();
     return localized.includes(searchTerm.toLowerCase());
   });
@@ -573,6 +581,16 @@ const WaiterOrderManagement: React.FC = () => {
         {/* Categories */}
         <div className="bg-card border-b p-4 overflow-x-auto">
           <div className="flex gap-2">
+            <Button
+              key="favorites"
+              variant={activeCategory === "favorites" ? "default" : "outline"}
+              onClick={() => setActiveCategory("favorites")}
+              className="whitespace-nowrap"
+              size="sm"
+            >
+              <Star className="h-3 w-3 mr-1 fill-current" />
+              Favorites
+            </Button>
             {categories.map((category) => (
               <Button
                 key={category.id}
@@ -597,9 +615,12 @@ const WaiterOrderManagement: React.FC = () => {
                   key={item.id}
                   className={`cursor-pointer transition-all hover:shadow-lg relative ${
                     !item.isAvailable ? "opacity-50" : ""
-                  }`}
+                  } ${item.isFavorite ? "border-2 border-yellow-400" : ""}`}
                   onClick={() => item.isAvailable && addToCart(item)}
                 >
+                  {item.isFavorite && (
+                    <Star className="absolute top-2 right-2 h-4 w-4 text-yellow-500 fill-yellow-500 z-10" />
+                  )}
                   {quantityInCart > 0 && (
                     <Badge
                       variant="default"

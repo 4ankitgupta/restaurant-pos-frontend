@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Minus, MessageSquare, ShoppingCart } from "lucide-react";
+import { Plus, Minus, MessageSquare, ShoppingCart, Star } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 import { APIMenuItem } from "@/types/restaurant";
@@ -51,7 +51,7 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
 }) => {
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("");
+  const [activeCategory, setActiveCategory] = useState<string>("favorites");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [variantDialogOpen, setVariantDialogOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<{
@@ -59,11 +59,6 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
     initialNote?: string;
     itemName: string;
   } | null>(null);
-
-  useEffect(() => {
-    if (categories.length > 0 && !activeCategory)
-      setActiveCategory(categories[0].id);
-  }, [categories, activeCategory]);
 
   const handleItemClick = (menuItem: APIMenuItem) => {
     if (menuItem.variants.length === 1) {
@@ -148,11 +143,17 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
     onSubmit(items);
   };
 
-  const filteredItems = menuItems.filter(
-    (item) =>
-      item.categoryId === activeCategory &&
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = menuItems.filter((item) => {
+    // Filter by favorites or category
+    if (activeCategory === "favorites") {
+      if (!item.isFavorite) return false;
+    } else if (item.categoryId !== activeCategory) {
+      return false;
+    }
+
+    // Filter by search term
+    return item.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   const totalItems = Array.from(cart.values()).reduce(
     (sum, i) => sum + i.quantity,
@@ -177,6 +178,18 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                 className="mb-4"
               />
               <div className="flex space-x-2 mb-4 overflow-x-auto pb-2">
+                <Button
+                  key="favorites"
+                  variant={
+                    activeCategory === "favorites" ? "default" : "outline"
+                  }
+                  onClick={() => setActiveCategory("favorites")}
+                  size="sm"
+                  className="whitespace-nowrap"
+                >
+                  <Star className="h-4 w-4 mr-1 fill-current" />
+                  Favorites
+                </Button>
                 {categories.map((cat) => (
                   <Button
                     key={cat.id}
@@ -194,11 +207,22 @@ export const AddItemsDialog: React.FC<AddItemsDialogProps> = ({
                   {filteredItems.map((item) => (
                     <Card
                       key={item.id}
-                      className="cursor-pointer hover:bg-accent/50"
+                      className={`cursor-pointer hover:bg-accent/50 ${
+                        item.isFavorite ? "border-yellow-400 border-2" : ""
+                      }`}
                       onClick={() => handleItemClick(item)}
                     >
-                      <CardContent className="p-3">
-                        <p className="font-medium">{item.name}</p>
+                      <CardContent className="p-3 relative">
+                        {item.isFavorite && (
+                          <Star className="absolute top-2 right-2 h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        )}
+                        <p
+                          className={`font-medium ${
+                            item.isFavorite ? "pr-6" : ""
+                          }`}
+                        >
+                          {item.name}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           ₹{item.variants[0]?.price ?? 0}
                         </p>

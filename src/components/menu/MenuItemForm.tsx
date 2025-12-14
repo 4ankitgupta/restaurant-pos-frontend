@@ -17,7 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Star } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
@@ -47,6 +48,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
     descriptionHindi: "",
     categoryId: "",
     isAvailable: true,
+    isFavorite: false,
     variants: [{ name: "", nameHindi: "", price: "" }] as {
       name: string;
       nameHindi: string;
@@ -65,6 +67,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
         descriptionHindi: editingItem.descriptionHindi || "",
         categoryId: editingItem.categoryId || "",
         isAvailable: editingItem.isAvailable,
+        isFavorite: editingItem.isFavorite || false,
         variants: editingItem.variants.map((v) => ({
           name: v.name,
           nameHindi: v.nameHindi || "",
@@ -79,6 +82,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
         descriptionHindi: "",
         categoryId: "",
         isAvailable: true,
+        isFavorite: false,
         variants: [{ name: "", nameHindi: "", price: "" }],
       });
     }
@@ -175,6 +179,7 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
       descriptionHindi: "",
       categoryId: "",
       isAvailable: true,
+      isFavorite: false,
       variants: [{ name: "", nameHindi: "", price: "" }],
     });
     setEditingItem(null);
@@ -341,6 +346,26 @@ export const MenuItemForm: React.FC<MenuItemFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center justify-between space-x-2 p-3 border rounded-md">
+              <div className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <Label htmlFor="item-favorite" className="cursor-pointer">
+                    Mark as Favorite
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Show in Favorites tab on POS
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="item-favorite"
+                checked={itemForm.isFavorite}
+                onCheckedChange={(checked) =>
+                  setItemForm((prev) => ({ ...prev, isFavorite: checked }))
+                }
+              />
             </div>
           </div>
           <div className="flex-shrink-0 pt-4 border-t">

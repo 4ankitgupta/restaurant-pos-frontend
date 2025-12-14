@@ -377,6 +377,20 @@ class ApiService {
     });
   }
 
+  async reorderCategories(categoryIds: string[]) {
+    return this.request<ApiResponse<any>>("/menu-categories/reorder", {
+      method: "POST",
+      body: JSON.stringify({ categoryIds }),
+    });
+  }
+
+  async reorderMenuItems(itemIds: string[]) {
+    return this.request<ApiResponse<any>>("/menu-items/reorder", {
+      method: "POST",
+      body: JSON.stringify({ itemIds }),
+    });
+  }
+
   // Payment Management
   async createPayment(paymentData: {
     orderId: string;
