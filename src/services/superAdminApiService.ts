@@ -25,6 +25,7 @@ export interface Restaurant {
   phone2?: string | null; // NEW: Secondary phone number
   gstin?: string | null; // NEW: GSTIN number
   logoUrl?: string | null; // NEW: Logo URL path
+  upiQrCodeUrl?: string | null; // NEW: UPI QR Code URL path
   address: string | null; // UPDATED: Based on schema
   isActive: boolean;
   featureFlags?: Record<string, boolean | string> | null; // Feature flags for granular control (supports both boolean and string values like cashier_layout_mode)
@@ -175,6 +176,7 @@ class SuperAdminApiService {
     gstin?: string;
     address?: string;
     logo?: File;
+    upiQrCode?: File;
     adminName: string;
     adminEmail: string;
     adminPassword: string;
@@ -186,6 +188,7 @@ class SuperAdminApiService {
     Object.keys(data).forEach((key) => {
       if (
         key !== "logo" &&
+        key !== "upiQrCode" &&
         key !== "featureFlags" &&
         (data as any)[key] !== undefined
       ) {
@@ -198,9 +201,12 @@ class SuperAdminApiService {
       formData.append("featureFlags", JSON.stringify(data.featureFlags));
     }
 
-    // Append file if exists
+    // Append files if they exist
     if (data.logo) {
       formData.append("logo", data.logo);
+    }
+    if (data.upiQrCode) {
+      formData.append("upiQrCode", data.upiQrCode);
     }
 
     // Use fetch directly to handle FormData (browser sets Content-Type with boundary)
@@ -234,20 +240,24 @@ class SuperAdminApiService {
       gstin?: string;
       address?: string;
       logo?: File;
+      upiQrCode?: File;
+      deleteLogo?: boolean;
+      deleteQrCode?: boolean;
       featureFlags?: Record<string, boolean | string>;
     }
   ): Promise<Restaurant> {
     const formData = new FormData();
 
-    // Append all fields except logo and featureFlags
+    // Append all fields except logo, upiQrCode and featureFlags
     Object.keys(data).forEach((key) => {
       if (
         key !== "logo" &&
+        key !== "upiQrCode" &&
         key !== "featureFlags" &&
         (data as any)[key] !== undefined &&
         (data as any)[key] !== null
       ) {
-        formData.append(key, (data as any)[key]);
+        formData.append(key, String((data as any)[key]));
       }
     });
 
@@ -256,9 +266,12 @@ class SuperAdminApiService {
       formData.append("featureFlags", JSON.stringify(data.featureFlags));
     }
 
-    // Append file if exists
+    // Append files if they exist
     if (data.logo instanceof File) {
       formData.append("logo", data.logo);
+    }
+    if (data.upiQrCode instanceof File) {
+      formData.append("upiQrCode", data.upiQrCode);
     }
 
     // Use fetch directly to handle FormData

@@ -830,6 +830,74 @@ class ApiService {
     // Public endpoint - no auth required but using request() for consistency
     return this.request<ApiResponse<APIOrder>>(`/public/bill/${token}`);
   }
+
+  // --- Restaurant Settings ---
+  getRestaurantInfo = async () => {
+    const response = await this.request<any>("/restaurant");
+    return response;
+  };
+
+  updateRestaurantInfo = async (data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    phone2?: string;
+    gstin?: string;
+    address?: string;
+    logo?: File;
+    upiQrCode?: File;
+    deleteLogo?: boolean;
+    deleteQrCode?: boolean;
+  }) => {
+    const formData = new FormData();
+
+    // Append text fields
+    Object.keys(data).forEach((key) => {
+      if (
+        key !== "logo" &&
+        key !== "upiQrCode" &&
+        (data as any)[key] !== undefined &&
+        (data as any)[key] !== null
+      ) {
+        formData.append(key, String((data as any)[key]));
+      }
+    });
+
+    // Append files if they exist
+    if (data.logo instanceof File) {
+      formData.append("logo", data.logo);
+    }
+    if (data.upiQrCode instanceof File) {
+      formData.append("upiQrCode", data.upiQrCode);
+    }
+
+    // Use fetch directly to handle FormData
+    const token = localStorage.getItem("accessToken");
+    const response = await fetch(`${this.baseURL}/restaurant`, {
+      method: "PATCH",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw {
+        code: response.status,
+        message: result.message || "Request failed",
+      } as ApiError;
+    }
+    return result;
+  };
 }
 
 export const apiService = new ApiService();
+
+// Export restaurant API separately for convenience
+export const restaurantApi = {
+  getRestaurantInfo: () => apiService.getRestaurantInfo(),
+  updateRestaurantInfo: (
+    data: Parameters<typeof apiService.updateRestaurantInfo>[0]
+  ) => apiService.updateRestaurantInfo(data),
+};

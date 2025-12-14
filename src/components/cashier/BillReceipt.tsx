@@ -140,6 +140,24 @@ export const BillReceipt = React.forwardRef<HTMLDivElement, BillReceiptProps>(
           </>
         )}
 
+        {/* UPI QR Code */}
+        {restaurant?.upiQrCodeUrl && (
+          <>
+            <section className="bill-qr-code-section">
+              <p className="qr-code-label">Scan to Pay</p>
+              <div className="qr-code-container">
+                <img
+                  src={`${baseUrl}${restaurant.upiQrCodeUrl}`}
+                  alt="UPI QR Code"
+                  className="bill-qr-code"
+                />
+              </div>
+            </section>
+
+            <Separator />
+          </>
+        )}
+
         <footer className="bill-footer">
           <p>Thank you for visiting!</p>
           <p className="powered-by">Powered by rasoitrack.in</p>

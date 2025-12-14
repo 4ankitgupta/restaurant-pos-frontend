@@ -71,6 +71,9 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
   const isEditMode = !!initialData;
   const validationSchema = isEditMode ? editSchema : createSchema;
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [selectedQrFile, setSelectedQrFile] = React.useState<File | null>(null);
+  const [deleteLogo, setDeleteLogo] = React.useState(false);
+  const [deleteQrCode, setDeleteQrCode] = React.useState(false);
 
   const {
     register,
@@ -115,6 +118,9 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
           }),
     });
     setSelectedFile(null);
+    setSelectedQrFile(null);
+    setDeleteLogo(false);
+    setDeleteQrCode(false);
   }, [initialData, reset, isEditMode]);
 
   const onSubmit = async (data: FormData) => {
@@ -131,6 +137,15 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
         };
         if (selectedFile) {
           editData.logo = selectedFile;
+        }
+        if (selectedQrFile) {
+          editData.upiQrCode = selectedQrFile;
+        }
+        if (deleteLogo) {
+          editData.deleteLogo = true;
+        }
+        if (deleteQrCode) {
+          editData.deleteQrCode = true;
         }
         await superAdminApi.updateRestaurant(initialData!.id, editData);
         toast({
@@ -149,6 +164,7 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
           gstin: createData.gstin,
           address: createData.address,
           logo: selectedFile || undefined,
+          upiQrCode: selectedQrFile || undefined,
           adminName: createData.adminName!,
           adminEmail: createData.adminEmail!,
           adminPassword: createData.adminPassword!,
@@ -262,17 +278,75 @@ export const RestaurantForm: React.FC<RestaurantFormProps> = ({
               type="file"
               accept="image/*"
               onChange={(e) => {
-                if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+                if (e.target.files?.[0]) {
+                  setSelectedFile(e.target.files[0]);
+                  setDeleteLogo(false);
+                }
               }}
             />
-            {initialData?.logoUrl && !selectedFile && (
-              <p className="text-xs text-muted-foreground">
-                Current logo: {initialData.logoUrl}
+            {initialData?.logoUrl && !selectedFile && !deleteLogo && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground flex-1">
+                  Current logo: {initialData.logoUrl}
+                </p>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteLogo(true)}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+            {deleteLogo && (
+              <p className="text-xs text-amber-600">
+                Logo will be removed on save
               </p>
             )}
             {selectedFile && (
               <p className="text-xs text-muted-foreground">
                 Selected: {selectedFile.name}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="upiQrCode">UPI QR Code (Optional)</Label>
+            <Input
+              id="upiQrCode"
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setSelectedQrFile(e.target.files[0]);
+                  setDeleteQrCode(false);
+                }
+              }}
+            />
+            {initialData?.upiQrCodeUrl && !selectedQrFile && !deleteQrCode && (
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-muted-foreground flex-1">
+                  Current QR code: {initialData.upiQrCodeUrl}
+                </p>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setDeleteQrCode(true)}
+                >
+                  Remove
+                </Button>
+              </div>
+            )}
+            {deleteQrCode && (
+              <p className="text-xs text-amber-600">
+                QR code will be removed on save
+              </p>
+            )}
+            {selectedQrFile && (
+              <p className="text-xs text-muted-foreground">
+                Selected: {selectedQrFile.name}
               </p>
             )}
           </div>

@@ -25,6 +25,7 @@ import Cashier from "./pages/Cashier";
 import Employees from "./pages/Employees";
 import AttendanceReport from "./pages/AttendanceReport";
 import Expenses from "./pages/Expenses";
+import { RestaurantSettings } from "./pages/RestaurantSettings";
 import { RefreshProvider } from "@/contexts/RefreshContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 
@@ -182,6 +183,14 @@ const App = () => (
                       element={
                         <ProtectedRoute allowedRoles={["admin", "manager"]}>
                           <Users />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="restaurant-settings"
+                      element={
+                        <ProtectedRoute allowedRoles={["admin"]}>
+                          <RestaurantSettings />
                         </ProtectedRoute>
                       }
                     />

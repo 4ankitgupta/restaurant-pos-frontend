@@ -101,6 +101,7 @@ export interface APIRestaurant {
   phone2?: string | null;
   gstin?: string | null;
   logoUrl?: string | null;
+  upiQrCodeUrl?: string | null;
   address?: string | null;
 }
 

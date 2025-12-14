@@ -44,6 +44,7 @@ import {
   Coins,
   CookingPot,
   Receipt,
+  Settings,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
@@ -142,6 +143,13 @@ export const Navbar: React.FC = () => {
             label: "Reports",
             path: "/reports",
             icon: BarChart3,
+          });
+
+          // Restaurant Settings
+          adminCategories.push({
+            // label: "Settings",
+            path: "/restaurant-settings",
+            icon: Settings,
           });
         }
 
