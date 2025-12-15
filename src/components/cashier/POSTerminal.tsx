@@ -57,6 +57,10 @@ import {
   Receipt,
   RefreshCw,
   Star,
+  Maximize2,
+  Minimize2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { PaymentDialog } from "./PaymentDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
@@ -95,6 +99,9 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   // Mobile detection
   const isMobile = useIsMobile();
 
+  // Fullscreen state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   // Data
   const [menuItems, setMenuItems] = useState<APIMenuItem[]>([]);
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -118,6 +125,9 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   // Menu filtering
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("");
+
+  // Category show more/less state
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   // Cart state
   const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
@@ -220,13 +230,25 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
   // 2. --- NEW: Handle Table Status Updates via WebSocket ---
   useEffect(() => {
     if (lastTableUpdate) {
-      setTables((prevTables) =>
-        prevTables.map((table) =>
+      setTables((prevTables) => {
+        const updated = prevTables.map((table) =>
           table.id === lastTableUpdate.id
             ? { ...table, status: lastTableUpdate.status }
             : table
-        )
-      );
+        );
+        // Keep tables sorted by table number
+        return updated.sort((a, b) => {
+          const numA =
+            typeof a.tableNumber === "number"
+              ? a.tableNumber
+              : parseInt(a.tableNumber, 10);
+          const numB =
+            typeof b.tableNumber === "number"
+              ? b.tableNumber
+              : parseInt(b.tableNumber, 10);
+          return numA - numB;
+        });
+      });
 
       // If the currently selected table was updated, update local selection too
       if (selectedTable?.id === lastTableUpdate.id) {
@@ -242,7 +264,21 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
     if (serviceType !== "DINE_IN") return;
     execTables(() => apiService.getTables())
       .then((res) => {
-        if (res?.data) setTables(res.data);
+        if (res?.data) {
+          // Sort tables by table number
+          const sortedTables = [...res.data].sort((a, b) => {
+            const numA =
+              typeof a.tableNumber === "number"
+                ? a.tableNumber
+                : parseInt(a.tableNumber, 10);
+            const numB =
+              typeof b.tableNumber === "number"
+                ? b.tableNumber
+                : parseInt(b.tableNumber, 10);
+            return numA - numB;
+          });
+          setTables(sortedTables);
+        }
       })
       .catch(() => {});
   };
@@ -645,18 +681,60 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
 
   const canRefund = user?.role === "manager" || user?.role === "admin";
 
+  // Fullscreen toggle
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement
+        .requestFullscreen()
+        .then(() => {
+          setIsFullscreen(true);
+        })
+        .catch((err) => {
+          console.error("Error attempting to enable fullscreen:", err);
+        });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col gap-3 h-[calc(100vh-110px)]">
       {/* Header with mode */}
       <div className="flex items-center justify-between gap-2 md:gap-3">
         <div className="flex items-center gap-1 md:gap-2 flex-wrap">
-          <h1 className="text-lg md:text-2xl font-bold">Cashier Station</h1>
-          <Badge variant="secondary" className="uppercase text-xs md:text-sm">
-            POS
-          </Badge>
+          <h1 className="text-lg md:text-2xl font-bold flex items-center gap-2">
+            <div className="bg-primary/10 p-1.5 md:p-2 rounded-lg">
+              <ShoppingCart className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            </div>
+            <span className="hidden sm:inline">Cashier Station</span>
+            <span className="sm:hidden">POS</span>
+          </h1>
           {serviceType === "DINE_IN" && selectedTable && (
-            <Badge className="text-xs md:text-sm">
+            <Badge className="text-xs md:text-sm bg-blue-600">
+              <Utensils className="h-3 w-3 mr-1" />
               Table {selectedTable.tableNumber}
+            </Badge>
+          )}
+          {serviceType === "TAKEAWAY" && (
+            <Badge className="text-xs md:text-sm bg-orange-600">
+              <LayoutGrid className="h-3 w-3 mr-1" />
+              Takeaway
             </Badge>
           )}
           {currentOrder && !isMobile && (
@@ -667,6 +745,21 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
         </div>
 
         <div className="flex items-center gap-1 md:gap-2">
+          <Button
+            variant="outline"
+            size={isMobile ? "sm" : "sm"}
+            onClick={toggleFullscreen}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+            <span className="hidden md:inline ml-1">
+              {isFullscreen ? "Exit" : "Fullscreen"}
+            </span>
+          </Button>
           {serviceType === "TAKEAWAY" && activeTakeawayOrders.length > 0 && (
             <Sheet
               open={activeTakeawayOpen}
@@ -779,49 +872,77 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
             <div className={`flex flex-col h-full ${isMobile ? "" : ""}`}>
               <div
                 className={`flex justify-between items-center ${
-                  isMobile ? "mb-2" : "mb-2"
+                  isMobile ? "mb-3" : "mb-3"
                 }`}
               >
-                <h3 className="font-semibold text-muted-foreground text-sm md:text-base">
-                  Select Table
-                </h3>
-                <Button variant="ghost" size="sm" onClick={refreshTables}>
+                <div>
+                  <h3 className="font-semibold text-lg md:text-xl flex items-center gap-2">
+                    <Utensils className="h-5 w-5 text-primary" />
+                    Select a Table
+                  </h3>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                    Choose an available table to start an order
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshTables}
+                  title="Refresh Tables"
+                >
                   <RotateCw className="h-4 w-4" />
                 </Button>
               </div>
               <ScrollArea className="flex-1">
-                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3 p-1">
-                  {tables.map((t) => (
-                    <button
-                      key={t.id}
-                      className={`rounded-lg p-3 md:p-4 border text-left transition-all active:scale-95 md:hover:scale-105 ${
-                        t.status === "Occupied"
-                          ? "bg-red-50 border-red-200 text-red-700 shadow-sm"
-                          : t.status === "Available"
-                          ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
-                          : "bg-muted/20"
-                      }`}
-                      onClick={() => handleTableClick(t)}
-                    >
-                      <div className="text-xs md:text-sm opacity-70">Table</div>
-                      <div className="text-xl md:text-2xl font-bold">
-                        {t.tableNumber}
-                      </div>
-                      <div className="mt-1 md:mt-2 flex items-center gap-1">
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            t.status === "Occupied"
-                              ? "bg-red-500"
-                              : "bg-emerald-500"
-                          }`}
-                        ></span>
-                        <span className="text-[10px] md:text-xs font-medium">
-                          {t.status}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                {tables.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div className="bg-muted/30 p-6 rounded-full mb-4">
+                      <Utensils className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h4 className="font-semibold text-lg mb-2">
+                      No Tables Available
+                    </h4>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                      Contact your administrator to set up tables for dine-in
+                      service.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3 p-1">
+                    {tables.map((t) => (
+                      <button
+                        key={t.id}
+                        className={`rounded-xl p-3 md:p-4 border-2 text-left transition-all active:scale-95 md:hover:scale-105 md:hover:shadow-lg ${
+                          t.status === "Occupied"
+                            ? "bg-red-50 border-red-300 text-red-700 shadow-md"
+                            : t.status === "Available"
+                            ? "bg-emerald-50 border-emerald-300 text-emerald-700 shadow-md hover:bg-emerald-100"
+                            : "bg-muted/20"
+                        }`}
+                        onClick={() => handleTableClick(t)}
+                      >
+                        <div className="text-xs md:text-sm opacity-70 font-medium">
+                          Table
+                        </div>
+                        <div className="text-2xl md:text-3xl font-bold my-1">
+                          {t.tableNumber}
+                        </div>
+                        <div className="mt-1 md:mt-2 flex items-center gap-1.5">
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              t.status === "Occupied"
+                                ? "bg-red-500 animate-pulse"
+                                : "bg-emerald-500"
+                            }`}
+                          ></span>
+                          <span className="text-[10px] md:text-xs font-semibold uppercase tracking-wide">
+                            {t.status}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </ScrollArea>
             </div>
           ) : (
@@ -837,100 +958,152 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
                       setCurrentOrder(null);
                       setCart(new Map());
                     }}
+                    className="shrink-0"
                   >
                     <ArrowLeft className="h-4 w-4 md:mr-1" />
-                    <span className="hidden md:inline">Tables</span>
+                    <span className="hidden md:inline">Back to Tables</span>
                   </Button>
                 )}
-                <Input
-                  placeholder="Search menu..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 h-9"
-                />
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Search menu items..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 h-9 pl-9"
+                  />
+                  <Utensils className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                </div>
               </div>
 
               {/* Sticky Category Navigation on Mobile */}
               <div
-                className={`flex gap-2 overflow-x-auto pb-1 scrollbar-hide ${
+                className={`space-y-2 ${
                   isMobile
                     ? "sticky top-0 bg-background z-10 -mx-4 px-4 py-2 border-b"
                     : ""
                 }`}
               >
-                <Button
-                  key="favorites"
-                  variant={
-                    activeCategory === "favorites" ? "default" : "outline"
-                  }
-                  size="sm"
-                  className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
-                  onClick={() => setActiveCategory("favorites")}
+                <div
+                  className={`flex flex-wrap gap-2 transition-all duration-300 ${
+                    !showAllCategories && categories.length > 6
+                      ? "max-h-[68px] overflow-hidden"
+                      : ""
+                  }`}
                 >
-                  <Star className="h-3 w-3 mr-1 fill-current" />
-                  Favorites
-                </Button>
-                {categories.map((cat) => (
                   <Button
-                    key={cat.id}
-                    variant={activeCategory === cat.id ? "default" : "outline"}
+                    key="favorites"
+                    variant={
+                      activeCategory === "favorites" ? "default" : "outline"
+                    }
                     size="sm"
                     className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
-                    onClick={() => setActiveCategory(cat.id)}
+                    onClick={() => setActiveCategory("favorites")}
                   >
-                    {getLocalizedName(cat as any, language)}
+                    <Star className="h-3 w-3 mr-1 fill-current" />
+                    Favorites
                   </Button>
-                ))}
+                  {categories.map((cat) => (
+                    <Button
+                      key={cat.id}
+                      variant={
+                        activeCategory === cat.id ? "default" : "outline"
+                      }
+                      size="sm"
+                      className="whitespace-nowrap text-xs md:text-sm h-8 md:h-9"
+                      onClick={() => setActiveCategory(cat.id)}
+                    >
+                      {getLocalizedName(cat as any, language)}
+                    </Button>
+                  ))}
+                </div>
+                {categories.length > 6 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCategories(!showAllCategories)}
+                    className="w-full h-7 text-xs"
+                  >
+                    {showAllCategories ? (
+                      <>
+                        <ChevronUp className="h-3 w-3 mr-1" />
+                        Show Less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3 w-3 mr-1" />
+                        Show More
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
 
               <ScrollArea
                 className={`flex-1 ${isMobile ? "-mx-4 px-4" : "-mr-3 pr-3"}`}
               >
-                <div
-                  className={`grid gap-2 md:gap-3 ${
-                    isMobile
-                      ? "grid-cols-2 pb-24"
-                      : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 pb-4"
-                  }`}
-                >
-                  {filteredItems.map((item) => (
-                    <Card
-                      key={item.id}
-                      className={`cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95 relative ${
-                        item.isFavorite ? "border-2 border-yellow-400" : ""
-                      }`}
-                      onClick={() => handleItemClick(item)}
-                    >
-                      {item.isFavorite && (
-                        <Star className="absolute top-1 right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
-                      )}
-                      <CardContent className={`${isMobile ? "p-2" : "p-3"}`}>
-                        <p
-                          className={`font-medium line-clamp-2 leading-tight ${
-                            isMobile ? "text-sm min-h-[2rem]" : "min-h-[2.5rem]"
-                          }`}
-                        >
-                          {getLocalizedName(item as any, language)}
-                        </p>
-                        <p
-                          className={`text-muted-foreground mt-1 font-mono ${
-                            isMobile ? "text-xs" : "text-sm"
-                          }`}
-                        >
-                          {getItemPriceRange(item)}
-                        </p>
-                        {item.variants.length > 1 && (
-                          <Badge
-                            variant="secondary"
-                            className="mt-1 md:mt-2 text-[9px] md:text-[10px] h-4 md:h-5"
-                          >
-                            {item.variants.length} options
-                          </Badge>
+                {filteredItems.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div className="bg-muted/30 p-6 rounded-full mb-4">
+                      <Utensils className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                    <h4 className="font-semibold text-lg mb-2">
+                      {searchTerm ? "No items found" : "No menu items"}
+                    </h4>
+                    <p className="text-sm text-muted-foreground max-w-sm">
+                      {searchTerm
+                        ? `No items match "${searchTerm}". Try a different search term.`
+                        : "Add menu items or select a different category."}
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className={`grid gap-2 md:gap-3 ${
+                      isMobile
+                        ? "grid-cols-2 pb-24"
+                        : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 pb-4"
+                    }`}
+                  >
+                    {filteredItems.map((item) => (
+                      <Card
+                        key={item.id}
+                        className={`cursor-pointer hover:bg-accent/50 hover:border-primary/50 transition-colors active:scale-95 relative ${
+                          item.isFavorite ? "border-2 border-yellow-400" : ""
+                        }`}
+                        onClick={() => handleItemClick(item)}
+                      >
+                        {item.isFavorite && (
+                          <Star className="absolute top-1 right-1 h-4 w-4 text-yellow-500 fill-yellow-500" />
                         )}
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                        <CardContent className={`${isMobile ? "p-2" : "p-3"}`}>
+                          <p
+                            className={`font-medium line-clamp-2 leading-tight ${
+                              isMobile
+                                ? "text-sm min-h-[2rem]"
+                                : "min-h-[2.5rem]"
+                            }`}
+                          >
+                            {getLocalizedName(item as any, language)}
+                          </p>
+                          <p
+                            className={`text-muted-foreground mt-1 font-mono ${
+                              isMobile ? "text-xs" : "text-sm"
+                            }`}
+                          >
+                            {getItemPriceRange(item)}
+                          </p>
+                          {item.variants.length > 1 && (
+                            <Badge
+                              variant="secondary"
+                              className="mt-1 md:mt-2 text-[9px] md:text-[10px] h-4 md:h-5"
+                            >
+                              {item.variants.length} options
+                            </Badge>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
               </ScrollArea>
             </div>
           )}
@@ -939,12 +1112,23 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
         {/* Right cart - Desktop sidebar / Mobile bottom drawer */}
         {!isMobile ? (
           // Desktop: Sidebar cart
-          <div className="border rounded-md p-3 flex flex-col min-h-0 bg-background">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Current Order</h3>
-              <Badge variant="secondary">Total: ₹{grandTotal.toFixed(2)}</Badge>
+          <div className="border rounded-md p-3 flex flex-col min-h-0 bg-background shadow-sm">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <div className="bg-primary/10 p-1.5 rounded-lg">
+                  <Receipt className="h-4 w-4 text-primary" />
+                </div>
+                Current Order
+              </h3>
+              <Badge variant="secondary" className="text-sm font-semibold">
+                ₹{grandTotal.toFixed(2)}
+              </Badge>
             </div>
-            <Separator className="my-3" />
+            <p className="text-xs text-muted-foreground mb-2">
+              {(currentOrder?.orderItems?.length || 0) + cart.size} items in
+              order
+            </p>
+            <Separator className="my-2" />
 
             <ScrollArea className="flex-1 -mr-3 pr-3">
               <div className="space-y-4">
@@ -1087,11 +1271,18 @@ export const POSTerminal: React.FC<POSTerminalProps> = ({
 
                 {/* EMPTY STATE */}
                 {!currentOrder && cart.size === 0 && (
-                  <div className="text-center text-muted-foreground pt-12 flex flex-col items-center opacity-50">
-                    <div className="bg-muted p-4 rounded-full mb-3">
-                      <ShoppingCart className="h-8 w-8" />
+                  <div className="text-center text-muted-foreground pt-12 flex flex-col items-center">
+                    <div className="bg-muted/30 p-6 rounded-full mb-4">
+                      <ShoppingCart className="h-10 w-10" />
                     </div>
-                    <p>Cart is empty</p>
+                    <h4 className="font-semibold text-base mb-2">
+                      Cart is Empty
+                    </h4>
+                    <p className="text-sm text-muted-foreground max-w-xs">
+                      {serviceType === "DINE_IN" && !selectedTable
+                        ? "Select a table to begin"
+                        : "Start adding items from the menu"}
+                    </p>
                   </div>
                 )}
               </div>

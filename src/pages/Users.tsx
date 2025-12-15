@@ -21,11 +21,13 @@ import {
   Mail,
   Phone,
   Shield,
+  Key,
 } from "lucide-react";
 import { apiService } from "@/services/apiService";
 import { useApi } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 import { UserForm } from "@/components/user/UserForm";
+import { ChangePasswordDialog } from "@/components/user/ChangePasswordDialog";
 import { useRefresh } from "@/contexts/RefreshContext";
 
 interface User {
@@ -41,6 +43,10 @@ const Users: React.FC = () => {
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("all");
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [passwordTargetUser, setPasswordTargetUser] = useState<User | null>(
+    null
+  );
 
   const { loading: usersLoading, execute: executeGetUsers } = useApi<User[]>();
 
@@ -75,6 +81,11 @@ const Users: React.FC = () => {
   const startEditUser = (user: User) => {
     setEditingUser(user);
     setIsUserFormOpen(true);
+  };
+
+  const handlePasswordChangeClick = (user: User) => {
+    setPasswordTargetUser(user);
+    setIsPasswordDialogOpen(true);
   };
 
   const getRoleBadgeVariant = (role: User["role"]) => {
@@ -187,12 +198,21 @@ const Users: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => startEditUser(user)}
+                    title="Edit User"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handlePasswordChangeClick(user)}
+                    title="Change Password"
+                  >
+                    <Key className="h-4 w-4" />
+                  </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" title="Delete User">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -253,6 +273,18 @@ const Users: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog
+        open={isPasswordDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPasswordTargetUser(null);
+          }
+          setIsPasswordDialogOpen(open);
+        }}
+        user={passwordTargetUser}
+      />
     </div>
   );
 };

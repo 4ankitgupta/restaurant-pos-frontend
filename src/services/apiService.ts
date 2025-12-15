@@ -515,6 +515,21 @@ class ApiService {
     });
   }
 
+  async changeUserPassword(
+    userId: string,
+    adminPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) {
+    return this.request<ApiResponse<{ message: string }>>(
+      `/users/${userId}/change-password`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ adminPassword, newPassword, confirmPassword }),
+      }
+    );
+  }
+
   async getSalesReport(startDate: string, endDate: string) {
     // The endpoint might be different depending on your backend routes
     return this.request<any>(
